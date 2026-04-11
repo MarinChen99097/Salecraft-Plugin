@@ -214,30 +214,45 @@ mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
 })
 ```
 
-**For local files** — MCP doesn't support multipart upload. Use curl instead:
-```bash
-curl -X POST "https://marketing-backend-v2-876464738390.asia-east1.run.app/brands/{brand_id}/assets/upload" \
-  -H "Authorization: Bearer {user_token}" \
-  -F "files=@/path/to/photo.jpg" \
-  -F "asset_type=spokesperson"
+**Upload flow (works for ALL file types — photos, logos, certifications):**
+
+Step 1: Get signed upload URL via MCP
+```
+mcp_tool_call("landing_ai_mcp", "get_asset_upload_url", {
+  "user_token": token,
+  "brand_id": brand_id,
+  "filename": "headshot.jpg",
+  "asset_type": "spokesperson",
+  "content_type": "image/jpeg"
+})
+→ { "upload_url": "https://storage.googleapis.com/...?X-Goog-Signature=...", "public_url": "https://storage.googleapis.com/..." }
 ```
 
-**For URLs** (photo already online):
+Step 2: Upload the file using curl
+```bash
+curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/headshot.jpg" "{upload_url}"
+```
+
+Step 3: Use the public_url to create spokesperson
 ```
 mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
   "user_token": token,
   "brand_id": brand_id,
   "name": "User Name",
   "description": "Professional headshot",
-  "photo_urls": ["https://example.com/photo.jpg"]
+  "photo_urls": ["{public_url}"]
 })
 ```
 
-**DO NOT ignore user photos.** If they give you a photo, it MUST be used as spokesperson.
-The LP Factory agent will incorporate the spokesperson into stripe images.
+**This same flow works for:**
+- Spokesperson photos (`asset_type: "spokesperson"`)
+- Product images (`asset_type: "product"`)
+- Logos (`asset_type: "logo"`)
+- Certifications (`asset_type: "certification"`)
+- Reference images for regeneration (`reference_image_urls_json`)
 
-⚠️ **KNOWN LIMITATION**: `upload_brand_asset` MCP tool is a stub — it does NOT actually upload.
-Always use the `curl` method for local files, or `create_spokesperson` with a URL for online images.
+**DO NOT ignore user photos.** If they give you a photo, it MUST be uploaded and used.
+The LP Factory agent will incorporate the spokesperson into stripe images.
 
 ### Discovery Tips
 
