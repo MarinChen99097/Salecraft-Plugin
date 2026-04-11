@@ -1,0 +1,150 @@
+/* ==========================================================
+   MarketingX — Adaptive Aspect Ratio CSS
+   Supports 16:9 (landscape) and 9:16 (portrait) LP embeds
+   ========================================================== */
+
+/* Container with CSS Container Queries */
+.lp-embed-container {
+  container-type: inline-size;
+  width: 100%;
+  position: relative;
+}
+
+/* Base embed styles */
+.lp-embed {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.lp-embed img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lp-embed iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* ---- 16:9 Landscape ---- */
+.lp-embed[data-ratio="16:9"] {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ---- 9:16 Portrait ---- */
+.lp-embed[data-ratio="9:16"] {
+  aspect-ratio: 9 / 16;
+  max-width: 480px;
+  margin: 0 auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ---- CTA Overlay ---- */
+.lp-cta-overlay {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 40px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--brand-primary, #2fa067);
+  color: #fff;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.lp-cta-overlay:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.lp-cta-overlay:active {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ---- Responsive: Tablet ---- */
+@media (max-width: 1024px) {
+  .lp-embed[data-ratio="16:9"] {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .lp-embed[data-ratio="9:16"] {
+    max-width: 420px;
+  }
+}
+
+/* ---- Responsive: Mobile ---- */
+@media (max-width: 768px) {
+  .lp-embed[data-ratio="16:9"] {
+    aspect-ratio: auto;
+    width: 100%;
+    border-radius: 0;
+  }
+
+  .lp-embed[data-ratio="16:9"] img {
+    height: auto;
+  }
+
+  .lp-embed[data-ratio="9:16"] {
+    aspect-ratio: auto;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .lp-embed[data-ratio="9:16"] img {
+    height: auto;
+  }
+
+  .lp-cta-overlay {
+    bottom: 5%;
+    padding: 12px 32px;
+    font-size: 14px;
+  }
+}
+
+/* ---- Container Queries (modern browsers) ---- */
+@container (min-width: 769px) {
+  .lp-embed[data-ratio="9:16"] {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+  }
+}
+
+@container (max-width: 480px) {
+  .lp-embed[data-ratio="9:16"] {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* ---- RTL Support ---- */
+[dir="rtl"] .lp-cta-overlay {
+  direction: rtl;
+}
+
+/* ---- Dark mode (prefers-color-scheme) ---- */
+@media (prefers-color-scheme: dark) {
+  .lp-embed {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .lp-embed[data-ratio="9:16"] {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  }
+}

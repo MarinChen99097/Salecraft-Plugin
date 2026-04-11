@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="{{locale}}" dir="{{direction}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{brand_name}} — {{page_title}}</title>
+  <meta name="description" content="{{meta_description}}">
+  <link rel="canonical" href="{{canonical_url}}">
+  <meta property="og:title" content="{{og_title}}">
+  <meta property="og:description" content="{{og_description}}">
+  <meta property="og:image" content="{{hero_image_url}}">
+  <meta property="og:type" content="website">
+
+  {{#each locales}}
+  <link rel="alternate" hreflang="{{this.code}}" href="{{this.url}}">
+  {{/each}}
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "{{brand_name}} Products",
+    "itemListElement": [
+      {{#each products}}
+      {
+        "@type": "ListItem",
+        "position": {{this.position}},
+        "item": {
+          "@type": "Product",
+          "name": "{{this.name}}",
+          "image": "{{this.image_url}}",
+          "description": "{{this.description}}"
+        }
+      }{{#unless @last}},{{/unless}}
+      {{/each}}
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="nav-logo">
+        <img src="{{logo_url}}" alt="{{brand_name}}" height="40">
+      </a>
+      <button class="menu-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="#products">{{i18n.nav_products}}</a></li>
+        <li><a href="#features">{{i18n.nav_features}}</a></li>
+        <li><a href="#cta">{{i18n.nav_contact}}</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section id="hero" class="hero-section hero-multi">
+    <div class="hero-content">
+      <h1>{{hero_headline}}</h1>
+      <p>{{hero_subtitle}}</p>
+    </div>
+  </section>
+
+  <!-- Products Grid (each product = one LP embed) -->
+  <section id="products" class="products-section">
+    <h2 class="section-title">{{i18n.section_products}}</h2>
+    <div class="products-grid">
+      {{#each products}}
+      <div class="product-card">
+        <div class="lp-embed-container">
+          <div class="lp-embed" data-ratio="{{this.aspect_ratio}}">
+            <img src="assets/{{this.slug}}-hero.webp" alt="{{this.name}}" loading="lazy">
+          </div>
+        </div>
+        <h3>{{this.name}}</h3>
+        <p>{{this.short_description}}</p>
+        <a href="{{this.lp_url}}" class="product-cta">{{i18n.cta_learn_more}}</a>
+      </div>
+      {{/each}}
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="features-section">
+    {{> features-grid}}
+  </section>
+
+  <!-- CTA -->
+  <section id="cta" class="cta-section">
+    {{> cta-banner}}
+  </section>
+
+  <!-- Footer -->
+  {{> footer}}
+
+  <script src="script.js"></script>
+</body>
+</html>

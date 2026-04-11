@@ -1,0 +1,19 @@
+<!-- LP Image Embed Component -->
+<!-- Usage: One per stripe. Replace {{variables}} with actual values. -->
+<div class="lp-embed-container">
+  <div class="lp-embed" data-ratio="{{aspect_ratio}}" data-stripe="{{stripe_idx}}">
+    <img
+      src="assets/stripe-{{stripe_idx}}.webp"
+      alt="{{stripe_alt_text}}"
+      loading="{{#if is_hero}}eager{{else}}lazy{{/if}}"
+      width="{{image_width}}"
+      height="{{image_height}}"
+      {{#if is_hero}}fetchpriority="high"{{/if}}
+    >
+    {{#if cta_text}}
+    <a href="{{cta_link}}" class="lp-cta-overlay" data-cta="{{cta_type}}">
+      {{cta_text}}
+    </a>
+    {{/if}}
+  </div>
+</div>

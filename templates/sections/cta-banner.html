@@ -1,0 +1,20 @@
+<!-- CTA Banner Section -->
+<div class="cta-container">
+  <div class="cta-content">
+    <h2>{{cta_headline}}</h2>
+    <p>{{cta_subtitle}}</p>
+    <div class="cta-buttons">
+      <a href="{{cta_primary_link}}" class="btn-primary">{{cta_primary_text}}</a>
+      {{#if cta_secondary_link}}
+      <a href="{{cta_secondary_link}}" class="btn-secondary">{{cta_secondary_text}}</a>
+      {{/if}}
+    </div>
+  </div>
+
+  <!-- Optional: LP CTA stripe as background -->
+  {{#if cta_stripe_idx}}
+  <div class="cta-bg-visual">
+    <img src="assets/stripe-{{cta_stripe_idx}}.webp" alt="" loading="lazy" aria-hidden="true">
+  </div>
+  {{/if}}
+</div>

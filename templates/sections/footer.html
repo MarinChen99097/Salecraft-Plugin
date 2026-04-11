@@ -1,0 +1,45 @@
+<!-- Footer Section -->
+<footer class="site-footer">
+  <div class="footer-container">
+    <div class="footer-brand">
+      <img src="{{logo_url}}" alt="{{brand_name}}" height="32">
+      <p>{{brand_tagline}}</p>
+    </div>
+
+    <div class="footer-links">
+      <div class="footer-column">
+        <h4>{{i18n.footer_product}}</h4>
+        <ul>
+          <li><a href="#features">{{i18n.nav_features}}</a></li>
+          <li><a href="#pricing">{{i18n.nav_pricing}}</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h4>{{i18n.footer_company}}</h4>
+        <ul>
+          <li><a href="{{about_url}}">{{i18n.footer_about}}</a></li>
+          <li><a href="{{contact_url}}">{{i18n.nav_contact}}</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h4>{{i18n.footer_legal}}</h4>
+        <ul>
+          <li><a href="{{privacy_url}}">{{i18n.footer_privacy}}</a></li>
+          <li><a href="{{terms_url}}">{{i18n.footer_terms}}</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-social">
+      {{#each social_links}}
+      <a href="{{this.url}}" aria-label="{{this.platform}}" target="_blank" rel="noopener">
+        {{this.icon_svg}}
+      </a>
+      {{/each}}
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>{{i18n.footer_copyright}}</p>
+  </div>
+</footer>

@@ -1,0 +1,40 @@
+<!-- Testimonials / Social Proof Section -->
+<div class="testimonials-container">
+  <h2 class="section-title">{{i18n.section_testimonials}}</h2>
+  <div class="testimonials-grid">
+    {{#each testimonials}}
+    <div class="testimonial-card">
+      <div class="testimonial-quote">"{{this.quote}}"</div>
+      <div class="testimonial-author">
+        {{#if this.avatar}}
+        <img src="{{this.avatar}}" alt="{{this.name}}" class="testimonial-avatar" loading="lazy">
+        {{/if}}
+        <div>
+          <strong>{{this.name}}</strong>
+          {{#if this.title}}<span>{{this.title}}</span>{{/if}}
+        </div>
+      </div>
+      {{#if this.rating}}
+      <div class="testimonial-rating" aria-label="{{this.rating}} out of 5 stars">
+        {{{this.stars_html}}}
+      </div>
+      {{/if}}
+    </div>
+    {{/each}}
+  </div>
+
+  <!-- Optional: LP stripe as social proof visual -->
+  {{#if testimonial_stripe_idx}}
+  <div class="testimonial-visual">
+    <div class="lp-embed-container">
+      <div class="lp-embed" data-ratio="{{aspect_ratio}}">
+        <img
+          src="assets/stripe-{{testimonial_stripe_idx}}.webp"
+          alt="{{i18n.section_testimonials}}"
+          loading="lazy"
+        >
+      </div>
+    </div>
+  </div>
+  {{/if}}
+</div>

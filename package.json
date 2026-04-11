@@ -1,0 +1,19 @@
+{
+  "name": "marketingx.plugin",
+  "version": "0.1.0",
+  "description": "Claude Code plugin for end-to-end marketing: Landing Page generation, homepage building, and ad publishing via MCP orchestration",
+  "author": "Martin @ LandingAI",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "marketing",
+    "landing-page",
+    "mcp",
+    "ads"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}

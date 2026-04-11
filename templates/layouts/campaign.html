@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="{{locale}}" dir="{{direction}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{campaign_name}} — {{brand_name}}</title>
+  <meta name="description" content="{{meta_description}}">
+  <link rel="canonical" href="{{canonical_url}}">
+  <meta property="og:title" content="{{og_title}}">
+  <meta property="og:description" content="{{og_description}}">
+  <meta property="og:image" content="{{hero_image_url}}">
+  <meta property="og:type" content="website">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": "{{campaign_name}}",
+    "description": "{{campaign_description}}",
+    "startDate": "{{campaign_start}}",
+    "endDate": "{{campaign_end}}",
+    "organizer": {
+      "@type": "Organization",
+      "name": "{{brand_name}}"
+    },
+    "image": "{{hero_image_url}}"
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="nav-logo">
+        <img src="{{logo_url}}" alt="{{brand_name}}" height="40">
+      </a>
+      <button class="menu-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="#countdown">{{i18n.nav_event}}</a></li>
+        <li><a href="#details">{{i18n.nav_details}}</a></li>
+        <li><a href="#register">{{i18n.nav_register}}</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Countdown Timer -->
+  <section id="countdown" class="countdown-section">
+    <h1>{{campaign_headline}}</h1>
+    <div class="countdown-timer" data-end="{{campaign_end}}">
+      <div class="countdown-unit">
+        <span class="countdown-number" id="days">00</span>
+        <span class="countdown-label">{{i18n.days}}</span>
+      </div>
+      <div class="countdown-unit">
+        <span class="countdown-number" id="hours">00</span>
+        <span class="countdown-label">{{i18n.hours}}</span>
+      </div>
+      <div class="countdown-unit">
+        <span class="countdown-number" id="minutes">00</span>
+        <span class="countdown-label">{{i18n.minutes}}</span>
+      </div>
+      <div class="countdown-unit">
+        <span class="countdown-number" id="seconds">00</span>
+        <span class="countdown-label">{{i18n.seconds}}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- LP Embed -->
+  <section id="details" class="campaign-lp-section">
+    {{> hero-with-lp}}
+  </section>
+
+  <!-- Registration Form -->
+  <section id="register" class="register-section">
+    <h2>{{i18n.register_title}}</h2>
+    <form class="register-form" action="{{form_action}}" method="POST">
+      <input type="text" name="name" placeholder="{{i18n.form_name}}" required>
+      <input type="email" name="email" placeholder="{{i18n.form_email}}" required>
+      <input type="tel" name="phone" placeholder="{{i18n.form_phone}}">
+      <button type="submit" class="btn-primary">{{i18n.form_submit}}</button>
+    </form>
+  </section>
+
+  <!-- Footer -->
+  {{> footer}}
+
+  <script src="script.js"></script>
+  <script>
+    // Countdown timer
+    const endDate = new Date(document.querySelector('.countdown-timer').dataset.end);
+    function updateCountdown() {
+      const now = new Date();
+      const diff = endDate - now;
+      if (diff <= 0) {
+        document.querySelector('.countdown-section h1').textContent = '{{i18n.event_started}}';
+        return;
+      }
+      document.getElementById('days').textContent = String(Math.floor(diff / 86400000)).padStart(2, '0');
+      document.getElementById('hours').textContent = String(Math.floor((diff % 86400000) / 3600000)).padStart(2, '0');
+      document.getElementById('minutes').textContent = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      document.getElementById('seconds').textContent = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+</body>
+</html>

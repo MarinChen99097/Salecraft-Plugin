@@ -1,0 +1,27 @@
+<!-- Pricing Table Section -->
+<div class="pricing-container">
+  <h2 class="section-title">{{i18n.section_pricing}}</h2>
+  <div class="pricing-grid">
+    {{#each plans}}
+    <div class="pricing-card {{#if this.featured}}pricing-featured{{/if}}">
+      {{#if this.featured}}
+      <div class="pricing-badge">{{i18n.pricing_popular}}</div>
+      {{/if}}
+      <h3>{{this.name}}</h3>
+      <div class="pricing-price">
+        <span class="pricing-currency">{{this.currency}}</span>
+        <span class="pricing-amount">{{this.price}}</span>
+        <span class="pricing-period">/ {{this.period}}</span>
+      </div>
+      <ul class="pricing-features">
+        {{#each this.features}}
+        <li>{{this}}</li>
+        {{/each}}
+      </ul>
+      <a href="{{this.cta_link}}" class="pricing-cta {{#if this.featured}}btn-primary{{else}}btn-secondary{{/if}}">
+        {{this.cta_text}}
+      </a>
+    </div>
+    {{/each}}
+  </div>
+</div>

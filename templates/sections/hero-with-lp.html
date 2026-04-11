@@ -1,0 +1,24 @@
+<!-- Hero Section with LP Stripe Embed -->
+<div class="hero-lp-wrapper">
+  <div class="lp-embed-container">
+    <div class="lp-embed" data-ratio="{{aspect_ratio}}">
+      <!-- Image Embed (default) -->
+      <img
+        src="assets/stripe-0.webp"
+        alt="{{hero_headline}}"
+        loading="eager"
+        width="{{image_width}}"
+        height="{{image_height}}"
+        fetchpriority="high"
+      >
+      <!-- CTA Overlay -->
+      <a href="{{cta_link}}" class="lp-cta-overlay">{{cta_text}}</a>
+    </div>
+  </div>
+
+  <!-- Optional: Text overlay below image for SEO -->
+  <div class="hero-text-content">
+    <h1>{{hero_headline}}</h1>
+    <p class="hero-subtitle">{{hero_subtitle}}</p>
+  </div>
+</div>

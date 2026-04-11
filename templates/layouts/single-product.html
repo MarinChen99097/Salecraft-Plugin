@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="{{locale}}" dir="{{direction}}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{brand_name}} — {{product_tagline}}</title>
+
+  <!-- SEO -->
+  <meta name="description" content="{{meta_description}}">
+  <link rel="canonical" href="{{canonical_url}}">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="{{og_title}}">
+  <meta property="og:description" content="{{og_description}}">
+  <meta property="og:image" content="{{hero_image_url}}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{canonical_url}}">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{og_title}}">
+  <meta name="twitter:description" content="{{og_description}}">
+  <meta name="twitter:image" content="{{hero_image_url}}">
+
+  <!-- hreflang -->
+  {{#each locales}}
+  <link rel="alternate" hreflang="{{this.code}}" href="{{this.url}}">
+  {{/each}}
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "{{product_name}}",
+    "description": "{{product_description}}",
+    "brand": {
+      "@type": "Brand",
+      "name": "{{brand_name}}"
+    },
+    "image": "{{hero_image_url}}",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="nav-logo">
+        <img src="{{logo_url}}" alt="{{brand_name}}" height="40">
+      </a>
+      <button class="menu-toggle" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="#hero">{{i18n.nav_home}}</a></li>
+        <li><a href="#features">{{i18n.nav_features}}</a></li>
+        <li><a href="#testimonials">{{i18n.nav_testimonials}}</a></li>
+        <li><a href="#cta">{{i18n.nav_contact}}</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Hero Section with LP Stripe -->
+  <section id="hero" class="hero-section">
+    {{> hero-with-lp}}
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features-section">
+    {{> features-grid}}
+  </section>
+
+  <!-- Testimonials / Social Proof -->
+  <section id="testimonials" class="testimonials-section">
+    {{> testimonials}}
+  </section>
+
+  <!-- CTA Banner -->
+  <section id="cta" class="cta-section">
+    {{> cta-banner}}
+  </section>
+
+  <!-- Footer -->
+  {{> footer}}
+
+  <script src="script.js"></script>
+</body>
+</html>
