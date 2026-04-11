@@ -237,23 +237,36 @@ mcp_tool_call("landing_ai_mcp", "get_public_landing_page", {
 → Returns: full LP config with stitched_image_url and per-stripe background_urls
 ```
 
-### Step 3: Present to user
+### Step 3: Present LP sales page link to user
+
+The Landing AI frontend renders the LP as an interactive sales page at:
+```
+https://landingai.info/{locale}/landing-page?campaign_id={campaign_id}
+```
+
+Present to user:
 ```
 ✅ LP 生成完畢！
 
-📄 完整長圖預覽:
+🔗 銷售頁預覽（點擊查看完整互動頁面）:
+https://landingai.info/zh-TW/landing-page?campaign_id={campaign_id}
+
+📄 完整長圖（靜態圖片版）:
 {stitched_image_url}
 
-📑 各頁 Stripe 預覽:
-1. {gra_tis_stripes[0].background_url} — {stripes[0].headline}
-2. {gra_tis_stripes[1].background_url} — {stripes[1].headline}
-... (list all stripes)
+📑 各頁 Stripe:
+1. {headline_1} — {stripe_type_1}
+2. {headline_2} — {stripe_type_2}
+... (list all)
 
-🔗 分享連結 Token: {share_token}
+🔗 分享 Token: {share_token}
 ```
 
-**This step is critical** — the user needs to SEE the LP before deciding to edit.
-If multiple LPs were generated, provide links for ALL of them.
+**CRITICAL RULES:**
+- The **sales page link** (landingai.info) is the PRIMARY link to show — this is the actual rendered page
+- The stitched_image_url is a secondary static preview
+- If multiple LPs were generated (different TAs), provide a sales page link for EACH campaign_id
+- The locale in the URL should match the user's language (zh-TW, en, ja, etc.)
 
 ## Output
 

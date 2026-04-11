@@ -233,6 +233,19 @@ marketingx.plugin/
 └── examples/              # Sample outputs
 ```
 
+## Landing Page Frontend URLs
+
+Generated LPs are viewable as interactive sales pages on the Landing AI frontend:
+
+```
+https://landingai.info/{locale}/landing-page?campaign_id={campaign_id}
+```
+
+- `locale`: `zh-TW`, `en`, `ja`, `ko`, etc.
+- `campaign_id`: the project UUID from `generate_session` response
+- This is the **primary link** to show users — NOT the GCS image URL
+- The frontend fetches data via `/landing-page/public/{campaign_id}` (no auth needed)
+
 ## Security Rules
 
 - **Never hardcode API keys or tokens** — always use `user_token` parameter
