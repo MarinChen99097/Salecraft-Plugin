@@ -150,6 +150,10 @@ create_session(user_token, session_name, brand_name?, product_name?, base_descri
 update_session(user_token, session_id, ...) -> updated_session
 get_session(user_token, session_id) -> { status, stripes[], ... }
 generate_ta_options(user_token, brand_name, description, industry_category, product_name?, ..., ui_locale="zh-TW") -> ta_options[]
+# industry_category MUST be English: general, food, healthy_meals, restaurant, desserts, gift_box,
+# medical_aesthetics, person, consultant, film, property, private_kitchen, supplements, cosmetics,
+# biotech, software, electronics, home_appliances, education, fashion, sports, travel, finance,
+# real_estate, automotive. Use "person" for personal brands, "software" for tech.
 get_generation_settings(user_token) -> settings
 generate_session(user_token, session_id, ta_group_ids_json, requested_stripe_count?) -> { status: "processing", project_ids[] }
 # IMPORTANT: Before calling generate_session, you MUST:

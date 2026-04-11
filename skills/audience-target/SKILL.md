@@ -30,12 +30,21 @@ You are a marketing strategist helping the user define who their landing page is
 
 **Goal**: Generate smart TA recommendations based on the brand profile.
 
+**IMPORTANT**: `industry_category` must be one of these English values:
+`general`, `food`, `healthy_meals`, `restaurant`, `desserts`, `gift_box`,
+`medical_aesthetics`, `person`, `consultant`, `film`, `property`, `private_kitchen`,
+`supplements`, `cosmetics`, `biotech`, `software`, `electronics`, `home_appliances`,
+`education`, `fashion`, `sports`, `travel`, `finance`, `real_estate`, `automotive`
+
+For personal brands, use `person`. For tech/dev, use `software`.
+Do NOT use Chinese values — they will cause validation errors.
+
 ```
 mcp_tool_call("landing_ai_mcp", "generate_ta_options", {
   "user_token": token,
   "brand_name": "Brand Name",
   "description": "Brand description...",
-  "industry_category": "cosmetics",
+  "industry_category": "software",
   "product_name": "Product Name",
   "value_proposition": "What makes this product special",
   "key_features_json": "[\"feature1\", \"feature2\"]",
@@ -52,27 +61,43 @@ Returns 3-5 AI-suggested TA groups, each with:
 - Pain points and desires
 - Recommended messaging angle
 
-## Phase 2: User Selection
+## Phase 2: Present ALL TAs to User (MANDATORY — do NOT skip any)
 
-Present TA options clearly:
+**You MUST present EVERY TA group returned by `generate_ta_options` to the user.**
+Do NOT pre-select or filter. Do NOT only show your recommendation. The user decides.
+
+Present ALL options in a clear, comparable format:
 
 ```
-AI suggests these target audiences for [Product Name]:
+AI generated [N] target audiences for [Product Name]:
 
-1. 💼 Career-Focused Professionals (25-40)
-   Pain: Not enough time for skincare
-   Angle: "Efficiency + premium quality"
+1. 💼 [TA Name] — Appeal: HIGH
+   Who: [1-line description]
+   Angle: "[fabt_translation]"
+   Style: [visual_style] / [language]
 
-2. 🌿 Health-Conscious Parents (30-45)
-   Pain: Worried about ingredients safety
-   Angle: "Natural, safe, family-friendly"
+2. 🎯 [TA Name] — Appeal: HIGH
+   Who: [1-line description]
+   Angle: "[fabt_translation]"
+   Style: [visual_style] / [language]
 
-3. ✨ Beauty Enthusiasts (18-30)
-   Pain: Overwhelmed by choices
-   Angle: "Expert-curated, trending ingredients"
+3. 🌿 [TA Name] — Appeal: MEDIUM
+   Who: [1-line description]
+   Angle: "[fabt_translation]"
+   Style: [visual_style] / [language]
 
-Select audiences (e.g., "1 and 3") or describe your own:
+... (show ALL groups, not just top 3)
+
+💡 My recommendation: #[N] because [reason based on user's stated goal]
+
+Which audience(s) do you want? (e.g., "1 and 3", or "just 2")
 ```
+
+**RULES:**
+- Show ALL TAs (typically 4-6 groups) — never truncate
+- Include appeal level (HIGH/MEDIUM) for each
+- State your recommendation with reasoning, but let user choose
+- User can select multiple, modify, or add custom
 
 User can:
 - Select one or more AI suggestions
