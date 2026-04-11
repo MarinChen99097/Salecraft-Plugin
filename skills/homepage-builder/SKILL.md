@@ -156,16 +156,31 @@ Use the selected layout template and compose sections. The homepage consists of:
 
 ### 4b: Embed LP Stripes
 
-**Image Embed** (recommended):
+**Image Embed** (for individual stripe):
 ```html
 <div class="lp-embed-container">
   <div class="lp-embed" data-ratio="{aspect_ratio}">
-    <img src="assets/stripe-0.webp" alt="{stripe_headline}" loading="lazy" width="1920" height="1080">
-    <!-- Overlay CTA button -->
+    <img src="assets/stripe-0.webp" alt="{stripe_headline}" loading="lazy">
     <a href="{cta_link}" class="lp-cta-overlay">{cta_text}</a>
   </div>
 </div>
 ```
+
+**Phone Mockup Embed** (RECOMMENDED for 9:16 LP — scrollable device frame):
+```html
+<div class="phone-mockup">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+    <img src="{stitched_image_url}" alt="{page_title}" loading="lazy">
+  </div>
+</div>
+```
+The phone-screen div has `overflow-y: scroll` with hidden scrollbar — user can scroll
+the entire LP long image inside the phone frame, like a real mobile preview.
+See `examples/nexdev-homepage/styles.css` for the full phone mockup CSS.
+
+This is the PREFERRED method for 9:16 LP embedding — it looks professional and
+avoids iframe X-Frame-Options issues.
 
 **iframe Embed** (⚠️ USUALLY BLOCKED):
 ```html

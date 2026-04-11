@@ -30,17 +30,36 @@ mcp__claude_ai_Service_System_Deep_Research__mcp_tool_call(
 
 If this MCP is not available, the plugin cannot function.
 
+## First-Time Setup (Cold Start)
+
+When a user first invokes this plugin:
+
+1. **Check MCP**: Verify `landing_ai_mcp` is reachable via the Service System Deep Research proxy
+2. **Account**: Ask if they have an account → Login or Register
+3. **Start**: `/mx` for menu, or `/mx-create` for full flow
+
 ## Authentication
 
-All MCP calls require a JWT token obtained via:
-
+### Login (existing user)
 ```
-mcp_tool_call(server_name="landing_ai_mcp", tool_name="login", arguments={"email": "...", "password": "..."})
+mcp_tool_call("landing_ai_mcp", "login", {"email": "...", "password": "..."})
+→ { "access_token": "eyJ...", "token_type": "bearer" }
 ```
 
-- Returns: `{ "access_token": "eyJ...", "refresh_token": "..." }`
-- Pass `user_token` parameter in all subsequent calls
-- Refresh via: `mcp_tool_call(server_name="landing_ai_mcp", tool_name="refresh_tokens", arguments={"refresh_token": "..."})`
+### Register (new user)
+```
+mcp_tool_call("landing_ai_mcp", "register", {"email": "...", "password": "...", "full_name": "..."})
+→ creates account + returns access_token
+```
+
+### Google OAuth
+```
+mcp_tool_call("landing_ai_mcp", "google_auth", {"credential": "<google_id_token>"})
+```
+
+### Auth Notes
+- Pass `user_token` in ALL subsequent calls
+- Token expires ~12 hours. On 401, re-call `login` (no refresh_token)
 - **Test account**: `user@example.com` / `123` (development only)
 
 ## Available Commands
@@ -99,6 +118,10 @@ mcp_tool_call(server_name="landing_ai_mcp", tool_name="login", arguments={"email
 ### Authentication
 ```
 login(email: str, password: str) -> { access_token, token_type: "bearer" }
+register(email: str, password: str, full_name: str) -> { user, access_token }
+google_auth(credential: str) -> { access_token, token_type }
+get_me(user_token) -> { id, email, full_name, credits, tier, is_admin, ... }
+update_me(user_token, data_json) -> updated_user
 # NOTE: No refresh_token returned. Token expires in ~12 hours. Re-login when 401.
 ```
 
