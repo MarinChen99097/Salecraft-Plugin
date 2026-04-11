@@ -137,21 +137,70 @@ B) See a preview of the full page
 C) Done — proceed to homepage building
 ```
 
-## Stripe Regeneration
+## Stripe Regeneration (3-Step Process)
 
-When the user wants a completely new version of a stripe:
+Regeneration is async: **trigger → poll → confirm**.
+
+### Step 1: Trigger — `regenerate_stripe`
+
+5 regeneration modes (can combine):
+
+| Parameter | Purpose | Example |
+|-----------|---------|---------|
+| `user_feedback` | Natural language instruction | `"把標題改成紅色"` |
+| `rect_annotations_json` | Red-box annotations on specific areas | `[{"x":0.1,"y":0.05,"width":0.8,"height":0.15,"notes":"放大這段文字"}]` |
+| `reference_image_urls_json` | Reference images for style | `["https://example.com/style.jpg"]` |
+| `mandatory_text_overrides_json` | Force-override text content | `{"headline":"新標題","subheadline":""}` |
+| `typography_overrides_json` | Font/color overrides | `{"headline_color":"#00C853","headline_size_multiplier":1.5}` |
 
 ```
 mcp_tool_call("landing_ai_mcp", "regenerate_stripe", {
   "user_token": token,
   "campaign_id": campaign_id,
-  "stripe_idx": 2
+  "stripe_idx": 7,
+  "user_feedback": "移除副標題，只保留主標題",
+  "mandatory_text_overrides_json": "{\"headline\": \"新標題\", \"subheadline\": \"\"}"
 })
+→ Returns: { "message": "Stripe 7 queued", "is_regenerating": true, "iteration": N }
 ```
 
-**Note**: This triggers the Factory Agent to re-generate the stripe image. Takes 10-30 seconds. Poll `get_stripe_detail` to check completion.
+**Note**: Coordinates in `rect_annotations_json` use normalized 0.0-1.0 range.
 
-**Cost**: Regeneration costs a fraction of a full page generation credit.
+### Step 2: Poll — `get_stripe_regen_status`
+
+Wait 10-30 seconds, then poll:
+```
+mcp_tool_call("landing_ai_mcp", "get_stripe_regen_status", {
+  "user_token": token,
+  "campaign_id": campaign_id,
+  "stripe_idx": 7
+})
+→ Check for: processing / completed / failed
+```
+
+### Step 3: Confirm — `complete_regeneration` (MANDATORY)
+
+**You MUST call this to apply the result.** Without it, the new image won't show.
+```
+mcp_tool_call("landing_ai_mcp", "complete_regeneration", {
+  "user_token": token,
+  "campaign_id": campaign_id,
+  "stripe_idx": 7
+})
+→ Returns: { "message": "Stripe 7 regeneration completed" }
+```
+
+To cancel instead: use `cancel_stripe_regen` with the same params.
+
+**Cost**: Free regenerations within quota (typically 8), then credits per regen.
+
+### Troubleshooting Regeneration
+
+If `get_stripe_regen_status` always shows `is_regenerating: false` and `regeneration_started_at: null`:
+- The regeneration worker may not be running on the backend
+- Check backend Cloud Run logs for worker errors
+- Try regenerating from the frontend UI to compare behavior
+- This is a backend infrastructure issue, not an MCP issue
 
 ## Export Options
 

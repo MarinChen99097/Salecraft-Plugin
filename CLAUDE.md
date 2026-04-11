@@ -139,7 +139,12 @@ get_landing_page(user_token, campaign_id) -> landing_page_config
 update_stripe_texts(user_token, campaign_id, updates_json) -> updated_stripe
 # updates_json format: '[{"index": 0, "headline": "New Text", "subheadline": "..."}]'
 # IMPORTANT: Use "index" (not "stripe_idx"), and field names directly (not "text_key"/"new_text")
-regenerate_stripe(user_token, campaign_id, stripe_idx: int) -> regenerated_stripe
+regenerate_stripe(user_token, campaign_id, stripe_idx, user_feedback?, mandatory_text_overrides_json?, typography_overrides_json?, rect_annotations_json?, reference_image_urls_json?) -> { is_regenerating, iteration }
+get_stripe_regen_status(user_token, campaign_id, stripe_idx) -> { is_regenerating, regeneration_progress }
+complete_regeneration(user_token, campaign_id, stripe_idx) -> { message }
+cancel_stripe_regen(user_token, campaign_id, stripe_idx) -> { message }
+# REGENERATION IS 3 STEPS: regenerate_stripe → poll get_stripe_regen_status → complete_regeneration
+# complete_regeneration is MANDATORY to apply the result
 update_stripe_text_styling(user_token, campaign_id, stripe_idx, styling_json) -> updated
 update_stripe_background(user_token, campaign_id, stripe_idx, ...) -> updated
 update_image_layers(user_token, campaign_id, stripe_idx, ...) -> updated

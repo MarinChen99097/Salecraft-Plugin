@@ -12,10 +12,10 @@
 - **Fix**: Added `data_json` parameter support to `update_brand` in Service_system MCP wrapper
 - **Status**: FIXED in Service_system/landing_ai_mcp/tools/brands.py
 
-### 3. regenerate_stripe not actually regenerating
-- **Root cause**: Missing `flag_modified(project, "landing_page_config")` before `db.commit()`
-- **Fix**: Added flag_modified() call in marketing_backend/routers/landing.py
-- **Status**: FIXED — needs deploy to take effect
+### 3. regenerate_stripe 3-step flow was not documented
+- **Root cause**: Plugin skill only called `regenerate_stripe` but missed the required `complete_regeneration` step
+- **Fix**: Documented full 3-step flow (trigger → poll → confirm) in edit-landing skill + CLAUDE.md
+- **Status**: FIXED in plugin docs
 
 ## OPEN
 
