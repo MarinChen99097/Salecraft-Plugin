@@ -251,10 +251,60 @@ mcp_tool_call("landing_ai_mcp", "download_stripe", {
 // Fetch the download_url with the auth_header to get the actual image file.
 ```
 
+## Batch Edits Principle (CRITICAL — save user credits and time)
+
+**Always batch as many changes as possible into ONE regeneration call per stripe.**
+
+Regeneration is expensive (credits + wait time). Before calling `regenerate_stripe`:
+
+1. **Collect ALL requested changes for this stripe** — text edits, visual removal, style changes
+2. **Combine into ONE call** with:
+   - `user_feedback`: natural language describing ALL changes
+   - `rect_annotations_json`: ALL red/green boxes for every area to modify/preserve
+   - `mandatory_text_overrides_json`: ALL text changes at once
+   - `typography_overrides_json`: ALL style changes at once
+3. **Never regenerate twice** for changes that could be batched
+
+### Red Box Colors
+
+| Color | Meaning | Use When |
+|-------|---------|----------|
+| `#EF4444` (red) | Remove / modify this area | Deleting elements, fixing errors |
+| `#22C55E` (green) | Keep this area unchanged | Protecting elements from being affected |
+| `#3B82F6` (blue) | Move / reposition this area | Relocating elements |
+
+### Multi-Box Example (real scenario)
+
+User says: "第 8 頁有重複標題，還有 debug 文字要移除"
+
+ONE call handles everything:
+```
+mcp_tool_call("landing_ai_mcp", "regenerate_stripe", {
+  "user_token": token,
+  "campaign_id": campaign_id,
+  "stripe_idx": 7,
+  "user_feedback": "1. 移除下方重複的標題 2. 移除字體 debug 資訊 3. 只保留上方大字標題和 body 內文",
+  "rect_annotations_json": "[
+    {\"x\": 0.02, \"y\": 0.62, \"width\": 0.96, \"height\": 0.10, \"color\": \"#EF4444\", \"notes\": \"移除重複標題\"},
+    {\"x\": 0.02, \"y\": 0.72, \"width\": 0.96, \"height\": 0.05, \"color\": \"#EF4444\", \"notes\": \"移除 debug 文字\"},
+    {\"x\": 0.02, \"y\": 0.05, \"width\": 0.96, \"height\": 0.30, \"color\": \"#22C55E\", \"notes\": \"保留此主標題\"}
+  ]",
+  "mandatory_text_overrides_json": "{\"subheadline\": \"\"}"
+})
+```
+
+❌ WRONG — two separate calls for the same stripe:
+```
+// Call 1: remove subtitle
+regenerate_stripe(stripe_idx=7, user_feedback="移除副標題")
+// Call 2: remove debug text  ← WASTES credits + time
+regenerate_stripe(stripe_idx=7, user_feedback="移除 debug 文字")
+```
+
 ## Conversation Tips
 
 - Always confirm which stripe before editing: "I'll edit stripe 2 (the features section). Correct?"
 - After each edit, briefly describe what changed
 - Offer undo immediately after any edit: "If that's not right, I can undo it"
-- Group related edits: "Want me to update all the text at once, or one stripe at a time?"
+- **Collect ALL edits for a stripe before regenerating** — ask "Any other changes for this stripe?"
 - For major changes, suggest regeneration over manual editing
