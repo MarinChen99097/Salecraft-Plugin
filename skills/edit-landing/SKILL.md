@@ -30,8 +30,8 @@ You are a landing page editor. You translate the user's natural language edit re
 
 | User says | Tool | Key params |
 |-----------|------|-----------|
-| "Change the headline to X" | `update_stripe_texts` | `campaign_id`, `updates_json`: `[{"stripe_idx": N, "text_key": "headline", "new_text": "X"}]` |
-| "Fix the typo in stripe 3" | `update_stripe_texts` | target specific stripe_idx and text_key |
+| "Change the headline to X" | `update_stripe_texts` | `campaign_id`, `updates_json`: `[{"index": N, "headline": "X"}]` |
+| "Fix the typo in stripe 3" | `update_stripe_texts` | `[{"index": 3, "headline": "...", "subheadline": "..."}]` |
 | "Rewrite the CTA button text" | `update_stripe_texts` | find CTA stripe, update button text |
 | "Make the description shorter" | `update_stripe_texts` | rewrite with shorter version |
 | "Translate to English" | `update_stripe_texts` | translate all text fields |
@@ -40,8 +40,11 @@ You are a landing page editor. You translate the user's natural language edit re
 mcp_tool_call("landing_ai_mcp", "update_stripe_texts", {
   "user_token": token,
   "campaign_id": campaign_id,
-  "updates_json": "[{\"stripe_idx\": 0, \"text_key\": \"headline\", \"new_text\": \"Your New Headline\"}]"
+  "updates_json": "[{\"index\": 0, \"headline\": \"Your New Headline\"}]"
 })
+// CRITICAL: Use "index" (NOT "stripe_idx"), and set fields directly (NOT "text_key"/"new_text")
+// Supported fields: headline, subheadline, body_text, bullet_points, cta_text, data_table
+// Multiple fields can be updated at once: {"index": 0, "headline": "...", "subheadline": "..."}
 ```
 
 ### Styling Edits

@@ -137,6 +137,8 @@ get_landing_page(user_token, campaign_id) -> landing_page_config
 ### Landing Page Editing
 ```
 update_stripe_texts(user_token, campaign_id, updates_json) -> updated_stripe
+# updates_json format: '[{"index": 0, "headline": "New Text", "subheadline": "..."}]'
+# IMPORTANT: Use "index" (not "stripe_idx"), and field names directly (not "text_key"/"new_text")
 regenerate_stripe(user_token, campaign_id, stripe_idx: int) -> regenerated_stripe
 update_stripe_text_styling(user_token, campaign_id, stripe_idx, styling_json) -> updated
 update_stripe_background(user_token, campaign_id, stripe_idx, ...) -> updated

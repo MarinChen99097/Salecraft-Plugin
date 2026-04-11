@@ -99,7 +99,7 @@ mcp_tool_call("landing_ai_mcp", "update_stripe_texts", {
   "user_token": token,
   "campaign_id": campaign_id,
   "updates_json": json.dumps([
-    {"stripe_idx": 0, "text_key": "headline", "new_text": "New Headline"}
+    {"index": 0, "headline": "New Headline"}
   ])
 })
 
@@ -189,7 +189,7 @@ mcp_tool_call("zereo_social_mcp", "create_ad_campaign", {
 Tools that accept complex data use `*_json` string parameters:
 ```python
 # Correct: pass as JSON string
-arguments = { "updates_json": '[ {"stripe_idx": 0, "text_key": "headline", "new_text": "Hello"} ]' }
+arguments = { "updates_json": '[ {"index": 0, "headline": "Hello"} ]' }
 
 # Wrong: don't pass as object
 arguments = { "updates_json": [{"stripe_idx": 0}] }  # This will fail

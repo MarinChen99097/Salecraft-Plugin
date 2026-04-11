@@ -63,11 +63,9 @@ Adjust text box sizes after translation to prevent overflow.
 mcp_tool_call("landing_ai_mcp", "update_stripe_texts", {
   "user_token": token,
   "campaign_id": campaign_id,
-  "updates_json": "[
-    {\"stripe_idx\": 0, \"text_key\": \"headline\", \"new_text\": \"新しいスキンケア体験\"},
-    {\"stripe_idx\": 0, \"text_key\": \"subtitle\", \"new_text\": \"お肌に寄り添う、やさしいケア\"}
-  ]"
+  "updates_json": "[{\"index\": 0, \"headline\": \"新しいスキンケア体験\", \"subheadline\": \"お肌に寄り添う、やさしいケア\"}]"
 })
+// Use "index" (NOT "stripe_idx"), set fields directly (NOT "text_key"/"new_text")
 ```
 
 ### Layer 2: Visual (Typography + Colors)
