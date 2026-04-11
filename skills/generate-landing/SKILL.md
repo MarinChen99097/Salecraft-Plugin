@@ -249,7 +249,7 @@ Present to user:
 ✅ LP 生成完畢！
 
 🔗 銷售頁預覽（點擊查看完整互動頁面）:
-https://landingai.info/zh-TW/landing-page?campaign_id={campaign_id}
+https://landingai.info/zh-TW/landing-page?id={campaign_id}
 
 📄 完整長圖（靜態圖片版）:
 {stitched_image_url}
