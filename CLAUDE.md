@@ -322,9 +322,12 @@ curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/photo.jpg" "{upload_url}"
 Allowed `asset_type`: `product`, `logo`, `spokesperson`, `certification`
 Allowed `content_type`: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, `application/pdf`
 
-⚠️ **Inline images**: Claude Code can SEE images pasted in chat but CANNOT save them to disk.
-When user pastes an image, ask them to save it to a local path first, then curl upload.
-If user provides a URL (already online), skip upload — use URL directly.
+### Inline Image Upload (user pastes image in chat)
+```
+upload_base64(user_token, brand_id, filename, base64_data, asset_type?, content_type?) -> { public_url }
+```
+Claude Code can read pasted images as base64. Use `upload_base64` to upload directly — no need to save to disk.
+Max 10MB per file. Supports data URI prefix stripping (e.g., `data:image/jpeg;base64,...`).
 
 ## Landing Page Frontend URLs
 

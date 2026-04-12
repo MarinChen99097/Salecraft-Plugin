@@ -233,36 +233,38 @@ Step 2: Upload the file using curl
 curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/headshot.jpg" "{upload_url}"
 ```
 
-### ⚠️ Handling Inline Images (user pastes image directly in chat)
+### Handling Inline Images (user pastes image directly in chat)
 
-Claude Code can SEE images pasted in the conversation but CANNOT save them to disk.
-When a user pastes/drags an image directly into the chat:
+When a user pastes/drags an image directly into the chat, use `upload_base64`:
 
-**Guide the user to save the file first:**
 ```
-I can see your image! But I need the file on disk to upload it.
-Please save it to a local path:
-
-Option A: Right-click the image → "Save As" → save to C:\tmp\my-image.jpg
-Option B: Drag the image to your Desktop
-Option C: Tell me the original file path if you have it
-
-Once saved, tell me the path and I'll upload it immediately.
+mcp_tool_call("landing_ai_mcp", "upload_base64", {
+  "user_token": token,
+  "brand_id": brand_id,
+  "filename": "user-photo.jpg",
+  "base64_data": "<base64_string_from_image>",
+  "asset_type": "product",
+  "content_type": "image/jpeg"
+})
+→ { "public_url": "https://storage.googleapis.com/..." }
 ```
 
-**If user provides a file path** (e.g., from their filesystem):
+This uploads directly — no need to save to disk or ask user for file paths.
+
+**If user provides a file path** (local file):
 ```bash
-# Verify file exists
-ls -la "/path/to/image.jpg"
-# Then upload
-curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/image.jpg" "{upload_url}"
+# Read as base64 and upload
+base64_data=$(base64 -i "/path/to/image.jpg")
+# Then call upload_base64 with the base64 string
+```
+
+Or use the signed URL flow:
+```bash
+# get_asset_upload_url → curl -T file <signed_url>
 ```
 
 **If user provides a URL** (already online):
 Skip upload — use the URL directly in `create_spokesperson` or `update_session`.
-
-**IMPORTANT**: Do NOT claim you can upload inline images directly — you cannot.
-Always ask the user for a file path or URL.
 
 Step 3: Use the public_url to create spokesperson
 ```
