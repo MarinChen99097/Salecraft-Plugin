@@ -307,6 +307,27 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 })
 ```
 
+### Per-TA Level Files (wizard_ta_group_files)
+
+Some fields are per-TA, not shared. Use `wizard_ta_group_files` array with TA `id`:
+
+```
+mcp_tool_call("landing_ai_mcp", "update_session", {
+  "user_token": token,
+  "session_id": session_id,
+  "data_json": "{\"wizard_ta_group_files\": [{\"id\": \"ta_1\", \"evidence_images\": [\"url1\"], \"evidence_description\": \"description\", \"spokesperson_faces\": [\"url2\"], \"specification\": \"url3\", \"ingredient\": \"url4\"}]}"
+})
+```
+
+| What | Location | Format |
+|------|----------|--------|
+| Trust evidence | `wizard_ta_group_files[].evidence_images` | `["url"]` (per-TA) |
+| Evidence description | `wizard_ta_group_files[].evidence_description` | string (per-TA) |
+| TA spokesperson | `wizard_ta_group_files[].spokesperson_faces` | `["url"]` (per-TA) |
+| Specification doc | `wizard_ta_group_files[].specification` | single URL or null |
+| Ingredient doc | `wizard_ta_group_files[].ingredient` | single URL or null |
+| Favicon | `wizard_shared_files.favicon_image` | single string |
+
 **Brand auto-enrichment**: When `create_session` is called with a brand that has
 spokesperson/logo assets, they are auto-injected. In `update_session`, you must pass explicitly.
 
