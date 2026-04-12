@@ -322,6 +322,10 @@ curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/photo.jpg" "{upload_url}"
 Allowed `asset_type`: `product`, `logo`, `spokesperson`, `certification`
 Allowed `content_type`: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, `application/pdf`
 
+⚠️ **Inline images**: Claude Code can SEE images pasted in chat but CANNOT save them to disk.
+When user pastes an image, ask them to save it to a local path first, then curl upload.
+If user provides a URL (already online), skip upload — use URL directly.
+
 ## Landing Page Frontend URLs
 
 Generated LPs are viewable as interactive sales pages on the Landing AI frontend:

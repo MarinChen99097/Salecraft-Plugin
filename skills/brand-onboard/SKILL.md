@@ -233,6 +233,37 @@ Step 2: Upload the file using curl
 curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/headshot.jpg" "{upload_url}"
 ```
 
+### ⚠️ Handling Inline Images (user pastes image directly in chat)
+
+Claude Code can SEE images pasted in the conversation but CANNOT save them to disk.
+When a user pastes/drags an image directly into the chat:
+
+**Guide the user to save the file first:**
+```
+I can see your image! But I need the file on disk to upload it.
+Please save it to a local path:
+
+Option A: Right-click the image → "Save As" → save to C:\tmp\my-image.jpg
+Option B: Drag the image to your Desktop
+Option C: Tell me the original file path if you have it
+
+Once saved, tell me the path and I'll upload it immediately.
+```
+
+**If user provides a file path** (e.g., from their filesystem):
+```bash
+# Verify file exists
+ls -la "/path/to/image.jpg"
+# Then upload
+curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/image.jpg" "{upload_url}"
+```
+
+**If user provides a URL** (already online):
+Skip upload — use the URL directly in `create_spokesperson` or `update_session`.
+
+**IMPORTANT**: Do NOT claim you can upload inline images directly — you cannot.
+Always ask the user for a file path or URL.
+
 Step 3: Use the public_url to create spokesperson
 ```
 mcp_tool_call("landing_ai_mcp", "create_spokesperson", {

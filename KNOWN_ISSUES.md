@@ -27,7 +27,14 @@
 - **Fix needed**: In `marketing_backend/agents/factory.py` or `core/prompts.py` — strip typography metadata from the text content passed to Gemini
 - **Workaround**: Regenerate the stripe — sometimes Gemini doesn't include it
 
-### 5. Gemini Pro Image generation can hang
+### 5. Claude Code cannot save inline images to disk
+- **Status**: Open (platform limitation)
+- **Symptom**: User pastes image in chat → Claude Code sees it but cannot `curl` upload it
+- **Workaround**: Ask user to save file to local path first, then upload via curl
+- **Root cause**: Claude Code receives inline images as in-memory base64, no filesystem access
+- **Future fix**: Build a local MCP tool that accepts base64 and POSTs to backend directly
+
+### 6. Gemini Pro Image generation can hang
 - **Status**: Known backend issue (not plugin-related)
 - **Symptom**: `progress_stage: "producing"` stays at 70% with `last_update` frozen
 - **Workaround**: Wait up to 10 min; if still stuck, the backend may eventually complete or timeout
