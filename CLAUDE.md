@@ -151,10 +151,15 @@ create_brand_asset(user_token, brand_id, data_json) -> asset
 list_brand_assets(user_token, brand_id) -> assets[]
 delete_brand_asset(user_token, brand_id, asset_id) -> { message }
 create_spokesperson(user_token, brand_id, name, description, photo_urls[]) -> spokesperson
-# Use public_url from get_asset_upload_url as the photo URL
+# ⚠️ create_spokesperson does NOT persist photo_urls! After creating, MUST call:
+update_spokesperson(user_token, brand_id, sp_id, data_json) -> updated
+# data_json: {"photo_urls": ["url"], "name": "...", "description": "..."}
+# This is the ONLY reliable way to set spokesperson photos.
 list_spokespersons(user_token, brand_id) -> spokespersons[]
-update_spokesperson(user_token, brand_id, spokesperson_id, data_json) -> updated
-delete_spokesperson(user_token, brand_id, spokesperson_id) -> { message }
+add_spokesperson_photos(user_token, brand_id, sp_id, photo_urls_json) -> ❌ multipart stub
+# Use update_spokesperson instead for setting photo_urls
+delete_spokesperson(user_token, brand_id, sp_id) -> { message }
+# NOTE: parameter name is "sp_id" not "spokesperson_id"
 # Wizard session images: view via get_session, add/delete via update_session
 # Delete = pass array WITHOUT the URL to remove (arrays are replaced, not appended)
 ```

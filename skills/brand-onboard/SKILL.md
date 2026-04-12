@@ -331,44 +331,80 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 **Brand auto-enrichment**: When `create_session` is called with a brand that has
 spokesperson/logo assets, they are auto-injected. In `update_session`, you must pass explicitly.
 
-**Step 0: Determine industry category FIRST** — this decides which image fields to ask for.
+**Step 0: Determine industry category FIRST** — this decides which fields to ask for.
 
-The user's `industry_category` (set during brand creation) determines the relevant fields.
-Only ask for images that match their industry. DO NOT show all 50+ fields.
+The `industry_category` determines which image AND text fields the wizard UI shows.
+**You MUST set `industry_category` in `wizard_shared_data` before collecting info.**
+Claude Code should auto-fill the fields that match the user's industry — don't ask for fields
+that don't apply (e.g., don't ask for `dish_images` from a software company).
 
-**Always ask (all industries):**
-- `product_images` — Main product/service photos
-- `certification_images` — Awards, certifications (if any)
-
-**Then ask ONLY the industry-specific fields:**
-
-| industry_category | Additional fields to ask |
-|-------------------|------------------------|
-| `cosmetics` | `cosmetic_product_images`, `texture_images`, `before_after_images`, `ingredients_images`, `handheld_product_images`, `inner_packaging_images`, `outer_packaging_images` |
-| `food`, `healthy_meals` | `harvest_images`, `farmer_story_images`, `handheld_produce_images`, `packaging_images`, `ingredients_images` |
-| `supplements`, `biotech` | `biotech_lab_images`, `biotech_cert_images`, `biotech_product_images`, `ingredients_images`, `spec_sheet_images` |
-| `restaurant` | `restaurant_exterior_images`, `restaurant_interior_images`, `dish_images`, `menu_images` |
-| `medical_aesthetics` | `clinic_images`, `procedure_before_after_images`, `doctor_team_images`, `medical_cert_images` |
-| `person`, `consultant` | `portrait_images`, `portfolio_images`, `event_speaking_images` |
-| `film` | `film_still_images`, `poster_images`, `behind_scenes_images`, `cast_images` |
-| `property`, `real_estate` | `property_exterior_images`, `property_interior_images`, `floor_plan_images`, `amenity_images`, `location_images` |
-| `automotive` | `vehicle_exterior_images`, `vehicle_interior_images`, `vehicle_engine_images`, `vehicle_action_images` |
-| `software`, `electronics` | `screenshot_images`, `mockup_images`, `device_angle_images`, `spec_sheet_images` |
-| `education` | `screenshot_images`, `portfolio_images`, `event_speaking_images` |
-| `fashion` | `handheld_product_images`, `texture_images`, `before_after_images`, `inner_packaging_images` |
-| `general` (fallback) | `product_closeup_images`, `packaging_images`, `before_after_images` |
-
-**Example conversation for `person` industry:**
 ```
-Your brand is categorized as "person" (personal brand).
-For the best LP, I need these images:
-
-1. 📸 Portrait photo — professional headshot or graduation photo
-2. 💼 Portfolio images — screenshots of your best projects
-3. 🎤 Event/speaking images — conference talks, presentations (if any)
-
-Which ones do you have? You can provide file paths or URLs.
+mcp_tool_call("landing_ai_mcp", "update_session", {
+  "user_token": token, "session_id": session_id,
+  "data_json": "{\"wizard_shared_data\": {\"industry_category\": \"software\"}}"
+})
 ```
+
+### Complete field map by industry (images + text)
+
+**All industries (always ask):**
+- Images: `product_images`, `landing_page_images`
+- Text: `brand_name`, `product_name`, `base_description`, `value_proposition`, `key_features[]`, `product_appeal`
+
+**`general`:**
+- Images: `inner_packaging_images`, `outer_packaging_images`, `ingredients_images`, `spec_sheet_images`, `handheld_product_images`, `product_closeup_images`, `packaging_images`, `before_after_images`, `certification_images`
+- Text: `inner_packaging_dimensions`, `outer_packaging_dimensions`, `product_dimensions`, `ingredients_dimensions`
+
+**`software` / `electronics`:**
+- Images: `screenshot_images`, `mockup_images`, `device_angle_images`, `spec_sheet_images`
+- Text: `device_dimensions`, `device_specifications`
+
+**`cosmetics`:**
+- Images: `cosmetic_product_images`, `texture_images`, `before_after_images`, `ingredients_images`, `handheld_product_images`, `inner_packaging_images`, `outer_packaging_images`, `handheld_swatch_images`
+- Text: `ingredients_text`
+
+**`biotech` / `supplements`:**
+- Images: `biotech_lab_images`, `biotech_cert_images`, `biotech_product_images`, `ingredients_images`, `spec_sheet_images`
+- Text: `biotech_certifications`, `biotech_research_basis`, `biotech_regulatory_status`, `ingredients_text`
+
+**`health_food` / `food` / `agricultural`:**
+- Images: `harvest_images`, `farmer_story_images`, `handheld_produce_images`, `handheld_packaging_images`, `packaging_images`, `product_closeup_images`, `certification_images`
+- Text: `origin_region`, `harvest_season`, `storage_instructions`, `product_variety`, `farming_method`, `weight_per_unit`, `shelf_life`, `nutritional_info`
+
+**`restaurant`:**
+- Images: `restaurant_exterior_images`, `restaurant_interior_images`, `dish_images`, `menu_images`
+
+**`medical_aesthetics`:**
+- Images: `clinic_images`, `procedure_before_after_images`, `doctor_team_images`, `medical_cert_images`
+- Text: `medical_certifications`, `treatment_description`
+
+**`person` / `consultant`:**
+- Images: `portrait_images`, `portfolio_images`, `event_speaking_images`
+- Text: `person_title`, `person_credentials`, `person_achievements`
+
+**`film`:**
+- Images: `film_still_images`, `poster_images`, `behind_scenes_images`, `cast_images`
+- Text: `film_synopsis`, `film_director`, `film_cast_info`
+
+**`property` / `real_estate`:**
+- Images: `property_exterior_images`, `property_interior_images`, `floor_plan_images`, `amenity_images`, `location_images`
+- Text: `property_location`, `property_size`, `property_features`, `property_price_range`
+
+**`automotive`:**
+- Images: `vehicle_exterior_images`, `vehicle_interior_images`, `vehicle_engine_images`, `vehicle_action_images`
+- Text: `vehicle_specs`, `vehicle_features`, `vehicle_price_range`
+
+**`venue_event`:**
+- Images: `venue_images`, `event_activity_images`, `facility_images`
+
+### Auto-fill strategy for Claude Code
+
+1. Ask user's industry → set `industry_category`
+2. Look up the field list above for that industry
+3. Ask user for ONLY those fields (images + text) — in batches of 3-4
+4. Upload images via `get_asset_upload_url` or `upload_base64`
+5. Write ALL data in one `update_session` call (both `wizard_shared_data` + `wizard_shared_files`)
+6. Don't ask for fields from other industries
 
 ### Viewing, Adding & Deleting Wizard Images
 
