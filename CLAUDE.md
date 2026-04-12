@@ -227,17 +227,47 @@ export_landing_image(user_token, campaign_id) -> { download_url, ... }
 # NOTE: download_stripe returns a URL that requires the auth_header to fetch the actual image.
 ```
 
-### Publishing
+### Social Accounts
 ```
 list_accounts(user_token) -> accounts[]
 get_account_capability(user_token, account_id) -> { can_advertise, permissions }
-import_from_session(user_token, session_id) -> imported_content
-validate_content_media(user_token, ...) -> validation_result
+```
+
+### Content Publishing
+```
 publish_post(user_token, data_json) -> post_result
 publish_multi(user_token, targets_json) -> results[]
 schedule_post(user_token, data_json) -> scheduled
-suggest_schedule(user_token) -> optimal_times[]
-generate_qr(user_token, url, style?) -> qr_image_url
+cancel_post(user_token, post_id) -> confirmation
+get_post_history(user_token, limit?, offset?, status_filter?) -> posts[]
+get_post_detail(user_token, post_id) -> post_detail
+```
+
+### Content Library
+```
+list_content(user_token) -> content[]
+get_content(user_token, content_id) -> content_detail
+import_from_session(user_token, session_id) -> imported_content
+update_content(user_token, content_id, data_json) -> updated
+delete_content(user_token, content_id) -> { message }
+publish_content(user_token, content_id, data_json) -> result
+validate_content_media(user_token, content_id, target_post_type, duration_seconds?) -> validation
+get_upload_signed_url(user_token, filename, content_type) -> { upload_url }
+confirm_upload(user_token, data_json) -> confirmed
+list_shared_content(user_token, target_user_id) -> shared_content[]
+```
+
+### AI Scheduling
+```
+suggest_schedule(user_token, content_id?, caption?, content_type?, ta_info_json?) -> optimal_times[]
+parse_schedule(user_token, text) -> { schedules: [{ datetime_iso, platforms }] }
+```
+
+### QR Code
+```
+generate_qr(user_token, url, size?) -> { qr_url }
+composite_qr(user_token, image_url, qr_target_url) -> { url } (QR overlaid on image)
+generate_qr_card(user_token, url, title?) -> { url } (branded QR card)
 ```
 
 ### Ad Campaigns
@@ -253,6 +283,15 @@ generate_ad(user_token, session_id, data_json) -> { project_id, ... }
 # data_json example: '{"platform": "meta"}' — platform goes INSIDE data_json
 get_ad_result(user_token, session_id, project_id) -> { status, creative, ... }
 # NOTE: Uses session_id + project_id, NOT task_id
+```
+
+### Reel Promotion (Boost)
+```
+promote_reel(user_token, data_json) -> { promotion_id }
+# data_json: { social_post_id, cta_type, cta_url, daily_budget, duration_days }
+get_promotion_status(user_token, promotion_id) -> status
+pause_promotion(user_token, promotion_id) -> result
+resume_promotion(user_token, promotion_id) -> result
 ```
 
 ## Aspect Ratio Support

@@ -225,6 +225,35 @@ B) Monitor campaign performance
 C) Done
 ```
 
+## Reel Promotion (Instagram/Facebook Boost)
+
+### Promote a published reel/post
+```
+mcp_tool_call("zereo_social_mcp", "promote_reel", {
+  "user_token": token,
+  "data_json": "{\"social_post_id\": \"<post_id_from_get_post_history>\", \"cta_type\": \"LEARN_MORE\", \"cta_url\": \"https://landing-page-url\", \"daily_budget\": 10.00, \"duration_days\": 7}"
+})
+→ Returns: { "promotion_id": "..." }
+```
+
+### Check promotion status
+```
+mcp_tool_call("zereo_social_mcp", "get_promotion_status", {
+  "user_token": token, "promotion_id": "<promotion_id>"
+})
+```
+
+### Pause / Resume promotion
+```
+mcp_tool_call("zereo_social_mcp", "pause_promotion", {
+  "user_token": token, "promotion_id": "<promotion_id>"
+})
+
+mcp_tool_call("zereo_social_mcp", "resume_promotion", {
+  "user_token": token, "promotion_id": "<promotion_id>"
+})
+```
+
 ## Multi-Platform Campaigns
 
 To run on both Meta and Google:

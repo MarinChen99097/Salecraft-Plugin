@@ -152,6 +152,110 @@ mcp_tool_call("zereo_social_mcp", "generate_qr", {
 → Returns: QR code image URL
 ```
 
+## Phase 7: Post-Publish Management
+
+### View post history
+```
+mcp_tool_call("zereo_social_mcp", "get_post_history", {
+  "user_token": token, "limit": 20, "offset": 0, "status_filter": ""
+})
+→ Returns: array of posts with status (published/scheduled/skipped), platform_permalink, metrics
+```
+
+### View single post detail
+```
+mcp_tool_call("zereo_social_mcp", "get_post_detail", {
+  "user_token": token, "post_id": "<post_id>"
+})
+```
+
+### Cancel scheduled post
+```
+mcp_tool_call("zereo_social_mcp", "cancel_post", {
+  "user_token": token, "post_id": "<post_id>"
+})
+```
+
+### Parse natural language schedule
+```
+mcp_tool_call("zereo_social_mcp", "parse_schedule", {
+  "user_token": token, "text": "tomorrow at 8pm"
+})
+→ Returns: { "schedules": [{ "datetime_iso": "2026-04-13T20:00:00+08:00", "platforms": ["ig_post"] }] }
+```
+
+## Phase 8: Content Library Management
+
+### List all content in library
+```
+mcp_tool_call("zereo_social_mcp", "list_content", { "user_token": token })
+```
+
+### Get content detail
+```
+mcp_tool_call("zereo_social_mcp", "get_content", {
+  "user_token": token, "content_id": "<content_id>"
+})
+```
+
+### Update content (caption, hashtags)
+```
+mcp_tool_call("zereo_social_mcp", "update_content", {
+  "user_token": token, "content_id": "<content_id>",
+  "data_json": "{\"caption\": \"New caption\", \"hashtags\": [\"#tag1\"]}"
+})
+```
+
+### Delete content
+```
+mcp_tool_call("zereo_social_mcp", "delete_content", {
+  "user_token": token, "content_id": "<content_id>"
+})
+```
+
+### Publish content directly
+```
+mcp_tool_call("zereo_social_mcp", "publish_content", {
+  "user_token": token, "content_id": "<content_id>",
+  "data_json": "{\"account_id\": \"<account_id>\", \"post_type\": \"ig_post\"}"
+})
+```
+
+### Upload to content library (signed URL)
+```
+mcp_tool_call("zereo_social_mcp", "get_upload_signed_url", {
+  "user_token": token, "filename": "image.jpg", "content_type": "image/jpeg"
+})
+→ upload via curl → then confirm_upload
+```
+
+## Phase 9: QR Code Tools
+
+### Simple QR code
+```
+mcp_tool_call("zereo_social_mcp", "generate_qr", {
+  "user_token": token, "url": "https://...", "size": 300
+})
+```
+
+### QR composite (overlay QR on an image)
+```
+mcp_tool_call("zereo_social_mcp", "composite_qr", {
+  "user_token": token,
+  "image_url": "<background_image_url>",
+  "qr_target_url": "https://landing-page-url"
+})
+→ Returns QR overlaid on the image (bottom-right)
+```
+
+### QR card (branded card with QR + title)
+```
+mcp_tool_call("zereo_social_mcp", "generate_qr_card", {
+  "user_token": token, "url": "https://...", "title": "Brand Name"
+})
+→ Returns styled QR card image
+```
+
 ## Output
 
 ```
@@ -163,6 +267,7 @@ mcp_tool_call("zereo_social_mcp", "generate_qr", {
 
 Want to:
 A) Run ad campaigns on these platforms → /mx-publish (ads)
-B) Check engagement later
-C) Done
+B) Check post history & engagement
+C) Generate QR code for print materials
+D) Done
 ```
