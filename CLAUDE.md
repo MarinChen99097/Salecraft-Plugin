@@ -164,6 +164,15 @@ get_asset_upload_url(user_token, brand_id, filename, asset_type?, content_type?)
 # 1. Call get_asset_upload_url → get signed PUT URL
 # 2. bash: curl -X PUT -H "Content-Type: image/jpeg" -T /path/to/photo.jpg "{upload_url}"
 # 3. Use public_url in create_spokesperson, regenerate_stripe reference_image_urls_json, etc.
+gdrive_import_shared_link(user_token, url) -> { status, imported[], classified_images }
+# Import from Google Drive shared link — no OAuth needed, backend uses service account
+# Supports: shared folders (all images/PDFs), single files, Docs/Slides (auto PDF export)
+# Link must be "Anyone with the link can view". Auto-classifies images (product, logo, evidence).
+gdrive_connect(user_token, data_json) -> connection_status
+gdrive_status(user_token) -> { connections[] }
+gdrive_list(user_token) -> { files[] }
+gdrive_import(user_token, data_json) -> import_result
+gdrive_disconnect(user_token, connection_id) -> { message }
 create_brand_asset(user_token, brand_id, data_json) -> asset
 list_brand_assets(user_token, brand_id) -> assets[]
 delete_brand_asset(user_token, brand_id, asset_id) -> { message }
@@ -427,6 +436,14 @@ upload_base64(user_token, brand_id, filename, base64_data, asset_type?, content_
 ```
 Claude Code can read pasted images as base64. Use `upload_base64` to upload directly — no need to save to disk.
 Max 10MB per file. Supports data URI prefix stripping (e.g., `data:image/jpeg;base64,...`).
+
+### Google Drive Import (user shares a Drive link)
+```
+gdrive_import_shared_link(user_token, url) -> { status, imported[], classified_images }
+```
+User pastes a Google Drive shared link → backend downloads all images/PDFs, uploads to GCS, auto-classifies.
+No OAuth needed. Link must be "Anyone with the link can view".
+Use returned URLs the same way as signed URL uploads.
 
 ## Landing Page Frontend URLs
 

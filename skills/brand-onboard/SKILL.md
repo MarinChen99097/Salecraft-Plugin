@@ -263,7 +263,35 @@ Or use the signed URL flow:
 # get_asset_upload_url → curl -T file <signed_url>
 ```
 
-**If user provides a URL** (already online):
+### Google Drive Import (user shares a Drive link)
+
+When a user provides a Google Drive link, import ALL images/PDFs in one call — no OAuth needed:
+
+```
+mcp_tool_call("landing_ai_mcp", "gdrive_import_shared_link", {
+  "user_token": token,
+  "url": "https://drive.google.com/drive/folders/XXXXX?usp=sharing"
+})
+→ {
+    "status": "ok",
+    "imported": [
+      {"name": "product.jpg", "url": "https://storage.googleapis.com/...", "mimeType": "image/jpeg"},
+      {"name": "logo.png", "url": "https://storage.googleapis.com/...", "mimeType": "image/png"}
+    ],
+    "classified_images": {"product_images": ["url"], "logo_image": ["url"]}
+  }
+```
+
+Supports:
+- **Shared folder links** — downloads ALL images/PDFs inside
+- **Single file links** — downloads that one file
+- **Google Docs/Slides** — auto-exported as PDF
+- Requirement: link must be set to "Anyone with the link can view"
+
+The backend auto-classifies imported images (product, logo, evidence) and saves them to the brand buffer.
+Use the returned `url` values in `update_session` wizard fields, just like signed URL uploads.
+
+**If user provides a regular URL** (already online):
 Skip upload — use the URL directly in `create_spokesperson` or `update_session`.
 
 Step 3: Use the public_url to create spokesperson
