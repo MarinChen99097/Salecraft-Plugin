@@ -57,22 +57,53 @@ mcp_tool_call("zereo_social_mcp", "get_tiktok_auth_url", {
 TikTok callback is handled server-side — user just needs to open the URL and authorize.
 
 ### Account Management
+
+**Refresh expired token** (Meta tokens expire ~60 days):
 ```
-# Refresh expired token
-refresh_account_token(user_token, account_id) → refreshed account
-
-# Recheck what the account can do (publish, ads, etc.)
-recheck_capability(user_token, account_id) → triggers capability check
-
-# Update ad account settings
-update_ad_account(user_token, account_id, data_json) → updated
-
-# Get account's published content
-get_account_content(user_token, account_id) → content list
-
-# Disconnect account
-disconnect_account(user_token, account_id) → confirmation (destructive!)
+mcp_tool_call("zereo_social_mcp", "refresh_account_token", {
+  "user_token": token,
+  "account_id": "<account_id_from_list_accounts>"
+})
+→ Returns: refreshed account with new token_expires_at
 ```
+When to use: if `list_accounts` shows `token_expires_at` is near or past.
+
+**Recheck account capabilities** (after changing FB page settings):
+```
+mcp_tool_call("zereo_social_mcp", "recheck_capability", {
+  "user_token": token,
+  "account_id": "<account_id>"
+})
+→ Triggers async check — call get_account_capability after to see result
+```
+
+**Update ad account** (link a different ad account ID):
+```
+mcp_tool_call("zereo_social_mcp", "update_ad_account", {
+  "user_token": token,
+  "account_id": "<account_id>",
+  "data_json": "{\"ad_account_id\": \"<new_ad_account_id>\"}"
+})
+```
+
+**Get account's published content** (what's already posted):
+```
+mcp_tool_call("zereo_social_mcp", "get_account_content", {
+  "user_token": token,
+  "account_id": "<account_id>"
+})
+→ Returns: list of posts published via this account
+```
+
+**Disconnect account** (⚠️ destructive — cannot undo):
+```
+mcp_tool_call("zereo_social_mcp", "disconnect_account", {
+  "user_token": token,
+  "account_id": "<account_id>"
+})
+→ Removes the social account connection. User must re-authorize to reconnect.
+```
+Always confirm with user before disconnecting.
 
 ## Phase 1: Check Connected Accounts
 
@@ -107,13 +138,23 @@ mcp_tool_call("zereo_social_mcp", "import_from_session", {
 
 ## Phase 3: Validate Media
 
+Check if the imported content meets platform requirements:
 ```
 mcp_tool_call("zereo_social_mcp", "validate_content_media", {
   "user_token": token,
-  // content references from import
+  "content_id": "<content_id_from_import>",
+  "target_post_type": "ig_post",
+  "duration_seconds": 0
 })
-→ Returns: validation results (size, format, aspect ratio checks per platform)
+→ Returns: validation results (size, format, aspect ratio checks)
 ```
+
+**Valid `target_post_type` values:**
+- `ig_post` — Instagram feed post (1:1 or 4:5)
+- `ig_story` — Instagram story (9:16)
+- `ig_reel` — Instagram reel (9:16 video)
+- `fb_post` — Facebook page post
+- `tt_video` — TikTok video (9:16)
 
 If validation fails: report issues and suggest fixes (resize, reformat).
 
@@ -148,9 +189,22 @@ Edit any caption, or approve all?
 ### Get optimal times
 ```
 mcp_tool_call("zereo_social_mcp", "suggest_schedule", {
-  "user_token": token
+  "user_token": token,
+  "content_id": "<content_id>",
+  "caption": "Your post caption here",
+  "content_type": "image",
+  "ta_info_json": ""
 })
 → Returns: recommended posting times per platform based on audience activity
+```
+
+### Or use natural language scheduling
+```
+mcp_tool_call("zereo_social_mcp", "parse_schedule", {
+  "user_token": token,
+  "text": "明天晚上8點"
+})
+→ { "schedules": [{ "datetime_iso": "2026-04-13T20:00:00+08:00", "platforms": ["ig_post"] }] }
 ```
 
 Present:
