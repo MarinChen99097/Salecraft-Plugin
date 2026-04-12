@@ -227,10 +227,26 @@ export_landing_image(user_token, campaign_id) -> { download_url, ... }
 # NOTE: download_stripe returns a URL that requires the auth_header to fetch the actual image.
 ```
 
-### Social Accounts
+### Social Account Connection (OAuth)
+```
+get_meta_auth_url(user_token, redirect_uri) -> { auth_url, state }
+# User opens auth_url in browser → authorizes → Meta redirects with code
+connect_meta_account(user_token, code, redirect_uri) -> connected_account
+# Completes OAuth — connects Facebook page + Instagram business
+
+get_tiktok_auth_url(user_token) -> { auth_url }
+# TikTok callback is server-side — user just opens URL and authorizes
+```
+
+### Social Account Management
 ```
 list_accounts(user_token) -> accounts[]
 get_account_capability(user_token, account_id) -> { can_advertise, permissions }
+recheck_capability(user_token, account_id) -> { detail }
+refresh_account_token(user_token, account_id) -> refreshed_account
+update_ad_account(user_token, account_id, data_json) -> updated
+get_account_content(user_token, account_id) -> content_list
+disconnect_account(user_token, account_id) -> confirmation (destructive!)
 ```
 
 ### Content Publishing

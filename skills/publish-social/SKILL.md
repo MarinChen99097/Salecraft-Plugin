@@ -24,6 +24,56 @@ You manage social media publishing for LP content. You help the user push their 
 - `user_token` and `session_id` from previous phases
 - Read `CLAUDE.md` for zereo_social_mcp tool signatures
 
+## Phase 0: Connect Social Accounts (if not connected)
+
+If user has no connected accounts, guide them through OAuth:
+
+### Connect Meta (Facebook + Instagram)
+```
+mcp_tool_call("zereo_social_mcp", "get_meta_auth_url", {
+  "user_token": token,
+  "redirect_uri": "https://landingai.info/auth/callback"
+})
+→ Returns: { "auth_url": "https://www.facebook.com/v20.0/dialog/oauth?..." }
+```
+Give the user the `auth_url` to open in browser. After they authorize, Meta redirects
+with a `code` parameter. Then complete the connection:
+```
+mcp_tool_call("zereo_social_mcp", "connect_meta_account", {
+  "user_token": token,
+  "code": "<code_from_redirect>",
+  "redirect_uri": "https://landingai.info/auth/callback"
+})
+→ Returns: newly connected account details (Facebook page + Instagram business)
+```
+
+### Connect TikTok
+```
+mcp_tool_call("zereo_social_mcp", "get_tiktok_auth_url", {
+  "user_token": token
+})
+→ Returns: { "auth_url": "https://www.tiktok.com/v2/auth/authorize/?..." }
+```
+TikTok callback is handled server-side — user just needs to open the URL and authorize.
+
+### Account Management
+```
+# Refresh expired token
+refresh_account_token(user_token, account_id) → refreshed account
+
+# Recheck what the account can do (publish, ads, etc.)
+recheck_capability(user_token, account_id) → triggers capability check
+
+# Update ad account settings
+update_ad_account(user_token, account_id, data_json) → updated
+
+# Get account's published content
+get_account_content(user_token, account_id) → content list
+
+# Disconnect account
+disconnect_account(user_token, account_id) → confirmation (destructive!)
+```
+
 ## Phase 1: Check Connected Accounts
 
 ```
@@ -43,11 +93,7 @@ Connected Accounts:
 Select platforms to publish to (e.g., "1 and 2"):
 ```
 
-If no accounts connected:
-```
-⚠ No social accounts connected.
-Connect accounts at [Zereo dashboard URL] first, then try again.
-```
+If no accounts connected → **go to Phase 0 to connect first.**
 
 ## Phase 2: Import LP Content
 
