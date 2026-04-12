@@ -134,6 +134,34 @@ When adapting for Arabic:
 5. **Number formatting**: Western numerals acceptable (Arabic numerals optional)
 6. **Homepage CSS**: Add `dir="rtl"` + CSS logical properties
 
+## Uploading Culture-Specific Images
+
+When adapting for a different culture, you may need to replace images (e.g., different
+spokesperson for different market, localized product packaging):
+
+```
+# Step 1: Get signed URL
+mcp_tool_call("landing_ai_mcp", "get_asset_upload_url", {
+  "user_token": token,
+  "brand_id": brand_id,
+  "filename": "japan-model.jpg",
+  "asset_type": "spokesperson",
+  "content_type": "image/jpeg"
+})
+
+# Step 2: Upload
+# bash: curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/file.jpg" "{upload_url}"
+
+# Step 3: Use in regeneration with cultural context
+mcp_tool_call("landing_ai_mcp", "regenerate_stripe", {
+  "user_token": token,
+  "campaign_id": campaign_id,
+  "stripe_idx": 0,
+  "user_feedback": "Replace spokesperson with Japanese market model",
+  "reference_image_urls_json": "[\"<public_url>\"]"
+})
+```
+
 ## Workflow
 
 1. Ask which locale(s) to adapt for

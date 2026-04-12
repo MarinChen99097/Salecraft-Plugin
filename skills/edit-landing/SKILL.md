@@ -219,6 +219,36 @@ To cancel instead: use `cancel_stripe_regen` with the same params.
 
 **Cost**: Free regenerations within quota (typically 8), then credits per regen.
 
+### Uploading Reference Images for Regeneration
+
+When the user provides a local image as style reference for regeneration:
+
+```
+# Step 1: Get signed upload URL
+mcp_tool_call("landing_ai_mcp", "get_asset_upload_url", {
+  "user_token": token,
+  "brand_id": brand_id,
+  "filename": "reference-style.jpg",
+  "asset_type": "product",
+  "content_type": "image/jpeg"
+})
+→ { "upload_url": "https://...", "public_url": "https://..." }
+
+# Step 2: Upload via curl
+# bash: curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/file.jpg" "{upload_url}"
+
+# Step 3: Use public_url in regeneration
+mcp_tool_call("landing_ai_mcp", "regenerate_stripe", {
+  "user_token": token,
+  "campaign_id": campaign_id,
+  "stripe_idx": 3,
+  "user_feedback": "Match the style of the reference image",
+  "reference_image_urls_json": "[\"https://...public_url...\"]"
+})
+```
+
+This also works for user_suggestion_images in regeneration.
+
 ### Troubleshooting Regeneration
 
 If `get_stripe_regen_status` always shows `is_regenerating: false` and `regeneration_started_at: null`:

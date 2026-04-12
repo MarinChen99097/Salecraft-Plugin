@@ -95,6 +95,35 @@ mcp_tool_call("landing_ai_mcp", "get_ta_statuses", {
 → Returns: [{ "ta_group_id": "ta_1", "ta_name": "...", ... }]
 ```
 
+## Phase 2.8: Upload Additional Assets (if user provides files)
+
+If the user provides additional images during this phase (product photos, screenshots, etc.),
+upload them and write into the session BEFORE triggering generation:
+
+```
+# Step 1: Get signed URL
+mcp_tool_call("landing_ai_mcp", "get_asset_upload_url", {
+  "user_token": token,
+  "brand_id": brand_id,
+  "filename": "product-photo.jpg",
+  "asset_type": "product",
+  "content_type": "image/jpeg"
+})
+→ { "upload_url": "...", "public_url": "..." }
+
+# Step 2: Upload
+# bash: curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/file.jpg" "{upload_url}"
+
+# Step 3: Write into session
+mcp_tool_call("landing_ai_mcp", "update_session", {
+  "user_token": token,
+  "session_id": session_id,
+  "data_json": "{\"wizard_shared_files\": {\"product_images\": [\"<public_url>\"]}}"
+})
+```
+
+Must be done BEFORE `generate_session` — Factory reads images from session at generation time.
+
 ## Phase 3: Trigger Generation
 
 ```

@@ -286,6 +286,37 @@ marketingx.plugin/
 └── examples/              # Sample outputs
 ```
 
+## File Upload (Universal — works in ALL skills)
+
+Any skill that needs to upload a local file uses this 3-step flow:
+
+```
+# 1. Get signed URL
+mcp_tool_call("landing_ai_mcp", "get_asset_upload_url", {
+  "user_token": token, "brand_id": brand_id,
+  "filename": "photo.jpg", "asset_type": "product", "content_type": "image/jpeg"
+})
+→ { "upload_url": "https://storage...?X-Goog-Signature=...", "public_url": "https://storage.../photo.jpg" }
+
+# 2. Upload via curl (bash)
+curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/photo.jpg" "{upload_url}"
+
+# 3. Use public_url in the appropriate target:
+```
+
+| Target | Where to put public_url |
+|--------|------------------------|
+| Wizard product images | `update_session` → `wizard_shared_files.product_images: ["url"]` |
+| Wizard logo | `update_session` → `wizard_shared_files.logo_image: "url"` (string, not array) |
+| Wizard evidence | `update_session` → `wizard_shared_files.evidence_images: ["url"]` |
+| Wizard spokesperson | `update_session` → `wizard_shared_data.spokesperson_faces: ["url"]` |
+| Wizard industry images | `update_session` → `wizard_shared_data.{field}_images: ["url"]` |
+| Regeneration reference | `regenerate_stripe` → `reference_image_urls_json: '["url"]'` |
+| Spokesperson entity | `create_spokesperson` → `photo_urls: ["url"]` |
+
+Allowed `asset_type`: `product`, `logo`, `spokesperson`, `certification`
+Allowed `content_type`: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, `application/pdf`
+
 ## Landing Page Frontend URLs
 
 Generated LPs are viewable as interactive sales pages on the Landing AI frontend:
