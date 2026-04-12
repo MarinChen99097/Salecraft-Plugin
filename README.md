@@ -33,14 +33,13 @@ This plugin requires a Remote MCP connection to work. Add to your Claude Code se
   "mcpServers": {
     "Service System Deep Research": {
       "type": "sse",
-      "url": "https://service-system-staging-876464738390.asia-east1.run.app/mcp/sse",
-      "token": "YOUR_MCP_TOKEN"
+      "url": "https://service-system-staging-876464738390.asia-east1.run.app/mcp/sse"
     }
   }
 }
 ```
 
-**Get your token**: Contact the Landing AI team or visit [landingai.info](https://landingai.info) to request access.
+This is a public endpoint. All tool calls still require a valid Landing AI JWT (obtained via `login`).
 
 ## Skills (9)
 

@@ -39,14 +39,11 @@ Add this Remote MCP server in your Claude Code settings (`~/.claude.json` or VS 
   "mcpServers": {
     "Service System Deep Research": {
       "type": "sse",
-      "url": "https://service-system-staging-876464738390.asia-east1.run.app/mcp/sse",
-      "token": "YOUR_MCP_TOKEN"
+      "url": "https://service-system-staging-876464738390.asia-east1.run.app/mcp/sse"
     }
   }
 }
 ```
-
-**To get your MCP token**: Contact the Landing AI team or visit https://landingai.info to request access.
 
 Once connected, Claude Code will see 400+ tools including `landing_ai_mcp`, `zereo_social_mcp`, and 7+ research MCPs.
 
