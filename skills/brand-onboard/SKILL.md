@@ -311,6 +311,44 @@ For the best LP, I need these images:
 Which ones do you have? You can provide file paths or URLs.
 ```
 
+### Viewing, Adding & Deleting Wizard Images
+
+**View current images** — `get_session` returns all wizard images:
+```
+mcp_tool_call("landing_ai_mcp", "get_session", { "user_token": token, "session_id": session_id })
+→ wizard_shared_files: { product_images: [...], logo_image: "...", evidence_images: [...] }
+→ wizard_shared_data: { spokesperson_faces: [...], screenshot_images: [...], ... }
+```
+
+**Add images** — `update_session` uses MERGE semantics (won't overwrite other fields):
+```
+mcp_tool_call("landing_ai_mcp", "update_session", {
+  "user_token": token, "session_id": session_id,
+  "data_json": "{\"wizard_shared_files\": {\"product_images\": [\"existing_url\", \"new_url\"]}}"
+})
+```
+⚠️ Arrays are REPLACED, not appended. Include existing URLs + new ones in the array.
+
+**Delete images** — pass the array WITHOUT the URL you want to remove:
+```
+# Before: product_images = ["url1", "url2", "url3"]
+# Remove url2:
+update_session(data_json: {"wizard_shared_files": {"product_images": ["url1", "url3"]}})
+# After: product_images = ["url1", "url3"]
+```
+
+**Delete brand-level assets** (separate from wizard):
+```
+list_brand_assets(user_token, brand_id) → find asset_id
+delete_brand_asset(user_token, brand_id, asset_id) → removed
+```
+
+**Delete spokesperson**:
+```
+list_spokespersons(user_token, brand_id) → find spokesperson_id
+delete_spokesperson(user_token, brand_id, spokesperson_id) → removed
+```
+
 ### Regeneration (重新生成) — put URL into regenerate_stripe params
 
 | Asset | Parameter | Example |

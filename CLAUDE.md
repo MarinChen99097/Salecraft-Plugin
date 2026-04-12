@@ -147,11 +147,16 @@ get_asset_upload_url(user_token, brand_id, filename, asset_type?, content_type?)
 # 1. Call get_asset_upload_url → get signed PUT URL
 # 2. bash: curl -X PUT -H "Content-Type: image/jpeg" -T /path/to/photo.jpg "{upload_url}"
 # 3. Use public_url in create_spokesperson, regenerate_stripe reference_image_urls_json, etc.
+create_brand_asset(user_token, brand_id, data_json) -> asset
+list_brand_assets(user_token, brand_id) -> assets[]
+delete_brand_asset(user_token, brand_id, asset_id) -> { message }
 create_spokesperson(user_token, brand_id, name, description, photo_urls[]) -> spokesperson
 # Use public_url from get_asset_upload_url as the photo URL
 list_spokespersons(user_token, brand_id) -> spokespersons[]
 update_spokesperson(user_token, brand_id, spokesperson_id, data_json) -> updated
 delete_spokesperson(user_token, brand_id, spokesperson_id) -> { message }
+# Wizard session images: view via get_session, add/delete via update_session
+# Delete = pass array WITHOUT the URL to remove (arrays are replaced, not appended)
 ```
 
 ### Session / Generation
