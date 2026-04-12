@@ -21,8 +21,26 @@ git clone https://github.com/MarinChen99097/marketingx.plugin.git
 ## Requirements
 
 - **Claude Code** with MCP support
-- **Service System Deep Research** MCP connected (provides access to `landing_ai_mcp` and `zereo_social_mcp`)
+- **Service System Deep Research** MCP connected (see setup below)
 - User account on the Landing AI platform
+
+## MCP Setup
+
+This plugin requires a Remote MCP connection to work. Add to your Claude Code settings:
+
+```json
+{
+  "mcpServers": {
+    "Service System Deep Research": {
+      "type": "sse",
+      "url": "https://service-system-staging-876464738390.asia-east1.run.app/mcp/sse",
+      "token": "YOUR_MCP_TOKEN"
+    }
+  }
+}
+```
+
+**Get your token**: Contact the Landing AI team or visit [landingai.info](https://landingai.info) to request access.
 
 ## Skills (9)
 

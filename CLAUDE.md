@@ -30,6 +30,26 @@ mcp__claude_ai_Service_System_Deep_Research__mcp_tool_call(
 
 If this MCP is not available, the plugin cannot function.
 
+### How to Connect the MCP
+
+Add this Remote MCP server in your Claude Code settings (`~/.claude.json` or VS Code settings):
+
+```json
+{
+  "mcpServers": {
+    "Service System Deep Research": {
+      "type": "sse",
+      "url": "https://service-system-staging-876464738390.asia-east1.run.app/mcp/sse",
+      "token": "YOUR_MCP_TOKEN"
+    }
+  }
+}
+```
+
+**To get your MCP token**: Contact the Landing AI team or visit https://landingai.info to request access.
+
+Once connected, Claude Code will see 400+ tools including `landing_ai_mcp`, `zereo_social_mcp`, and 7+ research MCPs.
+
 ## First-Time Setup (Cold Start)
 
 When a user first invokes this plugin:
