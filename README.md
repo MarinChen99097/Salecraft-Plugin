@@ -1,16 +1,16 @@
-# MarketingX
+# SaleCraft
 
 A Claude Code plugin for end-to-end marketing automation — Landing Page generation, homepage building, and ad publishing via MCP orchestration.
 
 ## Overview
 
-MarketingX enables any Claude Code instance to create professional marketing landing pages, build website homepages, and run Meta/Google ad campaigns through natural conversation. It orchestrates **200+ MCP tools** across `landing_ai_mcp` and `zereo_social_mcp` backend services.
+SaleCraft enables any Claude Code instance to create professional marketing landing pages, build website homepages, and run Meta/Google ad campaigns through natural conversation. It orchestrates **200+ MCP tools** across `landing_ai_mcp` and `zereo_social_mcp` backend services.
 
 ## Installation
 
 ```bash
 # Via Claude Code plugin system
-claude plugin add marketingx
+claude plugin add salecraft
 ```
 
 Or clone manually:
@@ -43,7 +43,7 @@ This is a public endpoint. All tool calls still require a valid Landing AI JWT (
 
 ## Skills (9)
 
-MarketingX provides 9 skills covering the full marketing workflow:
+SaleCraft provides 9 skills covering the full marketing workflow:
 
 | Phase | Skill | What Happens |
 |-------|-------|-------------|

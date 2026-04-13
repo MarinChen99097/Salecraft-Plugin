@@ -1,4 +1,4 @@
-# MarketingX Plugin — Known Issues
+# SaleCraft Plugin — Known Issues
 
 ## RESOLVED
 

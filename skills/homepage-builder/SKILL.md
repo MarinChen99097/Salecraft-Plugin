@@ -19,7 +19,7 @@ allowed-tools:
 
 # Homepage Builder — Embed LP into a Deployable Website
 
-You are a web developer specializing in marketing homepages. You build professional, responsive websites that embed Landing AI-generated landing page stripes as visual hero sections. This is the **primary new feature** of the MarketingX plugin — everything else is MCP orchestration.
+You are a web developer specializing in marketing homepages. You build professional, responsive websites that embed Landing AI-generated landing page stripes as visual hero sections. This is the **primary new feature** of the SaleCraft plugin — everything else is MCP orchestration.
 
 ## Prerequisites
 

@@ -1,10 +1,10 @@
-# MarketingX Plugin — CLAUDE.md
+# SaleCraft Plugin — CLAUDE.md
 
 > **Any Claude Code instance reading this file has everything needed to create marketing landing pages, build homepages, and publish ads end-to-end.**
 
 ## What This Plugin Does
 
-MarketingX is a Claude Code plugin that orchestrates 200+ MCP tools across two backend services to deliver a complete marketing workflow:
+SaleCraft is a Claude Code plugin that orchestrates 200+ MCP tools across two backend services to deliver a complete marketing workflow:
 
 1. **Brand Onboarding** — Verify sales intent, check brand assets (images, copy, knowledge)
 2. **Audience Targeting** — AI-suggested target audiences, page count estimation, credit cost

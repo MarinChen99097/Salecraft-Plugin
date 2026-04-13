@@ -1,4 +1,4 @@
-# MarketingX — Complete Workflow Reference
+# SaleCraft — Complete Workflow Reference
 
 ## End-to-End Flow
 

@@ -36,7 +36,7 @@ mcp_tool_call("zereo_social_mcp", "list_ad_campaigns", { "user_token": token })
 ## Output Format
 
 ```
-📊 MarketingX Status
+📊 SaleCraft Status
 ━━━━━━━━━━━━━━━━━
 Credits: [X] remaining (weekly reset: [day])
 Active Sessions: [N]

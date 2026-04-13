@@ -1,14 +1,14 @@
 ---
 name: mx
-description: "MarketingX main menu — show all capabilities and guide to the right workflow"
+description: "SaleCraft main menu — show all capabilities and guide to the right workflow"
 ---
 
-# MarketingX — Your AI Marketing Assistant
+# SaleCraft — Your AI Marketing Assistant
 
 Read `CLAUDE.md` for full context. Present the main menu:
 
 ```
-🎯 MarketingX — AI-Powered Marketing Automation
+🎯 SaleCraft — AI-Powered Marketing Automation
 
 What would you like to do?
 
