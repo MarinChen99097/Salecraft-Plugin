@@ -1,38 +1,35 @@
-# SaleCraft Plugin — CLAUDE.md
+# SaleCraft — CLAUDE.md
 
-> **Any Claude Code instance reading this file has everything needed to create marketing landing pages, build homepages, and publish ads end-to-end.**
+> **SaleCraft 是一個行銷顧問 AI，專為實體產品賣家打造。先諮詢、再規劃、最後才動用工具。**
 
-## What This Plugin Does
+## What SaleCraft Is
 
-SaleCraft is a Claude Code plugin that orchestrates 200+ MCP tools across two backend services to deliver a complete marketing workflow:
+SaleCraft is a **free marketing consultant** that lives inside Claude Code. It helps physical product sellers plan and execute marketing campaigns.
 
-1. **Brand Onboarding** — Verify sales intent, check brand assets (images, copy, knowledge)
-2. **Audience Targeting** — AI-suggested target audiences, page count estimation, credit cost
-3. **Landing Page Generation** — AI pipeline: Strategist → Architect → Factory → Stripe Reflector
-4. **Post-Generation Editing** — Stripe-level text, image, overlay, crop, regenerate
-5. **Homepage Building** — Embed LP stripes into a deployable website homepage
-6. **Social Publishing** — Multi-platform posting (Meta, TikTok, etc.)
-7. **Ad Campaigns** — Meta / Google Ads one-stop creation and management
-8. **i18n Adaptation** — 10 locales, RTL support, 4-layer cultural adaptation
-9. **Market Research** — Optional trend/competitor analysis via 7+ social MCPs
+### The Flow (Consultation First, Tools Last)
+
+```
+1. 免費諮詢 → 了解產品、痛點、目標
+2. 行銷診斷 → 分析品牌現況、找出缺口
+3. 策略規劃 → 建議行銷方案（管道、內容、預算）
+4. 確認方案 → 用戶同意後，才開始使用付費工具
+5. 執行生成 → LP、Reels、社群發佈、廣告等
+```
+
+**重要**：Step 1-3 完全免費。只有 Step 5 的工具使用才需要點數。
+
+### Who We Serve
+
+| ✅ 適合 | ❌ 不適合 |
+|--------|---------|
+| 實體產品（保養品、食品、服飾…） | 軟體 / SaaS |
+| 單品或產品線 | 多目的平台 |
+| 明確銷售目標 | 抽象服務 |
+| 電商、零售、餐飲、時尚、醫美、健康、製造 | B2B SaaS、顧問公司 |
 
 ## MCP Dependency (REQUIRED)
 
-This plugin requires the **Service System Deep Research** MCP to be connected. All tool calls route through:
-
-```
-mcp__claude_ai_Service_System_Deep_Research__mcp_tool_call(
-  server_name = "landing_ai_mcp" | "zereo_social_mcp" | ...,
-  tool_name   = "<tool>",
-  arguments   = { ... }
-)
-```
-
-If this MCP is not available, the plugin cannot function.
-
-### How to Connect the MCP
-
-Add this Remote MCP server in your Claude Code settings (`~/.claude.json` or VS Code settings):
+This plugin requires the **Service System Deep Research** MCP:
 
 ```json
 {
@@ -45,372 +42,119 @@ Add this Remote MCP server in your Claude Code settings (`~/.claude.json` or VS 
 }
 ```
 
-Once connected, Claude Code will see 400+ tools including `landing_ai_mcp`, `zereo_social_mcp`, and 7+ research MCPs.
+All tool calls route through:
+```
+mcp__claude_ai_Service_System_Deep_Research__mcp_tool_call(
+  server_name = "landing_ai_mcp" | "zereo_social_mcp",
+  tool_name   = "<tool>",
+  arguments   = { ... }
+)
+```
 
-## First-Time Setup (Cold Start)
+## First-Time Setup
 
-When a user first invokes this plugin:
+1. **Check MCP** — Verify connection
+2. **Start consultation** — Don't jump to tools. Use `saleskit` skill first.
+3. **If user needs tools** → Direct to onboarding page:
+   > https://marketingx-site-876464738390.asia-east1.run.app/{locale}/get-started
+   
+   This handles: Registration, Meta/Google binding, Stripe top-up ($1 = 30 pts, min $20)
 
-1. **Check MCP**: Verify `landing_ai_mcp` is reachable via the Service System Deep Research proxy
-2. **Account & Setup**: Direct the user to the onboarding page to complete all setup in one place:
+4. **Login** → `mcp_tool_call("landing_ai_mcp", "login", {"email": "...", "password": "..."})`
 
-   **Onboarding URL**: `https://marketingx-site-876464738390.asia-east1.run.app/{locale}/get-started`
+## Available Skills (10)
 
-   This page handles:
-   - **Registration / Login** (email or Google OAuth) — redirects to Landing AI auth, then back
-   - **Meta account binding** (Facebook / Instagram) — for automated social publishing
-   - **Google account binding** — for Google Drive content access
-   - **Points top-up** ($1 USD = 30 pts) — via Stripe checkout
+### 🎯 Consultation (Free)
 
-   Tell the user: "Please open this link to set up your account: https://marketingx-site-876464738390.asia-east1.run.app/en/get-started"
+| Skill | Purpose | Cost |
+|-------|---------|------|
+| **saleskit** | Free marketing consultation — diagnose needs, recommend tools | **FREE** |
+| **research-market** | Market research, competitor analysis, trend scanning | **FREE** (MCP calls only) |
 
-3. **After setup**: Ask the user for their email, then call `login` to get the access_token
-4. **Start**: `/mx` for menu, or `/mx-create` for full flow
+### 🔧 Execution (Paid — requires pts)
+
+| Skill | What It Does | Cost (pts) |
+|-------|-------------|------------|
+| **brand-onboard** | Brand profile setup, asset check, gap analysis | 10-30 |
+| **audience-target** | AI target audience suggestions + cost estimation | 5-15 |
+| **generate-landing** | AI Landing Page generation (4-stage pipeline) | 75-250 |
+| **edit-landing** | Edit generated LP (text, image, layout) | 5-20 |
+| **homepage-builder** | Build deployable website from LP | FREE |
+| **publish-social** | Post to IG/FB/TikTok | 5-10/post |
+| **publish-ads** | Create Meta/Google ad campaigns | 30-100 |
+| **i18n-adapt** | Adapt content for 10 locales | 10-30 |
+
+## Pricing (Must Know)
+
+| Item | Cost |
+|------|------|
+| **1 USD** | 30 pts |
+| **最低儲值** | $20 USD = 600 pts |
+| Landing Page | 75-250 pts |
+| Reels 影音 | 50-150 pts |
+| 社群發佈 | 5-10 pts/篇 |
+| KOL 分析 | 20-50 pts/人 |
+| 廣告投放 | 30-100 pts |
+| 品牌分析 | 10-30 pts |
+| QR Code | 5 pts |
+
+**Always tell the user the cost BEFORE calling any paid tool.**
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/mx` | Main menu — show what SaleCraft can do |
+| `/mx-create` | Full marketing flow (consultation → generation) |
+| `/mx-edit` | Edit existing Landing Page |
+| `/mx-homepage` | Build homepage from existing LP |
+| `/mx-publish` | Publish to social + run ads |
+| `/mx-status` | Check credits / session status |
+
+## Core Rules
+
+1. **Consultation first** — ALWAYS start with `saleskit`. Never jump to LP generation.
+2. **Physical products only** — Politely decline SaaS/software requests.
+3. **Transparent pricing** — Tell costs before any paid action.
+4. **Check credits** — Call `get_me()` before generation.
+5. **User confirms** — Never generate without explicit user approval.
+6. **Never hardcode secrets** — Use `user_token` for all MCP calls.
 
 ## Authentication
 
-### Login (existing user — after onboarding)
 ```
+# Login
 mcp_tool_call("landing_ai_mcp", "login", {"email": "...", "password": "..."})
 → { "access_token": "eyJ...", "token_type": "bearer" }
-```
 
-### Register (fallback — if user prefers CLI registration)
-```
+# Register (fallback)
 mcp_tool_call("landing_ai_mcp", "register", {"email": "...", "password": "...", "full_name": "..."})
-→ creates account + returns access_token
-```
 
-### Google OAuth
-```
+# Google OAuth
 mcp_tool_call("landing_ai_mcp", "google_auth", {"credential": "<google_id_token>"})
 ```
 
-### Auth Notes
 - Pass `user_token` in ALL subsequent calls
-- Token expires ~12 hours. On 401, re-call `login` (no refresh_token)
-- **Preferred flow**: Direct users to the onboarding page first, then login via MCP after setup is complete
-- **Test account**: Use your own Landing AI account credentials
+- Token expires ~12 hours. On 401, re-login.
 
-## Available Commands
+## MCP Tool Reference
 
-| Command | Purpose | Workflow |
-|---------|---------|----------|
-| `/mx` | Main menu — show capabilities | — |
-| `/mx-create` | Full creation flow | Phase 1→5 (brand → TA → generate → edit → homepage) |
-| `/mx-edit` | Edit existing LP | Phase 4 only |
-| `/mx-homepage` | Build homepage from existing LP | Phase 5 only |
-| `/mx-publish` | Publish + run ads | Phase 6a + 6b |
-| `/mx-status` | Check session status / credits | — |
+See individual skill SKILL.md files for detailed tool signatures. Key modules:
 
-## Available Skills (9)
+### landing_ai_mcp
+- **Session Wizard** (32 tools) — Create sessions, generate LPs, TA options
+- **Landing Page Editor** (49 tools) — Edit stripes, text, image, overlay
+- **Brand Management** (29 tools) — Brand CRUD, gap analysis, asset upload
+- **Reels** (26 tools) — Short video generation
+- **Content** (45 tools) — URL scraping, PDF import, SEO, QR
 
-| Skill | Phase | Core MCP | Key Tools |
-|-------|-------|----------|-----------|
-| `brand-onboard` | 1 | `landing_ai_mcp` | `login`, `list_brands`, `brand_gap_analysis`, `upload_brand_asset` |
-| `audience-target` | 2 | `landing_ai_mcp` | `generate_ta_options`, `get_me`, `get_generation_settings` |
-| `generate-landing` | 3 | `landing_ai_mcp` | `create_session`, `generate_session`, `get_session`, `list_stripes` |
-| `edit-landing` | 4 | `landing_ai_mcp` | `update_stripe_texts`, `regenerate_stripe`, `crop_stripe`, `undo_stripe` |
-| `homepage-builder` | 5 | `landing_ai_mcp` | `export_html`, `download_stripe`, `get_landing_page` |
-| `publish-social` | 6a | `zereo_social_mcp` | `list_accounts`, `publish_multi`, `suggest_schedule` |
-| `publish-ads` | 6b | `zereo_social_mcp` + `landing_ai_mcp` | `create_ad_campaign`, `generate_ad`, `get_ad_objectives` |
-| `i18n-adapt` | any | `landing_ai_mcp` | `update_stripe_texts`, `update_stripe_text_styling`, `regenerate_stripe` |
-| `research-market` | pre | 7+ social MCPs | `google_trends_mcp`, `x_mcp`, `reddit_mcp`, etc. |
+### zereo_social_mcp
+- **Social Accounts** (10 tools) — Meta/TikTok connection
+- **Publishing** (8 tools) — Multi-platform posting
+- **Ad Campaigns** (11 tools) — Meta/Google ads
+- **QR Code** (3 tools) — Styled QR generation
 
-## Core MCP Servers
-
-### landing_ai_mcp (160+ tools)
-
-| Module | Tools | Purpose |
-|--------|-------|---------|
-| Session Wizard | 32 | Create sessions, generate LPs, TA options |
-| Landing Page Editor | 49 | Edit stripes (text, image, overlay, crop, reorder, export) |
-| Brand Management | 29 | Brand CRUD, gap analysis, asset upload |
-| Conversations | 20 | Message-based interaction, asset classification |
-| Reels | 26 | Short video generation pipeline |
-| Content | 45 | URL scraping, PDF import, SEO, QR, campaigns |
-| Workspace | 10 | Project management |
-| Todos | 14 | Task tracking, AI plan |
-
-### zereo_social_mcp (43 tools)
-
-| Module | Tools | Purpose |
-|--------|-------|---------|
-| Social Accounts | 10 | Platform connection management (Meta/TikTok OAuth) |
-| Content Publishing | 8 | Post/schedule to multiple platforms |
-| Content Library | 10 | Import, validate, manage generated content |
-| Ad Campaigns | 11 | Create/manage Meta & Google ad campaigns |
-| QR Code | 3 | Generate styled QR codes |
-| AI Scheduling | 2 | Optimal posting time suggestions |
-
-## Key Tool Signatures
-
-### Authentication & Account Management
-```
-login(email: str, password: str) -> { access_token, token_type: "bearer" }
-register(email: str, password: str, full_name: str) -> { user, access_token }
-google_auth(credential: str) -> { access_token, token_type }
-refresh_tokens(refresh_token: str) -> { access_token }
-forgot_password(email: str) -> { message }
-reset_password(token: str, new_password: str) -> { message }
-verify_email(token: str) -> { message }
-resend_verification(email: str) -> { message }
-get_me(user_token) -> { id, email, full_name, credits, tier, is_admin, ... }
-update_me(user_token, data_json) -> updated_user
-update_user_settings(user_token, data_json) -> updated_settings
-logout(user_token) -> { message }
-delete_account(user_token) -> { message }
-cancel_deletion(user_token) -> { message }
-# NOTE: login returns access_token only (no refresh_token). Token expires ~12h. Re-login on 401.
-```
-
-### Brand
-```
-create_brand(user_token, name, description?, industry?, primary_color?) -> brand
-get_brand(user_token, brand_id) -> brand_detail
-list_brands(user_token) -> brands[]
-brand_gap_analysis(user_token, brand_id) -> { missing_assets, readiness_score }
-analyze_brand_url(user_token, url) -> extracted_brand_info
-upload_brand_asset(user_token, brand_id, asset_type, file_url) -> asset
-get_asset_upload_url(user_token, brand_id, filename, asset_type?, content_type?) -> { upload_url, gcs_path, public_url }
-# MCP-compatible file upload! Flow:
-# 1. Call get_asset_upload_url → get signed PUT URL
-# 2. bash: curl -X PUT -H "Content-Type: image/jpeg" -T /path/to/photo.jpg "{upload_url}"
-# 3. Use public_url in create_spokesperson, regenerate_stripe reference_image_urls_json, etc.
-gdrive_import_shared_link(user_token, url) -> { status, imported[], classified_images }
-# Import from Google Drive shared link — no OAuth needed, backend uses service account
-# Supports: shared folders (all images/PDFs), single files, Docs/Slides (auto PDF export)
-# Link must be "Anyone with the link can view". Auto-classifies images (product, logo, evidence).
-gdrive_connect(user_token, data_json) -> connection_status
-gdrive_status(user_token) -> { connections[] }
-gdrive_list(user_token) -> { files[] }
-gdrive_import(user_token, data_json) -> import_result
-gdrive_disconnect(user_token, connection_id) -> { message }
-create_brand_asset(user_token, brand_id, data_json) -> asset
-list_brand_assets(user_token, brand_id) -> assets[]
-delete_brand_asset(user_token, brand_id, asset_id) -> { message }
-create_spokesperson(user_token, brand_id, name, description, photo_urls[]) -> spokesperson
-# ⚠️ create_spokesperson does NOT persist photo_urls! After creating, MUST call:
-update_spokesperson(user_token, brand_id, sp_id, data_json) -> updated
-# data_json: {"photo_urls": ["url"], "name": "...", "description": "..."}
-# This is the ONLY reliable way to set spokesperson photos.
-list_spokespersons(user_token, brand_id) -> spokespersons[]
-add_spokesperson_photos(user_token, brand_id, sp_id, photo_urls_json) -> ❌ multipart stub
-# Use update_spokesperson instead for setting photo_urls
-delete_spokesperson(user_token, brand_id, sp_id) -> { message }
-# NOTE: parameter name is "sp_id" not "spokesperson_id"
-# Wizard session images: view via get_session, add/delete via update_session
-# Delete = pass array WITHOUT the URL to remove (arrays are replaced, not appended)
-```
-
-### Session / Generation
-```
-create_session(user_token, session_name, brand_name?, product_name?, base_description?, conversation_id?) -> session
-update_session(user_token, session_id, ...) -> updated_session
-get_session(user_token, session_id) -> { status, stripes[], ... }
-generate_ta_options(user_token, brand_name, description, industry_category, product_name?, ..., ui_locale="zh-TW") -> ta_options[]
-# industry_category MUST be English: general, food, healthy_meals, restaurant, desserts, gift_box,
-# medical_aesthetics, person, consultant, film, property, private_kitchen, supplements, cosmetics,
-# biotech, software, electronics, home_appliances, education, fashion, sports, travel, finance,
-# real_estate, automotive. Use "person" for personal brands, "software" for tech.
-get_generation_settings(user_token) -> settings
-generate_session(user_token, session_id, ta_group_ids_json, requested_stripe_count?) -> { status: "processing", project_ids[] }
-# IMPORTANT: Before calling generate_session, you MUST:
-# 1. Call update_session with wizard_ta_groups data (from generate_ta_options output)
-# 2. Call get_ta_statuses to get the auto-assigned ta_group_id values
-# 3. Pass those IDs as ta_group_ids_json: '["ta_1"]'
-get_me(user_token) -> { credits_remaining, tier, ... }
-```
-
-### Landing Page Viewing
-```
-list_stripes(user_token, session_id) -> stripes[]
-get_stripe_detail(user_token, campaign_id, stripe_idx) -> stripe_detail
-get_landing_page(user_token, campaign_id) -> landing_page_config
-```
-
-### Landing Page Editing
-```
-update_stripe_texts(user_token, campaign_id, updates_json) -> updated_stripe
-# updates_json format: '[{"index": 0, "headline": "New Text", "subheadline": "..."}]'
-# IMPORTANT: Use "index" (not "stripe_idx"), and field names directly (not "text_key"/"new_text")
-regenerate_stripe(user_token, campaign_id, stripe_idx, user_feedback?, mandatory_text_overrides_json?, typography_overrides_json?, rect_annotations_json?, reference_image_urls_json?) -> { is_regenerating, iteration }
-get_stripe_regen_status(user_token, campaign_id, stripe_idx) -> { is_regenerating, regeneration_progress }
-complete_regeneration(user_token, campaign_id, stripe_idx) -> { message }
-cancel_stripe_regen(user_token, campaign_id, stripe_idx) -> { message }
-# REGENERATION IS 3 STEPS: regenerate_stripe → poll get_stripe_regen_status → complete_regeneration
-# complete_regeneration is MANDATORY to apply the result
-update_stripe_text_styling(user_token, campaign_id, stripe_idx, styling_json) -> updated
-update_stripe_background(user_token, campaign_id, stripe_idx, ...) -> updated
-update_image_layers(user_token, campaign_id, stripe_idx, ...) -> updated
-set_stripe_overlay(user_token, campaign_id, stripe_idx, enabled: bool, overlay_json) -> updated
-set_stripe_soft_edge(user_token, campaign_id, stripe_idx, enabled: bool, soft_edge_json) -> updated
-# NOTE: Both require `enabled` as a mandatory parameter (true to apply, false to remove).
-crop_stripe(user_token, campaign_id, stripe_idx, crop_json) -> updated
-reset_crop(user_token, campaign_id, stripe_idx) -> updated
-undo_stripe(user_token, campaign_id, stripe_idx) -> previous_state
-redo_stripe(user_token, campaign_id, stripe_idx) -> next_state
-reorder_stripes(user_token, campaign_id, order_json) -> updated
-hide_stripe(user_token, campaign_id, stripe_idx) -> updated
-restore_stripe(user_token, campaign_id, stripe_idx) -> updated
-update_seo(user_token, campaign_id, seo_json) -> updated
-update_faq_content(user_token, campaign_id, faq_json) -> updated
-```
-
-### Landing Page Export
-```
-export_html(user_token, campaign_id) -> html_string
-download_stripe(user_token, campaign_id, stripe_idx: int) -> { download_url, method, auth_header }
-download_all_stripes(user_token, campaign_id) -> { download_url, ... }
-export_landing_image(user_token, campaign_id) -> { download_url, ... }
-# NOTE: download_stripe returns a URL that requires the auth_header to fetch the actual image.
-```
-
-### Social Account Connection (OAuth)
-```
-get_meta_auth_url(user_token, redirect_uri) -> { auth_url, state }
-# User opens auth_url in browser → authorizes → Meta redirects with code
-connect_meta_account(user_token, code, redirect_uri) -> connected_account
-# Completes OAuth — connects Facebook page + Instagram business
-
-get_tiktok_auth_url(user_token) -> { auth_url }
-# TikTok callback is server-side — user just opens URL and authorizes
-```
-
-### Social Account Management
-```
-list_accounts(user_token) -> accounts[]
-get_account_capability(user_token, account_id) -> { can_advertise, permissions }
-recheck_capability(user_token, account_id) -> { detail }
-refresh_account_token(user_token, account_id) -> refreshed_account
-update_ad_account(user_token, account_id, data_json) -> updated
-get_account_content(user_token, account_id) -> content_list
-disconnect_account(user_token, account_id) -> confirmation (destructive!)
-```
-
-### Social Post Generation (AI)
-```
-social_copy(user_token, data_json) -> generated_copy
-# data_json: {"conversation_id": "", "quantity": 1} — deducts credits
-get_session_content(user_token, session_id) -> { stripes, social_copy }
-# Returns Architect-generated social copy (caption + hashtags) if available
-social_reflect(user_token, data_json) -> { reflection_score, reflection_data }
-# data_json: {"post_text": "...", "image_url": "...", "brand_name": "..."}
-# Score < 7 = rewrite recommended
-```
-
-### Content Publishing
-```
-publish_post(user_token, data_json) -> post_result
-# data_json: {"social_account_id": "...", "post_type": "ig_post", "caption": "...", "image_url": "..."}
-# ⚠️ Parameter name is "social_account_id" (NOT "account_id") in ALL publish tools
-publish_multi(user_token, targets_json) -> results[]
-# targets_json: [{"social_account_id": "...", "caption": "...", "media_ids": ["..."]}]
-schedule_post(user_token, data_json) -> scheduled
-cancel_post(user_token, post_id) -> confirmation
-get_post_history(user_token, limit?, offset?, status_filter?) -> posts[]
-get_post_detail(user_token, post_id) -> post_detail
-# ⚠️ LP images (9:16) → use ig_story. ig_post requires 1:1 or 4:5 aspect ratio.
-# Quick Ad images (1:1) work for ig_post.
-```
-
-### Content Library
-```
-list_content(user_token) -> content[]
-get_content(user_token, content_id) -> content_detail
-import_from_session(user_token, session_id) -> imported_content
-update_content(user_token, content_id, data_json) -> updated
-delete_content(user_token, content_id) -> { message }
-publish_content(user_token, content_id, data_json) -> { post_id, status }
-# data_json: {"social_account_id": "...", "post_type": "ig_post|ig_story|fb_post|tt_video"}
-validate_content_media(user_token, content_id, target_post_type, duration_seconds?) -> validation
-get_upload_signed_url(user_token, filename, content_type) -> { upload_url }
-confirm_upload(user_token, data_json) -> confirmed
-# list_shared_content — influencer-only, requires is_influencer=True + shared_with permission check
-```
-
-### AI Scheduling
-```
-suggest_schedule(user_token, content_id?, caption?, content_type?, ta_info_json?) -> optimal_times[]
-parse_schedule(user_token, text) -> { schedules: [{ datetime_iso, platforms }] }
-```
-
-### QR Code
-```
-generate_qr(user_token, url, size?) -> { qr_url }
-composite_qr(user_token, image_url, qr_target_url) -> { url } (QR overlaid on image)
-generate_qr_card(user_token, url, title?) -> { url } (branded QR card)
-```
-
-### Ad Campaigns
-```
-get_ad_objectives(user_token) -> objectives[]
-get_cta_types(user_token) -> cta_types[]
-create_ad_campaign(user_token, data_json) -> campaign
-list_ad_campaigns(user_token) -> campaigns[]
-get_ad_campaign(user_token, campaign_id, refresh?) -> campaign_status
-pause_ad_campaign(user_token, campaign_id) -> result
-resume_ad_campaign(user_token, campaign_id) -> result
-generate_ad(user_token, session_id, data_json) -> { project_id, status: "processing" }
-# data_json MUST include: '{"platform": "meta", "ta_group_id": "ta_1"}'
-# ta_group_id is REQUIRED — get it from generate_session or get_ta_statuses
-get_ad_result(user_token, session_id, project_id) -> { status, creative, ... }
-# NOTE: Uses session_id + project_id, NOT task_id
-```
-
-### Reel Promotion (Boost)
-```
-promote_reel(user_token, data_json) -> { promotion_id }
-# data_json: { social_post_id, cta_type, cta_url, daily_budget, duration_days }
-get_promotion_status(user_token, promotion_id) -> status
-pause_promotion(user_token, promotion_id) -> result
-resume_promotion(user_token, promotion_id) -> result
-```
-
-## Aspect Ratio Support
-
-Both **16:9** (landscape) and **9:16** (portrait) are supported:
-
-- Set via `update_session` before generation
-- If user wants both, create two separate sessions
-- Homepage embedding uses adaptive CSS:
-  - 16:9: full-width on desktop, stacked on mobile
-  - 9:16: centered column (max-width 480px) on desktop, full-width on mobile
-
-## i18n — 10 Locales
-
-`en`, `zh-TW`, `ja`, `ko`, `vi`, `fr`, `th`, `es`, `pt`, `ar`
-
-- Arabic (`ar`) requires RTL: `dir="rtl"` + CSS logical properties
-- Japanese: longer text (20-40%), ですます体
-- Korean: 해요체, high visual polish
-- Pass `ui_locale` parameter in `generate_ta_options` and session creation
-
-## Ad Platform Specs
-
-| Platform | Format | Size |
-|----------|--------|------|
-| Meta Feed | Square | 1080×1080 |
-| Meta Stories/Reels | Portrait | 1080×1920 (9:16) |
-| Google Display | Responsive | headlines + descriptions + images |
-| Google Search | Text | headlines + descriptions + sitelinks |
-
-## File Structure
-
-```
-marketingx.plugin/
-├── CLAUDE.md              ← You are here
-├── skills/                # 9 skills (SKILL.md each)
-├── commands/              # 6 slash commands
-├── prompts/               # BOOTSTRAP.md, WORKFLOW.md
-├── templates/             # Homepage HTML templates + i18n
-├── lib/                   # Reference docs (MCP patterns, credit calc, etc.)
-└── examples/              # Sample outputs
-```
-
-## File Upload (Universal — works in ALL skills)
-
-Any skill that needs to upload a local file uses this 3-step flow:
+## File Upload
 
 ```
 # 1. Get signed URL
@@ -418,69 +162,42 @@ mcp_tool_call("landing_ai_mcp", "get_asset_upload_url", {
   "user_token": token, "brand_id": brand_id,
   "filename": "photo.jpg", "asset_type": "product", "content_type": "image/jpeg"
 })
-→ { "upload_url": "https://storage...?X-Goog-Signature=...", "public_url": "https://storage.../photo.jpg" }
 
-# 2. Upload via curl (bash)
+# 2. Upload
 curl -X PUT -H "Content-Type: image/jpeg" -T "/path/to/photo.jpg" "{upload_url}"
 
-# 3. Use public_url in the appropriate target:
+# 3. Use public_url in target tool
 ```
 
-| Target | Where to put public_url |
-|--------|------------------------|
-| Wizard product images | **BOTH** `wizard_shared_data.product_images` + `wizard_shared_files.product_images` |
-| Wizard logo | `wizard_shared_files.logo_image: "url"` (single string, not array) |
-| Wizard evidence/certs | **BOTH** `wizard_shared_data.certification_images` + `wizard_shared_files.evidence_images` |
-| Wizard LP reference | `wizard_shared_data.landing_page_images: ["url"]` |
-| Wizard spokesperson | `wizard_shared_data.spokesperson_faces: ["url"]` |
-| Wizard industry images | `wizard_shared_data.{field}_images: ["url"]` |
-| Regeneration reference | `regenerate_stripe` → `reference_image_urls_json: '["url"]'` |
-| Spokesperson entity | `create_spokesperson` → `photo_urls: ["url"]` |
-
-⚠️ **CRITICAL**: `wizard_shared_data` = frontend UI display, `wizard_shared_files` = Factory AI reads.
-Product images and evidence MUST be written to BOTH or one side won't see them.
-
-Allowed `asset_type`: `product`, `logo`, `spokesperson`, `certification`
-Allowed `content_type`: `image/jpeg`, `image/png`, `image/webp`, `image/heic`, `application/pdf`
-
-### Inline Image Upload (user pastes image in chat)
-```
-upload_base64(user_token, brand_id, filename, base64_data, asset_type?, content_type?) -> { public_url }
-```
-Claude Code can read pasted images as base64. Use `upload_base64` to upload directly — no need to save to disk.
-Max 10MB per file. Supports data URI prefix stripping (e.g., `data:image/jpeg;base64,...`).
-
-### Google Drive Import (user shares a Drive link)
-```
-gdrive_import_shared_link(user_token, url) -> { status, imported[], classified_images }
-```
-User pastes a Google Drive shared link → backend downloads all images/PDFs, uploads to GCS, auto-classifies.
-No OAuth needed. Link must be "Anyone with the link can view".
-Use returned URLs the same way as signed URL uploads.
-
-## Landing Page Frontend URLs
-
-Generated LPs are viewable as interactive sales pages on the Landing AI frontend:
+## Landing Page URLs
 
 ```
 https://landingai.info/{locale}/landing-page?id={campaign_id}
 ```
 
-- `locale`: `zh-TW`, `en`, `ja`, `ko`, etc.
-- `campaign_id`: the project UUID from `generate_session` response
-- This is the **primary link** to show users — NOT the GCS image URL
-- The frontend fetches data via `/landing-page/public/{campaign_id}` (no auth needed)
+## i18n — 10 Locales
 
-## Security Rules
+`en`, `zh-TW`, `ja`, `ko`, `vi`, `fr`, `th`, `es`, `pt`, `ar` (RTL)
 
-- **Never hardcode API keys or tokens** — always use `user_token` parameter
-- **Never modify real user data** — always confirm with user before destructive operations
-- **Never expose JWT tokens** in generated HTML or client-side code
-- **All MCP calls** go through the Service System proxy — never call backend APIs directly
+## File Structure
 
-## Credit System
-
-- Each LP generation costs credits (varies by stripe count and model)
-- Check balance via `get_me(user_token)` before generation
-- `generate_ta_options` returns estimated cost per TA group
-- Credits are deducted on `generate_session`, auto-refunded on interruption
+```
+salecraft/
+├── CLAUDE.md              ← You are here
+├── skills/                # 10 skills
+│   ├── saleskit/          # FREE consultation (start here)
+│   ├── brand-onboard/
+│   ├── audience-target/
+│   ├── generate-landing/
+│   ├── edit-landing/
+│   ├── homepage-builder/
+│   ├── publish-social/
+│   ├── publish-ads/
+│   ├── i18n-adapt/
+│   └── research-market/
+├── commands/              # /mx, /mx-create, etc.
+├── prompts/               # BOOTSTRAP.md, WORKFLOW.md
+├── templates/             # Homepage HTML templates
+├── lib/                   # Reference docs
+└── examples/              # Sample outputs
+```
