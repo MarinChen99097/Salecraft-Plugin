@@ -86,14 +86,16 @@ mcp__claude_ai_Service_System_Deep_Research__mcp_tool_call(
 
 ## LP Content Awareness (Automatic)
 
-You must always know the full content of the active LP. Users describe stripes naturally — by text content, color, position, or purpose — never by index number.
+You must track the full content of **ALL LPs in the current session**. Users may generate multiple LPs (different products, A/B variants). They describe pages by text content, color, or product name — never by campaign_id or stripe index.
 
-**After generating or opening an LP, silently load all stripes** (`list_stripes` + `get_stripe_detail` for each). Then when user says:
-- "有寫『給你全新生活』的那頁改成藍色" → search headlines → find → edit
-- "價格那頁的按鈕改掉" → find pricing stripe → update CTA
-- "最後一頁背景變暗" → last stripe → add overlay
+**Silently load all stripes** after generation or when user references a LP. Maintain a mental index mapping product name → campaign_id → stripe contents.
 
-High confidence match → edit directly. Low confidence → briefly ask. No match → list available pages.
+When user says:
+- "有寫『給你全新生活』的那頁改成藍色" → search all LPs → find LP + stripe → edit
+- "面膜的價格頁改掉" → "面膜" identifies which LP → find pricing stripe → edit
+- "最後一頁背景變暗" → last stripe of current/only LP → add overlay
+
+**Single LP** → skip LP disambiguation. **Multiple LPs** → use product name/keywords to identify. **Ambiguous** → briefly ask.
 
 ## Pricing (Must Know)
 
