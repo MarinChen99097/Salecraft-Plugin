@@ -34,7 +34,7 @@ SaleCraft works on **any AI platform** that supports MCP — including Claude Co
 Add SaleCraft to any MCP-compatible AI platform:
 
 ```
-https://github.com/connactai/salecraft-plugin
+https://github.com/connactai/Salecraft-Plugin
 ```
 
 ### MCP Server Setup
