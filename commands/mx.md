@@ -12,7 +12,7 @@ Read `CLAUDE.md` for full context. Present the main menu:
 
 我能幫你做什麼？
 
-━━━━━━━ 🆓 免費服務 ━━━━━━━
+━━━━━━━ 🆓 免費服務（不用帳號）━━━━━━━
 
 1. /mx-strategy  → 策略規劃（成長方向、漏斗設計、競品情報）
 2. /mx-engage    → 互動與成交策略（私訊腳本、異議處理、收單）

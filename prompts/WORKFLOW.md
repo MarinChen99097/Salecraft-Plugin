@@ -6,16 +6,48 @@
 User Request
   │
   ▼
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  FREE CONSULTATION — no account needed
+  Complete marketing strategy delivered
+  before any paid action
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 ━━━ THINK (FREE) ━━━
 Phase 0: Free Consultation [saleskit]
-  │  Diagnose product, pain points, goals → Recommend next steps
-  │  Output: diagnosis + recommended_workflow
+  │  Diagnose product, pain points, goals → Sprint Plan
+  │  Output: diagnosis + personalized Sprint Plan
   ▼
 ━━━ POSITION (FREE) ━━━
 Phase 0b: Strategy [plan-cgo-review → plan-funnel-review → market-intel]
   │  Growth direction → Funnel design → Competitive intelligence
   │  Output: growth_strategy + funnel_blueprint + competitive_snapshot
   ▼
+━━━ ENGAGE (FREE) ━━━
+Phase 7: Engagement Strategy [engage-operator]
+  │  DM scripts → FAQ tree → Lead capture → Auto-reply → Booking
+  │  Output: conversation_flow + faq_tree + education_sequence
+  ▼
+━━━ CONVERT (FREE) ━━━
+Phase 8: Conversion Strategy [conversion-closer]
+  │  Objection handling → Pricing framing → Closing script → Follow-up
+  │  Output: objection_library + closing_script + followup_sequence
+  ▼
+━━━ RETAIN (FREE) ━━━
+Phase 9: Retention Design [member-lifecycle]
+  │  Segments → Touchpoints → Repurchase triggers → Referral → VIP
+  │  Output: retention_flow + referral_program + vip_system
+  ▼
+━━━ GOVERNANCE (FREE) ━━━
+Phase 9b: Quality Audit [guard-brand → guard-offer → brand-risk-review]
+  │  Brand consistency → Offer consistency → Compliance
+  │  Output: audit_verdicts + corrections
+  ▼
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  All FREE phases complete.
+  User now has a complete marketing plan.
+  Everything below requires account + credits.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 ━━━ PACKAGE + ATTRACT (PAID) ━━━
 Phase 1: Brand Onboarding [brand-onboard]
   │  Authenticate → Check brand → Verify assets → Fill gaps
@@ -45,22 +77,7 @@ Phase 6b: Ad Campaigns [publish-ads]
   │  Select objective → Generate creative → Set budget → Create campaign
   │  Output: campaign_ids + monitoring links
   ▼
-━━━ ENGAGE (FREE) ━━━
-Phase 7: Engagement Strategy [engage-operator]
-  │  DM scripts → FAQ tree → Lead capture → Auto-reply → Booking prompts
-  │  Output: conversation_flow + faq_tree
-  ▼
-━━━ CONVERT (FREE) ━━━
-Phase 8: Conversion Strategy [conversion-closer]
-  │  Objection handling → Pricing framing → Closing script → Follow-up
-  │  Output: objection_library + closing_script
-  ▼
-━━━ RETAIN (FREE) ━━━
-Phase 9: Retention & Lifecycle [member-lifecycle]
-  │  Segments → Touchpoints → Repurchase triggers → Referral → VIP
-  │  Output: retention_flow + referral_program
-  ▼
-━━━ REFLECT (FREE) ━━━
+━━━ REFLECT (FREE — post-campaign) ━━━
 Phase 10: Growth Retrospective [growth-retro]
   │  KPI review → What worked/failed → Optimization → Next hypotheses
   │  Output: optimization_priorities + next_hypotheses
@@ -68,11 +85,6 @@ Phase 10: Growth Retrospective [growth-retro]
   ╔══════════════════════════════════╗
   ║  Loop back to Phase 0 (new sprint) ║
   ╚══════════════════════════════════╝
-
-━━━ GOVERNANCE (FREE, runs in parallel) ━━━
-guard-brand → guard-offer → brand-risk-review → journey-qa → careful-publish → campaign-ship
-  │  Quality gates that intervene before any publishing
-  │  Output: pass/fail verdicts + correction requirements
 ```
 
 ## Phase Details
@@ -224,9 +236,11 @@ guard-brand → guard-offer → brand-risk-review → journey-qa → careful-pub
 7. Create campaign: `create_ad_campaign(user_token, data_json)` via `zereo_social_mcp`
 8. Monitor: `get_ad_campaign(user_token, campaign_id)` — report status
 
-## Phase 7: Engagement Strategy [engage-operator] (FREE)
+## FREE Phases (run BEFORE any paid action)
 
-**Goal**: Design the interaction layer — how customers engage with the brand after seeing the LP.
+### Phase 7: Engagement Strategy [engage-operator] (FREE — no account)
+
+**Goal**: Design the interaction layer — how customers engage with the brand.
 
 **Steps**:
 1. Diagnose current engagement state (response time, channels, FAQ)
@@ -240,7 +254,7 @@ guard-brand → guard-offer → brand-risk-review → journey-qa → careful-pub
 
 **Feeds into**: Phase 8 (Conversion)
 
-## Phase 8: Conversion Strategy [conversion-closer] (FREE)
+### Phase 8: Conversion Strategy [conversion-closer] (FREE — no account)
 
 **Goal**: Design every element that drives the final purchase decision.
 
@@ -256,7 +270,7 @@ guard-brand → guard-offer → brand-risk-review → journey-qa → careful-pub
 
 **Feeds into**: Phase 9 (Retention)
 
-## Phase 9: Retention & Lifecycle [member-lifecycle] (FREE)
+### Phase 9: Retention & Lifecycle [member-lifecycle] (FREE — no account)
 
 **Goal**: Turn first-time buyers into loyal repeat customers.
 
@@ -271,6 +285,18 @@ guard-brand → guard-offer → brand-risk-review → journey-qa → careful-pub
 8. Output: segment_strategy + retention_flow + referral_program
 
 **Feeds into**: Phase 10 (Growth Retro)
+
+### Phase 9b: Quality Audit [governance skills] (FREE — no account)
+
+**Goal**: Verify all outputs before paid execution.
+
+**Steps**:
+1. guard-brand → Brand consistency check
+2. guard-offer → Price/claim consistency check
+3. brand-risk-review → Compliance review (if sensitive industry)
+4. Output: audit_verdicts + corrections
+
+**All free phases complete → user has a full marketing plan → proceed to paid execution.**
 
 ## Phase 10: Growth Retrospective [growth-retro] (FREE)
 
