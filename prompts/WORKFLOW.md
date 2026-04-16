@@ -1,11 +1,22 @@
 # SaleCraft — Complete Workflow Reference
 
-## End-to-End Flow
+## End-to-End Flow (8-Stage Sprint)
 
 ```
 User Request
   │
   ▼
+━━━ THINK (FREE) ━━━
+Phase 0: Free Consultation [saleskit]
+  │  Diagnose product, pain points, goals → Recommend next steps
+  │  Output: diagnosis + recommended_workflow
+  ▼
+━━━ POSITION (FREE) ━━━
+Phase 0b: Strategy [plan-cgo-review → plan-funnel-review → market-intel]
+  │  Growth direction → Funnel design → Competitive intelligence
+  │  Output: growth_strategy + funnel_blueprint + competitive_snapshot
+  ▼
+━━━ PACKAGE + ATTRACT (PAID) ━━━
 Phase 1: Brand Onboarding [brand-onboard]
   │  Authenticate → Check brand → Verify assets → Fill gaps
   │  Output: brand_id + readiness_score
@@ -33,6 +44,35 @@ Phase 6a: Social Publishing [publish-social]
 Phase 6b: Ad Campaigns [publish-ads]
   │  Select objective → Generate creative → Set budget → Create campaign
   │  Output: campaign_ids + monitoring links
+  ▼
+━━━ ENGAGE (FREE) ━━━
+Phase 7: Engagement Strategy [engage-operator]
+  │  DM scripts → FAQ tree → Lead capture → Auto-reply → Booking prompts
+  │  Output: conversation_flow + faq_tree
+  ▼
+━━━ CONVERT (FREE) ━━━
+Phase 8: Conversion Strategy [conversion-closer]
+  │  Objection handling → Pricing framing → Closing script → Follow-up
+  │  Output: objection_library + closing_script
+  ▼
+━━━ RETAIN (FREE) ━━━
+Phase 9: Retention & Lifecycle [member-lifecycle]
+  │  Segments → Touchpoints → Repurchase triggers → Referral → VIP
+  │  Output: retention_flow + referral_program
+  ▼
+━━━ REFLECT (FREE) ━━━
+Phase 10: Growth Retrospective [growth-retro]
+  │  KPI review → What worked/failed → Optimization → Next hypotheses
+  │  Output: optimization_priorities + next_hypotheses
+  ▼
+  ╔══════════════════════════════════╗
+  ║  Loop back to Phase 0 (new sprint) ║
+  ╚══════════════════════════════════╝
+
+━━━ GOVERNANCE (FREE, runs in parallel) ━━━
+guard-brand → guard-offer → brand-risk-review → journey-qa → careful-publish → campaign-ship
+  │  Quality gates that intervene before any publishing
+  │  Output: pass/fail verdicts + correction requirements
 ```
 
 ## Phase Details
@@ -184,6 +224,89 @@ Phase 6b: Ad Campaigns [publish-ads]
 7. Create campaign: `create_ad_campaign(user_token, data_json)` via `zereo_social_mcp`
 8. Monitor: `get_ad_campaign(user_token, campaign_id)` — report status
 
+## Phase 7: Engagement Strategy [engage-operator] (FREE)
+
+**Goal**: Design the interaction layer — how customers engage with the brand after seeing the LP.
+
+**Steps**:
+1. Diagnose current engagement state (response time, channels, FAQ)
+2. Design opening script for DMs / Line
+3. Build FAQ decision tree (question → answer → next action)
+4. Create customer education sequence (Day 0-30 touchpoints)
+5. Design auto-reply logic and rules
+6. Create booking prompt script
+7. Generate segment-specific response templates
+8. Output: conversation_flow + faq_tree + education_sequence
+
+**Feeds into**: Phase 8 (Conversion)
+
+## Phase 8: Conversion Strategy [conversion-closer] (FREE)
+
+**Goal**: Design every element that drives the final purchase decision.
+
+**Steps**:
+1. Diagnose current conversion rate and barriers
+2. Analyze decision barriers (AECR framework)
+3. Build objection handling library (5+ common objections)
+4. Design pricing framing strategy
+5. Structure social proof elements
+6. Create closing script (3-step)
+7. Design follow-up sequence for non-converters (Day 0-30)
+8. Output: objection_library + closing_script + followup_sequence
+
+**Feeds into**: Phase 9 (Retention)
+
+## Phase 9: Retention & Lifecycle [member-lifecycle] (FREE)
+
+**Goal**: Turn first-time buyers into loyal repeat customers.
+
+**Steps**:
+1. Diagnose current retention state (repurchase rate, churn points)
+2. Design customer segments (new, active, dormant, churned, VIP)
+3. Create post-purchase touchpoint timeline (Day 0-90)
+4. Build repurchase trigger system (7+ triggers)
+5. Design referral program (incentives + mechanics)
+6. Create VIP care system (tiers + benefits + scripts)
+7. Map customer upgrade path (entry → standard → premium → advocate)
+8. Output: segment_strategy + retention_flow + referral_program
+
+**Feeds into**: Phase 10 (Growth Retro)
+
+## Phase 10: Growth Retrospective [growth-retro] (FREE)
+
+**Goal**: Review performance, extract lessons, plan the next sprint.
+
+**Steps**:
+1. Collect performance data (traffic, engagement, conversion, retention)
+2. Analyze KPIs against targets
+3. Identify what worked (double down) and what failed (fix or stop)
+4. Prioritize optimization by impact × ease
+5. Generate next sprint hypotheses (testable)
+6. Recommend system updates (LP, CTA, scripts, pricing)
+7. Output: performance_summary + optimization_priorities + next_hypotheses
+
+**Loops back to**: Phase 1 (new sprint)
+
+## Governance Layer (runs in parallel, FREE)
+
+Quality gates that intervene at any point:
+
+```
+/guard-brand        → Brand voice & visual consistency
+/guard-offer        → Price & claim consistency across touchpoints
+/brand-risk-review  → Legal compliance (medical/financial/educational claims)
+/journey-qa         → End-to-end customer journey testing
+/careful-publish    → Final gate for high-risk content
+/campaign-ship      → Launch checklist & monitoring plan
+/market-intel       → Ongoing competitive intelligence
+/document-release   → Compile verified outputs into reusable documents
+```
+
+**Quality Gate Chain (before launch)**:
+```
+guard-brand → guard-offer → brand-risk-review → journey-qa → careful-publish → campaign-ship
+```
+
 ## Cross-Phase State
 
 These values carry across phases — never re-ask for something already known:
@@ -199,6 +322,15 @@ These values carry across phases — never re-ask for something already known:
   campaign_id: "camp_def456",    // Phase 3
   landing_page_id: "lp_ghi012", // Phase 3
   homepage_files: ["index.html", ...], // Phase 5
-  ad_campaign_ids: [...]         // Phase 6b
+  ad_campaign_ids: [...],        // Phase 6b
+  conversation_flow: {...},      // Phase 7
+  faq_tree: [...],               // Phase 7
+  objection_library: [...],      // Phase 8
+  closing_script: {...},         // Phase 8
+  segment_strategy: {...},       // Phase 9
+  retention_flow: [...],         // Phase 9
+  referral_program: {...},       // Phase 9
+  performance_summary: {...},    // Phase 10
+  next_hypotheses: [...]         // Phase 10
 }
 ```

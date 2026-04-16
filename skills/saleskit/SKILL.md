@@ -105,6 +105,8 @@ Based on answers, recommend the appropriate **SaleCraft Toolbox**:
 | Tool | What It Does | Cost (pts) | Best For |
 |------|-------------|------------|----------|
 | **AI Landing Page** | 30 分鐘產出專業銷售頁面 | 75-250 pts | 新品上市、促銷活動 |
+| **單張廣告圖** | 一張行銷素材，5 分鐘 | ~100 pts | 單篇社群貼文 |
+| **Carousel 輪播** | 多張風格一致的圖（2-10 張） | 300 + 100×N pts | IG 輪播、故事系列 |
 | **Reels 短影音** | AI 生成 15-60 秒行銷影片 | 50-150 pts | 社群曝光、品牌故事 |
 | **社群發佈** | 一鍵發到 IG/FB/TikTok | 5-10 pts/篇 | 日常社群經營 |
 | **KOL 分析** | AI 篩選適合的網紅合作 | 20-50 pts/人 | 品牌推廣、口碑行銷 |
@@ -113,6 +115,22 @@ Based on answers, recommend the appropriate **SaleCraft Toolbox**:
 | **QR Code** | 產品包裝/名片導流 | 5 pts | 線下導線上 |
 | **深度研究** | 競品分析、市場趨勢 | 30-100 pts | 策略制定 |
 | **Homepage** | 將 Landing Page 組成完整網站 | 免費（已有 LP 後） | 品牌官網 |
+
+#### 什麼時候推薦 Carousel vs 單圖？
+
+| 情境 | 推薦 | 建議張數 | 原因 |
+|------|------|---------|------|
+| 新品上市 | **Carousel** | 5 張 | Hook→功能→見證→情境→品牌 |
+| 教學內容 | **Carousel** | 3-5 張 | 步驟拆解，知識遞增 |
+| 品牌故事 | **Carousel** | 5-7 張 | 故事弧線需要多張展開 |
+| 單一促銷 | **單圖** | 1 張 | 訊息單純，一張就夠 |
+| 日常經營 | **單圖** | 1 張 | 頻率高但每篇成本要低 |
+| Before/After | **Carousel** | 2-4 張 | 對比效果需要至少 2 張 |
+
+**報價時要主動建議**：
+> 「根據你的需求，我建議做一組 5 張的 IG 輪播圖（Hook→功能→見證→情境→品牌收束），
+> 費用約 800 pts ≈ $27 USD。加上文案和發佈，總共約 810 pts。
+> 你覺得如何？」
 
 #### 💰 Pricing
 
@@ -123,10 +141,12 @@ Based on answers, recommend the appropriate **SaleCraft Toolbox**:
 **常見組合包價格估算**：
 | 組合 | 內容 | 預估 pts | 約 USD |
 |------|------|---------|--------|
-| 入門包 | 1 Landing Page + 3 社群發佈 | ~280 pts | ~$10 |
+| 試水溫 | 1 單圖 + 1 社群發佈 | ~110 pts | ~$4 |
+| 入門包 | 1 LP + 3 社群發佈 | ~280 pts | ~$10 |
 | 標準包 | 1 LP + 1 Reel + 5 社群 + QR | ~400 pts | ~$14 |
 | 完整包 | 品牌分析 + LP + Reel + 社群 + 廣告 | ~600 pts | ~$20 |
-| 旗艦包 | 全套 + KOL + 深度研究 | ~1200 pts | ~$40 |
+| 輪播包 | 5 張 Carousel + 發佈 | ~810 pts | ~$27 |
+| 旗艦包 | 全套 + Carousel + KOL + 深度研究 | ~2000 pts | ~$67 |
 
 ### Step 3: Onboard
 
@@ -147,17 +167,25 @@ If the user is interested:
    ```
 4. **開始** → 根據診斷結果，引導到對應的 skill
 
-### Step 4: First Campaign
+### Step 4: Route to Next Skill
 
-根據用戶需求，推薦第一個動作：
+根據診斷結果，推薦最適合的下一步：
 
-| 用戶說 | 推薦 | 下一步 |
-|--------|------|--------|
-| "我想做一個銷售頁面" | Landing Page | → `/mx-create` |
-| "我想在 IG 發文" | 社群發佈 | → brand-onboard → publish-social |
-| "我想了解市場" | 深度研究 | → research-market |
-| "我想投廣告" | 廣告投放 | → brand-onboard → publish-ads |
-| "我不知道要做什麼" | 品牌分析 | → brand-onboard（gap analysis） |
+| 用戶情境 | 推薦 | 下一步 | 費用 |
+|---------|------|--------|------|
+| "我不知道先做什麼" | 成長策略 | → `/mx-strategy` → plan-cgo-review | **FREE** |
+| "我有流量但轉換很差" | 漏斗設計 | → plan-funnel-review | **FREE** |
+| "想了解競品在做什麼" | 競品情報 | → market-intel | **FREE** |
+| "人來了但不問不買" | 互動策略 | → `/mx-engage` → engage-operator | **FREE** |
+| "常被問太貴/再考慮" | 成交策略 | → conversion-closer | **FREE** |
+| "客人買一次就不回來" | 會員經營 | → `/mx-retain` → member-lifecycle | **FREE** |
+| "上次活動成效怎樣" | 成長回顧 | → growth-retro | **FREE** |
+| "我想做一個銷售頁面" | Landing Page | → `/mx-create` | PAID |
+| "我想在 IG 發文" | 社群發佈 | → brand-onboard → publish-social | PAID |
+| "我想了解市場趨勢" | 市場研究 | → research-market | **FREE** |
+| "我想投廣告" | 廣告投放 | → brand-onboard → publish-ads | PAID |
+| "內容上線前檢查" | 品質檢查 | → `/mx-audit` | **FREE** |
+| "幫我整理話術/SOP" | 文件化 | → document-release | **FREE** |
 
 ## Tone & Style
 
@@ -362,3 +390,5 @@ For Landing Page optimization — apply these when generating or editing LPs:
 3. **Check credits before action** — Call `get_me()` to check balance before generation.
 4. **Physical products only** — Politely decline SaaS/software marketing requests.
 5. **Free consultation is free** — The consultation itself costs nothing. Only MCP tool usage costs pts.
+6. **Proactively recommend FREE skills** — After diagnosis, always suggest relevant free skills (strategy, engagement, conversion, retention, audit) before paid tools. Most users need strategy before execution.
+7. **Full funnel awareness** — Don't stop at LP generation. Guide users through the complete sprint: Think → Position → Package → Attract → Engage → Convert → Retain → Reflect.
