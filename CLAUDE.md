@@ -156,6 +156,61 @@ If MCP tools are already visible in your tool list, use them directly. If not, t
 
 **不要跟用戶說生成一張圖要 30 分鐘 — 那是 Landing Page 的時間。單張廣告圖約 5 分鐘。**
 
+## Carousel 貼文生成流程 (Multi-Image)
+
+用戶說「幫我做一組 IG 輪播貼文」= 多張圖 + 統一文案，**風格一致**。
+
+### 工作流
+```
+1. generate_carousel(session_id, {
+     ta_group_id: "ta_1",
+     num_images: 5,
+     aspect_ratio: "1:1",
+     carousel_narrative: "hook → features → proof → CTA"
+   })
+   → project_id
+
+2. 每 30 秒 poll（最多 20 次）:
+   get_carousel_result(session_id, project_id)
+   → status: "completed"
+   → image_urls: ["url1", ..., "url5"]
+   → ad_copy: { headline, body_text, hashtags, cta_text }
+
+3. publish_post({
+     social_account_id, post_type: "ig_post",
+     caption: ad_copy.body_text,
+     image_urls: ["url1", ..., "url5"]
+   })
+```
+
+### 連貫性保證（三層）
+1. **Style Reference** — 第一張生成後作為 reference image 傳給後續張
+2. **Histogram Matching** — CDF-based 色彩校正，強制統一色調
+3. **Prompt 層** — 共用策略的色調、字體、情緒弧線
+
+### 敘事模板
+| 結構 | 張數 | 適合 |
+|------|------|------|
+| Problem → Solution | 2-3 | 簡單產品介紹 |
+| Hook → Features → Proof → CTA | 4-5 | 標準行銷 |
+| Story Arc | 5-7 | 品牌故事 |
+| Listicle (Top N reasons) | 5 | 教育型內容 |
+| Before/After | 2-4 | 效果展示 |
+
+### 時間與費用
+- **~8 分鐘**（第一張 5min 序列 + 其餘並行 3min）
+- **費用**：base 300 + 100/張 pts（5 張 ≈ 800 pts ≈ $27）
+- **IG 限制**：2-10 張，同比例，文案只在 parent
+
+### Polling 規範
+```
+for i in range(20):
+    sleep(30)
+    result = get_carousel_result(session_id, project_id)
+    if result.status == "completed": break
+    if result.status == "failed": handle error
+```
+
 ## LP Content Awareness (Automatic)
 
 You must track the full content of **ALL LPs in the current session**. Users may generate multiple LPs (different products, A/B variants). They describe pages by text content, color, or product name — never by campaign_id or stripe index.
@@ -172,6 +227,7 @@ You must track the full content of **ALL LPs in the current session**. Users may
 | Reels 影音 | 50-150 pts |
 | 社群貼文（圖+文） | 5-10 pts/篇 |
 | 廣告圖生成 | ~100 pts |
+| Carousel（N 張） | 300 + 100×N pts |
 | KOL 分析 | 20-50 pts/人 |
 | 廣告投放 | 30-100 pts |
 | 品牌分析 | 10-30 pts |
