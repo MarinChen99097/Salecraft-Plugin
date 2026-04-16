@@ -259,7 +259,7 @@ Hypothesis 3:
 成長回顧完成！根據分析結果：
 
 1. 🔄 開始新一輪 Sprint → /saleskit 或 /plan-cgo-review
-2. ✏️ /mx-edit → 根據回顧結果修改 Landing Page
+2. ✏️ /salecraft-edit → 根據回顧結果修改 Landing Page
 3. 🎯 /conversion-closer → 優化成交策略
 4. 💬 /engage-operator → 改善互動環節
 5. 📤 /publish-social → 調整社群內容策略

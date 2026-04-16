@@ -91,7 +91,7 @@ Design the complete journey with 9 nodes:
    內容：[一句話主張 — 讓人 3 秒內知道你是誰、能幫什麼]
    目標：阻止滑動，引發好奇
    KPI：跳出率 < 40%
-   SaleCraft 工具：/mx-create (Landing Page 首頁)
+   SaleCraft 工具：/salecraft-create (Landing Page 首頁)
 
 ③ 第一個 CTA (First Call-to-Action)
    動作：[了解更多 / 免費試用 / 加 Line / ...]
@@ -222,7 +222,7 @@ Design every CTA across the funnel:
 - [風險]：[緩解方案]
 
 【Handoff】
-- Recommended Next Skill: /content-architect 或 /mx-create
+- Recommended Next Skill: /content-architect 或 /salecraft-create
 - What Next Skill Needs: 漏斗藍圖、CTA 地圖、優先修正清單
 - Alternative: /engage-operator（如果互動節點是最大漏洞）
 - Success Criteria: 漏斗 9 節點都有設計，無明顯斷裂
@@ -235,7 +235,7 @@ Design every CTA across the funnel:
 ```
 漏斗分析完成！根據你的狀況，建議接下來：
 
-1. 🏗️ /mx-create → 建立 Landing Page（修補首屏+CTA+成交節點）
+1. 🏗️ /salecraft-create → 建立 Landing Page（修補首屏+CTA+成交節點）
 2. 💬 /engage-operator → 設計互動腳本（修補互動+留資節點）
 3. 🎯 /conversion-closer → 設計成交策略（修補成交節點）
 4. 🔄 /member-lifecycle → 設計回購機制（修補回購+推薦節點）

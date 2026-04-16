@@ -5,7 +5,7 @@ description: |
   (Strategist → Scriptwriter → Visual Director → Voice → Critic → Editor → Render).
   Creates a reel session, generates script, allows user review/revision, triggers
   full video generation, polls for completion, and presents the final video.
-  Trigger: Phase 3 of /mx-reels, or "generate reels", "create short video",
+  Trigger: Phase 3 of /salecraft-reels, or "generate reels", "create short video",
   "make a reel", "製作短影音", "生成影片".
 allowed-tools:
   - Bash
@@ -303,7 +303,7 @@ mcp_tool_call("landing_ai_mcp", "get_reel_session", {
 
 **接下來你可以：**
 - 📝 「修改第3個場景」 — 重新生成特定場景
-- 📱 `/mx-publish` — 發佈到 IG Reels / TikTok
+- 📱 `/salecraft-publish` — 發佈到 IG Reels / TikTok
 - 🔄 「重新製作」 — 用不同風格重做
 - 💾 「存為模板」 — 儲存這個腳本格式
 ```
@@ -377,7 +377,7 @@ mcp_tool_call("landing_ai_mcp", "cancel_reel", {
 
 **After video complete:**
 > 影片製作完成！
-> - `/mx-publish` → 發佈到社群平台
+> - `/salecraft-publish` → 發佈到社群平台
 > - 「修改第X場景」 → 重新生成特定畫面
 > - 「存為模板」 → 下次可以快速套用
-> - `/mx-create` → 回到行銷主流程
+> - `/salecraft-create` → 回到行銷主流程

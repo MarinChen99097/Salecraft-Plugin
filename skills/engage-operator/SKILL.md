@@ -48,7 +48,7 @@ Before asking someone to buy, you must:
 
 ## Prerequisites
 
-- Traffic source & LP (from `traffic-strategist` / `mx-create`)
+- Traffic source & LP (from `traffic-strategist` / `salecraft-create`)
 - Customer persona (from `plan-cgo-review` or `saleskit`)
 - FAQ data (product questions, common objections)
 - CTA & contact method (Line, form, phone, DM)
@@ -294,7 +294,7 @@ Step 5: 預約後追蹤
 
 1. 🎯 /conversion-closer → 設計成交策略（異議處理、closing、跟進）
 2. 🔍 /journey-qa → 測試整個顧客旅程是否順暢
-3. 🏗️ /mx-create → 在 Landing Page 中加入 FAQ 和 CTA
+3. 🏗️ /salecraft-create → 在 Landing Page 中加入 FAQ 和 CTA
 4. 📤 /publish-social → 用社群內容啟動流量
 5. ✏️ 調整互動設計
 

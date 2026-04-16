@@ -281,7 +281,7 @@ Entry → Standard → Premium → Advocate
 1. 📊 /growth-retro → 設定 KPI 和回顧機制（確保持續優化）
 2. 🚀 /campaign-ship → 準備上線發布
 3. 📤 /publish-social → 發布會員活動到社群
-4. 🏗️ /mx-create → 建立推薦頁面或 VIP 專屬 LP
+4. 🏗️ /salecraft-create → 建立推薦頁面或 VIP 專屬 LP
 5. 🔍 /journey-qa → 測試完整會員旅程
 6. ✏️ 調整會員策略
 

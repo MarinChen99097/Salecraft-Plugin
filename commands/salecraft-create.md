@@ -1,9 +1,9 @@
 ---
-name: mx-create
+name: salecraft-create
 description: "Full creation flow: brand onboard → audience target → generate LP → edit → build homepage"
 ---
 
-# /mx-create — Full Landing Page + Homepage Creation
+# /salecraft-create — Full Landing Page + Homepage Creation
 
 Read `CLAUDE.md` and `prompts/WORKFLOW.md` for complete workflow reference.
 
@@ -11,7 +11,7 @@ Execute these phases in order:
 
 ## Phase 1: Brand Onboarding
 Invoke the `brand-onboard` skill.
-- Authenticate user
+- Authenticate user (ask email + password, call `login`)
 - Verify brand assets
 - Fill gaps if needed
 - Output: `brand_id`, `user_token`
@@ -43,9 +43,15 @@ Invoke the `homepage-builder` skill.
 - Apply i18n + aspect ratio CSS
 - Output: HTML/CSS/JS files
 
-After completion, suggest: "Ready to publish? Use /mx-publish to post on social media and run ads."
+After completion, suggest: "要不要把這個頁面發佈到社群？用 /salecraft-publish 就可以囉！"
 
 ## Cross-Phase State
 Carry these values across all phases — never re-ask:
 - `user_token`, `brand_id`, `ta_groups`, `aspect_ratio`, `locale`
 - `session_id`, `campaign_id`, `landing_page_id`
+
+## Login Awareness
+**You CAN log users in directly.** Call `login` with email + password. If user has no account, direct to `https://salecraft.ai/get-started`.
+
+## No Jargon Rule
+Never mention MCP, tokens, skills, or technical internals to users. Just do the work.

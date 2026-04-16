@@ -4,7 +4,7 @@ description: |
   Publish landing page content to social media platforms. Lists connected accounts,
   imports LP content, validates media specs, suggests optimal timing, and publishes
   to multiple platforms simultaneously via zereo_social_mcp.
-  Trigger: Phase 6a of /mx-publish, or "post to social media", "publish to Instagram".
+  Trigger: Phase 6a of /salecraft-publish, or "post to social media", "publish to Instagram".
 allowed-tools:
   - Bash
   - Read
@@ -432,7 +432,7 @@ mcp_tool_call("zereo_social_mcp", "generate_qr_card", {
 🎵 TikTok — Posted at [time] — [post_url]
 
 Want to:
-A) Run ad campaigns on these platforms → /mx-publish (ads)
+A) Run ad campaigns on these platforms → /salecraft-publish (ads)
 B) Check post history & engagement
 C) Generate QR code for print materials
 D) Done

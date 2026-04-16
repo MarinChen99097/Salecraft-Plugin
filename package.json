@@ -1,19 +1,20 @@
 {
-  "name": "marketingx.plugin",
-  "version": "0.1.0",
-  "description": "Claude Code plugin for end-to-end marketing: Landing Page generation, homepage building, and ad publishing via MCP orchestration",
-  "author": "Martin @ LandingAI",
+  "name": "salecraft-plugin",
+  "version": "0.2.0",
+  "description": "AI marketing plugin for any MCP-compatible platform: free consultation, Landing Page generation, homepage building, social publishing, and ad campaigns",
+  "author": "Martin @ connactai",
   "license": "MIT",
   "keywords": [
-    "claude-code",
-    "plugin",
+    "salecraft",
+    "mcp",
     "marketing",
     "landing-page",
-    "mcp",
-    "ads"
+    "ai-agent",
+    "ads",
+    "social-media"
   ],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/connactai/salecraft-plugin"
   }
 }

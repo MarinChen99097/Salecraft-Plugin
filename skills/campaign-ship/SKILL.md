@@ -164,7 +164,7 @@ Sequence:
 
 【Handoff】
 - Post-Launch: /growth-retro（第 7 天回顧）
-- If Issues Found: /mx-edit 或回到對應 skill 修正
+- If Issues Found: /salecraft-edit 或回到對應 skill 修正
 - Success Criteria: 上線順利、前 3 天指標在目標範圍內
 ```
 

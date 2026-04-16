@@ -5,7 +5,7 @@ description: |
   Uses AI to suggest target audiences based on brand profile, lets user select/customize,
   guides through visual/content/CTA configuration, estimates credits, and requires
   EXPLICIT user confirmation before any generation or credit deduction.
-  Trigger: Phase 2 of /mx-create, or "choose target audience", "who should I target".
+  Trigger: Phase 2 of /salecraft-create, or "choose target audience", "who should I target".
 allowed-tools:
   - Bash
   - Read

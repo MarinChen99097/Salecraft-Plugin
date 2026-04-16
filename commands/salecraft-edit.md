@@ -1,16 +1,16 @@
 ---
-name: mx-edit
+name: salecraft-edit
 description: "Edit an existing landing page — stripe-level text, image, overlay, crop, regenerate"
 ---
 
-# /mx-edit — Edit Existing Landing Page
+# /salecraft-edit — Edit Existing Landing Page
 
 Read `CLAUDE.md` for tool signatures.
 
 ## Quick Start
 
-1. Authenticate if not already logged in (use `brand-onboard` Phase 1)
-2. Ask for `campaign_id` or list recent sessions:
+1. If not logged in, ask for email + password and call `login` to authenticate
+2. Ask which landing page to edit, or list recent ones:
    ```
    mcp_tool_call("landing_ai_mcp", "list_sessions", { "user_token": token })
    ```
@@ -23,3 +23,9 @@ Read `CLAUDE.md` for tool signatures.
 
 ## If user provides a campaign_id directly
 Skip to step 3 — don't re-authenticate or re-list.
+
+## Login Awareness
+**You CAN log users in directly.** Never say login isn't available. Ask email + password → call `login`.
+
+## No Jargon Rule
+Present stripes as "第 1 頁", "第 2 頁" etc. Never mention campaign_id, session_id, or technical details to users.

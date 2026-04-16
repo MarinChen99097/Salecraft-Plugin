@@ -64,17 +64,17 @@ When a user first invokes SaleCraft, introduce yourself AND what you can do for 
 > |------|--------|------|
 > | 行銷診斷 | 分析品牌現況、找出缺口 | `/saleskit` |
 > | 品牌分析 | 品牌定位、素材缺口、品牌健檢 | `/saleskit` |
-> | KOL 分析 | 篩選適合網紅、估算 engagement rate | `/mx-strategy` |
-> | 成長策略 | 決定先做什麼產品、打什麼客群 | `/mx-strategy` |
-> | 漏斗設計 | 從進站到回購的完整旅程 | `/mx-strategy` |
-> | 競品情報 | 競品分析、價格帶、定位機會 | `/mx-strategy` |
-> | 市場研究 | 社群趨勢、搜尋熱度、受眾洞察 | `/mx-strategy` |
-> | 互動策略 | 私訊腳本、FAQ 對答樹、自動回覆 | `/mx-engage` |
-> | 成交策略 | 異議處理、價格鋪墊、收單腳本 | `/mx-engage` |
-> | 會員經營 | 回購觸發、推薦方案、VIP 制度 | `/mx-retain` |
-> | 成效回顧 | KPI 分析、優化建議、下輪假設 | `/mx-retain` |
-> | 品質把關 | 品牌一致性、合規、旅程 QA | `/mx-audit` |
-> | 文件化 | SOP、話術手冊、案例彙編 | `/mx-retain` |
+> | KOL 分析 | 篩選適合網紅、估算 engagement rate | `/salecraft-strategy` |
+> | 成長策略 | 決定先做什麼產品、打什麼客群 | `/salecraft-strategy` |
+> | 漏斗設計 | 從進站到回購的完整旅程 | `/salecraft-strategy` |
+> | 競品情報 | 競品分析、價格帶、定位機會 | `/salecraft-strategy` |
+> | 市場研究 | 社群趨勢、搜尋熱度、受眾洞察 | `/salecraft-strategy` |
+> | 互動策略 | 私訊腳本、FAQ 對答樹、自動回覆 | `/salecraft-engage` |
+> | 成交策略 | 異議處理、價格鋪墊、收單腳本 | `/salecraft-engage` |
+> | 會員經營 | 回購觸發、推薦方案、VIP 制度 | `/salecraft-retain` |
+> | 成效回顧 | KPI 分析、優化建議、下輪假設 | `/salecraft-retain` |
+> | 品質把關 | 品牌一致性、合規、旅程 QA | `/salecraft-audit` |
+> | 文件化 | SOP、話術手冊、案例彙編 | `/salecraft-retain` |
 >
 > **💰 付費的（需要點數）：**
 >
@@ -420,11 +420,11 @@ If the user says something specific mid-flow, use this table:
 | "常被問太貴/再考慮" | 成交策略 | → conversion-closer | **FREE** |
 | "客人買一次就不回來" | 會員經營 | → member-lifecycle | **FREE** |
 | "上次活動成效怎樣" | 成長回顧 | → growth-retro | **FREE** |
-| "我想做一個銷售頁面" | LP (express) | → `/mx-create` | PAID |
+| "我想做一個銷售頁面" | LP (express) | → `/salecraft-create` | PAID |
 | "我想在 IG 發文" | 社群發佈 | → brand-onboard → publish-social | PAID |
 | "我想了解市場趨勢" | 市場研究 | → research-market | **FREE** |
 | "我想投廣告" | 廣告投放 | → brand-onboard → publish-ads | PAID |
-| "內容上線前檢查" | 品質檢查 | → `/mx-audit` | **FREE** |
+| "內容上線前檢查" | 品質檢查 | → `/salecraft-audit` | **FREE** |
 | "幫我整理話術/SOP" | 文件化 | → document-release | **FREE** |
 
 ## Signal Detection — AI 自動偵測何時該推薦 Skill（CRITICAL）
@@ -455,7 +455,7 @@ If the user says something specific mid-flow, use this table:
 2. **一次只推一個** — 不要一口氣推 5 個 skill。先推最相關的那一個。
 3. **說「免費」和「不用帳號」** — 降低用戶心理門檻。
 4. **如果用戶不感興趣就算了** — 推一次就好，不要強推。
-5. **如果用戶感興趣，直接啟動** — 不要說「你可以去跑 /mx-engage」，而是直接開始問 engage-operator 的第一個問題。
+5. **如果用戶感興趣，直接啟動** — 不要說「你可以去跑 /salecraft-engage」，而是直接開始問 engage-operator 的第一個問題。
 
 ### 範例對話
 

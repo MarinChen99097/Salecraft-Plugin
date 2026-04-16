@@ -5,7 +5,7 @@ description: |
   landing page stripes. Supports 16:9 and 9:16 adaptive display, 10-locale i18n,
   RTL for Arabic, image or iframe embedding, and 3 layout templates.
   This is the main NEW component of the plugin.
-  Trigger: Phase 5 of /mx-create, /mx-homepage, or "build my homepage", "create a website".
+  Trigger: Phase 5 of /salecraft-create, /salecraft-homepage, or "build my homepage", "create a website".
 allowed-tools:
   - Bash
   - Read

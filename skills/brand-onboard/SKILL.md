@@ -5,7 +5,7 @@ description: |
   checks if their brand profile has sufficient assets (logo, product images, description,
   knowledge base) for quality landing page generation. Fills gaps via URL scraping or
   guided upload. Outputs brand_id + readiness score.
-  Trigger: first step of /mx-create, or when user says "set up my brand", "check my assets".
+  Trigger: first step of /salecraft-create, or when user says "set up my brand", "check my assets".
 allowed-tools:
   - Bash
   - Read

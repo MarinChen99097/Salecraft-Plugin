@@ -4,7 +4,7 @@ description: |
   Post-generation landing page editing. Translates natural language edit requests
   into specific MCP tool calls for stripe-level modifications: text, styling,
   images, overlays, crops, regeneration, reordering. Supports undo/redo.
-  Trigger: Phase 4 of /mx-create, /mx-edit, or "edit my landing page", "change the headline".
+  Trigger: Phase 4 of /salecraft-create, /salecraft-edit, or "edit my landing page", "change the headline".
 allowed-tools:
   - Bash
   - Read
@@ -278,7 +278,7 @@ Want to:
 A) Make more edits
 B) See a preview of the full page → https://landingai.info/{locale}/landing-page?id={campaign_id}
 C) Open the visual editor → https://landingai.info/{locale}/editor?id={campaign_id}
-D) Done — proceed to homepage building (/mx-homepage)
+D) Done — proceed to homepage building (/salecraft-homepage)
 ```
 
 ## Crop & Visual Adjustments

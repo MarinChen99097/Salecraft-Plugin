@@ -154,7 +154,7 @@ The QA officer should use the `/browse` skill or headless browser to:
 
 【Handoff】
 - If Go → /campaign-ship（上線發布）
-- If Fix → /mx-edit（修改 LP）或回到對應的 skill 修正
+- If Fix → /salecraft-edit（修改 LP）或回到對應的 skill 修正
 - Success Criteria: 所有 Critical/High 問題已修復
 ```
 
@@ -166,7 +166,7 @@ The QA officer should use the `/browse` skill or headless browser to:
 QA 測試完成！結果：[Go / Fix Then Go / Hold]
 
 1. 🚀 /campaign-ship → 通過 QA，準備上線
-2. ✏️ /mx-edit → 修正 LP 上的問題
+2. ✏️ /salecraft-edit → 修正 LP 上的問題
 3. 💬 /engage-operator → 修正互動流程
 4. 🔄 重新測試 → 修完後再跑一次 QA
 5. 📊 /guard-brand → 檢查品牌一致性

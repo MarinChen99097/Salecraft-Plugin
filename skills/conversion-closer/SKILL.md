@@ -297,7 +297,7 @@ Step 3 — 行動引導：
 1. 🔄 /member-lifecycle → 設計回購和會員經營策略
 2. 🔍 /journey-qa → 測試從進站到成交的完整體驗
 3. 🚀 /campaign-ship → 準備上線發布
-4. 🏗️ /mx-edit → 把異議處理和見證加入 Landing Page
+4. 🏗️ /salecraft-edit → 把異議處理和見證加入 Landing Page
 5. 📊 /guard-offer → 檢查所有價格和承諾是否一致
 6. ✏️ 調整成交策略
 

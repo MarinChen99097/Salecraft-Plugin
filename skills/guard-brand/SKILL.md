@@ -166,7 +166,7 @@ For each piece of content being audited, check against the brand profile:
 
 【Handoff】
 - If Pass → /campaign-ship
-- If Needs Correction → /mx-edit 或回到內容創作 skill
+- If Needs Correction → /salecraft-edit 或回到內容創作 skill
 - If Fail → 需要與用戶重新確認品牌定位
 ```
 

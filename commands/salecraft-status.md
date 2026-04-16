@@ -1,9 +1,9 @@
 ---
-name: mx-status
+name: salecraft-status
 description: "Check generation status, credit balance, and session history"
 ---
 
-# /mx-status — Status Check
+# /salecraft-status — Status Check
 
 Read `CLAUDE.md` for tool signatures.
 
@@ -36,14 +36,20 @@ mcp_tool_call("zereo_social_mcp", "list_ad_campaigns", { "user_token": token })
 ## Output Format
 
 ```
-📊 SaleCraft Status
+📊 SaleCraft 狀態
 ━━━━━━━━━━━━━━━━━
-Credits: [X] remaining (weekly reset: [day])
-Active Sessions: [N]
-Published Pages: [N]
-Active Ad Campaigns: [N]
+剩餘點數: [X] pts
+進行中的專案: [N] 個
+已發佈的頁面: [N] 個
+廣告活動: [N] 個
 
-Recent Activity:
-- [session_name] — [status] — [date]
-- [session_name] — [status] — [date]
+最近動態:
+- [名稱] — [狀態] — [日期]
+- [名稱] — [狀態] — [日期]
 ```
+
+## Login Awareness
+**You CAN log users in directly.** Must be logged in to check status. Ask email + password → call `login`.
+
+## No Jargon Rule
+Show "剩餘點數" not "credits_remaining". Show "進行中" not "processing". Never expose raw API data to users.

@@ -4,7 +4,7 @@ description: |
   Orchestrates landing page generation through the AI agent pipeline
   (Strategist → Architect → Factory → Stripe Reflector). Creates a session,
   triggers generation, polls for completion, and verifies quality.
-  Trigger: Phase 3 of /mx-create, or "generate my landing page", "create LP".
+  Trigger: Phase 3 of /salecraft-create, or "generate my landing page", "create LP".
 allowed-tools:
   - Bash
   - Read
@@ -285,8 +285,8 @@ A) Edit text, images, or layout → just tell me what to change
 B) Screenshot editing → open the sales page, take a screenshot, circle what to change, paste here
 C) SEO optimization → I'll generate meta tags, schema markup, and keywords
 D) Crop & adjust → fine-tune individual stripe images
-E) Build homepage → embed this LP into a full website (/mx-homepage)
-F) Publish → push to social media or run ads (/mx-publish)
+E) Build homepage → embed this LP into a full website (/salecraft-homepage)
+F) Publish → push to social media or run ads (/salecraft-publish)
 G) Generate another variant (different TA or aspect ratio)
 
 Tip: Open the sales page link on your phone to see the mobile experience!

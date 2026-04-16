@@ -4,7 +4,7 @@ description: |
   One-stop Meta / Google ad campaign creation. Verifies ad account access,
   generates platform-optimized ad creatives from LP content, sets budget/targeting/schedule,
   creates campaigns, and monitors performance.
-  Trigger: Phase 6b of /mx-publish, or "run ads", "create ad campaign", "Meta ads".
+  Trigger: Phase 6b of /salecraft-publish, or "run ads", "create ad campaign", "Meta ads".
 allowed-tools:
   - Bash
   - Read

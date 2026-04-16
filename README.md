@@ -1,27 +1,29 @@
 # SaleCraft
 
-**Your AI marketing consultant for physical products.** Free consultation, expert strategy, then execution — all through one MCP plugin.
+**Your AI marketing consultant for physical products.** Free consultation, expert strategy, then execution — all through one plugin that works on any AI platform.
 
 ## What Is SaleCraft?
 
-SaleCraft is an MCP plugin that turns any AI platform into a marketing consultant for physical product sellers. It doesn't start by generating assets — it starts by **understanding your product and diagnosing your marketing needs**.
+SaleCraft turns any AI assistant into a marketing consultant for physical product sellers. It doesn't start by generating assets — it starts by **understanding your product and diagnosing your marketing needs**.
+
+SaleCraft works on **any AI platform** that supports MCP — including Claude Code, Claude App, Claude Cowork, ChatGPT, Gemini, Kimi, GLM, OpenClaw, and more. There is no platform limitation.
 
 ### The Flow
 
 ```
-1. 🎯 Free Consultation  →  What do you sell? Who buys it? What's the pain?
-2. 📊 Marketing Diagnosis →  Brand audit, channel analysis, competitor scan
-3. 📋 Strategy Plan       →  Recommended channels, content plan, budget
-4. ✅ User Confirms       →  You approve the plan and pricing
-5. 🏭 AI Executes         →  Landing Pages, Reels, social posts, ads
+1. Free Consultation  →  What do you sell? Who buys it? What's the pain?
+2. Marketing Diagnosis →  Brand audit, channel analysis, competitor scan
+3. Strategy Plan       →  Recommended channels, content plan, budget
+4. User Confirms       →  You approve the plan and pricing
+5. AI Executes         →  Landing Pages, Reels, social posts, ads
 ```
 
 **Steps 1-3 are completely free.** You only pay when the AI actually creates something (Step 5).
 
 ## Who It's For
 
-| ✅ Perfect Fit | ❌ Not For |
-|---------------|-----------|
+| Perfect Fit | Not For |
+|-------------|---------|
 | Physical products (skincare, food, fashion...) | Software / SaaS |
 | Single product or product line | Multi-purpose platforms |
 | E-commerce, retail, F&B, beauty, health | B2B consulting |
@@ -29,10 +31,10 @@ SaleCraft is an MCP plugin that turns any AI platform into a marketing consultan
 
 ## Installation
 
-Add this plugin to any MCP-compatible AI platform:
+Add SaleCraft to any MCP-compatible AI platform:
 
 ```
-https://github.com/connactai/Salecraft-Plugin
+https://github.com/connactai/salecraft-plugin
 ```
 
 ### MCP Server Setup
@@ -55,6 +57,8 @@ SaleCraft requires a Remote MCP connection:
 First-time users: **https://salecraft.ai/en/get-started**
 
 This handles registration (Google or email), social account binding (FB/IG), Google Drive access, and points top-up.
+
+**You can also log in directly through the AI** — just tell it your email and password.
 
 ## Skills (25)
 
@@ -83,7 +87,7 @@ This handles registration (Google or email), social account binding (FB/IG), Goo
 
 | Skill | What It Does | Cost (pts) |
 |-------|-------------|------------|
-| **brand-onboard** | Brand profile, asset check, gap analysis | FREE consultation; MCP upload costs only |
+| **brand-onboard** | Brand profile, asset check, gap analysis | FREE consultation; upload costs only |
 | **audience-target** | AI target audience suggestions | 5-15 |
 | **generate-landing** | AI Landing Page (4-stage pipeline) | 1,600-2,000 |
 | **edit-landing** | Edit LP text, images, layout | 100/regen |
@@ -102,13 +106,13 @@ This handles registration (Google or email), social account binding (FB/IG), Goo
 
 | Action | Cost |
 |--------|------|
-| Landing Page (8 pages × 1 TA) | 1,600 pts (~$53) |
-| Landing Page (10 pages × 1 TA) | 2,000 pts (~$67) |
+| Landing Page (8 pages) | 1,600 pts (~$53) |
+| Landing Page (10 pages) | 2,000 pts (~$67) |
 | Regenerate 1 stripe | 100 pts (~$3) |
 | Quick Ad (single image) | 200 pts (~$7) |
-| Carousel (N images) | 300 + 100×N pts |
+| Carousel (N images) | 300 + 100xN pts |
 | Social Copy | 100 pts/set (~$3) |
-| Reels video | 100 pts/sec (e.g. 10s = 1,000 pts) |
+| Reels video | 100 pts/sec |
 | Spokesperson generation | 500 pts (~$17) |
 | SEO optimization | 500 pts (~$17) |
 | QR Code | 5 pts |
@@ -117,17 +121,17 @@ This handles registration (Google or email), social account binding (FB/IG), Goo
 
 | Command | Description | Cost |
 |---------|-------------|------|
-| `/mx` | Main menu — what can SaleCraft do? | — |
-| `/mx-strategy` | Growth strategy + funnel design + market intel | **FREE** |
-| `/mx-engage` | Engagement + conversion strategy | **FREE** |
-| `/mx-retain` | Retention + growth review | **FREE** |
-| `/mx-audit` | Brand, compliance, journey QA | **FREE** |
-| `/mx-create` | Full flow: consultation → strategy → generation | PAID |
-| `/mx-edit` | Edit existing Landing Page | PAID |
-| `/mx-homepage` | Build homepage from LP | FREE |
-| `/mx-publish` | Social posting + ads | PAID |
-| `/mx-reels` | AI short video generation | PAID |
-| `/mx-status` | Check credits / session | FREE |
+| `/salecraft` | Main menu — what can SaleCraft do? | -- |
+| `/salecraft-strategy` | Growth strategy + funnel design + market intel | **FREE** |
+| `/salecraft-engage` | Engagement + conversion strategy | **FREE** |
+| `/salecraft-retain` | Retention + growth review | **FREE** |
+| `/salecraft-audit` | Brand, compliance, journey QA | **FREE** |
+| `/salecraft-create` | Full flow: consultation -> strategy -> generation | PAID |
+| `/salecraft-edit` | Edit existing Landing Page | PAID |
+| `/salecraft-homepage` | Build homepage from LP | FREE |
+| `/salecraft-publish` | Social posting + ads | PAID |
+| `/salecraft-reels` | AI short video generation | PAID |
+| `/salecraft-status` | Check credits / session | FREE |
 
 ## Features
 
@@ -139,24 +143,40 @@ This handles registration (Google or email), social account binding (FB/IG), Goo
 - **Ad campaigns** — Meta + Google Ads creation
 - **Brand audit** — Diagnose what's missing before spending
 - **Transparent pricing** — AI always tells you the cost before acting
+- **Any platform** — Works on Claude Code, Claude App, ChatGPT, Gemini, Kimi, GLM, OpenClaw, and any MCP-compatible environment
 
 ## Architecture
 
 ```
-Salecraft-Plugin/
+salecraft-plugin/
 ├── CLAUDE.md              # Core plugin instructions
-├── skills/                # 10 skills
+├── skills/                # 25 skills (16 FREE + 9 paid/mixed)
 │   ├── saleskit/          # FREE consultation (start here)
-│   ├── brand-onboard/
-│   ├── audience-target/
-│   ├── generate-landing/
-│   ├── edit-landing/
-│   ├── homepage-builder/
-│   ├── publish-social/
-│   ├── publish-ads/
-│   ├── i18n-adapt/
-│   └── research-market/
-├── commands/              # /mx, /mx-create, etc.
+│   ├── research-market/   # FREE market research
+│   ├── plan-cgo-review/   # FREE growth strategy
+│   ├── plan-funnel-review/# FREE funnel architecture
+│   ├── market-intel/      # FREE competitive intelligence
+│   ├── engage-operator/   # FREE engagement strategy
+│   ├── conversion-closer/ # FREE conversion strategy
+│   ├── member-lifecycle/  # FREE retention strategy
+│   ├── growth-retro/      # FREE performance review
+│   ├── document-release/  # FREE documentation
+│   ├── guard-brand/       # FREE brand consistency
+│   ├── guard-offer/       # FREE offer consistency
+│   ├── brand-risk-review/ # FREE compliance review
+│   ├── careful-publish/   # FREE publish gate
+│   ├── journey-qa/        # FREE journey QA
+│   ├── campaign-ship/     # FREE launch management
+│   ├── brand-onboard/     # Brand setup (mixed)
+│   ├── audience-target/   # TA selection (paid)
+│   ├── generate-landing/  # LP generation (paid)
+│   ├── edit-landing/      # LP editing (paid)
+│   ├── homepage-builder/  # Homepage building (free)
+│   ├── publish-social/    # Social publishing (paid)
+│   ├── publish-ads/       # Ad campaigns (paid)
+│   ├── generate-reels/    # Reels generation (paid)
+│   └── i18n-adapt/        # Localization (paid)
+├── commands/              # /salecraft, /salecraft-create, etc.
 ├── prompts/               # System context
 ├── templates/             # Homepage HTML templates
 ├── lib/                   # Reference docs
