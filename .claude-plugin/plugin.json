@@ -1,6 +1,6 @@
 {
   "name": "salecraft",
-  "description": "End-to-end marketing automation: Landing Page generation, homepage building, and ad publishing via MCP orchestration. Enables any Claude Code instance to create professional landing pages, build websites, and run Meta/Google ad campaigns through 200+ MCP tools.",
+  "description": "End-to-end marketing automation: Landing Page generation, homepage building, and ad publishing via MCP orchestration. Works on any AI platform (ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw, etc.) to create professional landing pages, build websites, and run Meta/Google ad campaigns through 200+ MCP tools. Includes built-in login/register tools — users can authenticate directly through the AI without installing anything.",
   "author": {
     "name": "Landing AI",
     "email": "support@landing-ai.com"

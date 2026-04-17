@@ -17,10 +17,11 @@
 - **Fix**: Documented full 3-step flow (trigger -> poll -> confirm) in edit-landing skill + CLAUDE.md
 - **Status**: FIXED
 
-### 5. Claude Code inline image upload
+### 5. Inline image upload (base64)
 - **Status**: FIXED
 - **Solution**: Added `upload_base64` MCP tool — accepts base64 data directly, no disk save needed
-- **Flow**: User pastes image -> Claude Code reads as base64 -> `upload_base64` -> public_url
+- **Flow**: User provides image → AI reads as base64 → `upload_base64` → public_url
+- **Works on**: Any AI platform that can read image data as base64
 
 ## OPEN
 

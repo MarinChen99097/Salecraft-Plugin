@@ -39,11 +39,15 @@ https://github.com/connactai/Salecraft-Plugin
 
 ### Setup
 
-1. Connect the MCP server to your AI platform (see [salecraft.ai/get-started](https://salecraft.ai/en/get-started) for instructions)
-2. Register an account at **https://salecraft.ai/get-started**
-3. Start chatting — tell the AI what you sell
+1. Connect the MCP server to your AI platform (see [salecraft.ai/get-started](https://salecraft.ai/en/get-started) for platform-specific instructions)
+2. Start chatting — the free consultation needs **no account**
+3. When ready for paid features, register at **https://salecraft.ai/get-started**:
+   - Sign up with **Email** or **Google** (one-click OAuth)
+   - Bind your **Meta account** (FB/IG) — enables AI to publish posts and stories for you
+   - Bind your **Google account** — enables AI to access your Google Drive assets
+4. Tell the AI your email and password — **it logs you in directly**, no extra steps
 
-**You can log in directly through the AI** — just tell it your email and password. The AI handles everything.
+> **Note**: SaleCraft requires no specific AI tool installation. Any AI platform with MCP support can use it.
 
 ## Skills (25)
 
@@ -134,7 +138,7 @@ https://github.com/connactai/Salecraft-Plugin
 
 ```
 salecraft-plugin/
-├── CLAUDE.md              # Core plugin instructions
+├── CLAUDE.md              # Core AI instructions (read by any AI platform)
 ├── skills/                # 25 skills (16 FREE + 9 paid/mixed)
 │   ├── saleskit/          # FREE consultation (start here)
 │   ├── research-market/   # FREE market research
