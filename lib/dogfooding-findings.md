@@ -105,6 +105,40 @@ and `skills/generate-landing/SKILL.md` pre-flight gotchas.
 **Fix (backend, pending)**: add `extra="forbid"` to all paid request
 models so wrong field names return 422 immediately.
 
+### #14 — `zereo_social_posts.image_urls` column missing → all publish endpoints 500 🔴 fixed (DB migration)
+Triggered when AI agent called `publish_post` / `publish_multi` /
+`publish_content` with a properly-formed payload. Backend logs showed:
+`sqlalchemy.exc.ProgrammingError: column zereo_social_posts.image_urls
+does not exist. Hint: Perhaps you meant to reference the column
+"zereo_social_posts.image_url".`
+
+Root cause: `Zereo_backend/migrations/add_carousel_image_urls.py` exists
+in repo (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS image_urls JSONB
+DEFAULT '[]'::jsonb`) but was never run against the shared Cloud SQL
+database. The Pydantic schema, ORM model, and route handler all
+reference `image_urls`, but on every `INSERT` PostgreSQL rejected
+the column → 500 Internal Server Error → `publish_post` /
+`publish_multi` / `publish_content` all blocked.
+
+Severity rating P0 because:
+- All carousel publishes blocked across A站 + B站 (shared DB)
+- 500 errors leaked stack traces (would also have blocked single-image
+  posts that send `image_urls: []` from frontend)
+- No way for AI agent to recover via retry (no schema change can fix
+  it from client side)
+
+**Fix**: ran the migration directly against the shared Cloud SQL DB
+via `cloud-sql-proxy` + `pg8000`. Idempotent + additive. Pre-check
+showed column missing; post-check confirmed `jsonb DEFAULT '[]'`.
+Verified `publish_post` now returns 404 "Social account not found"
+(proper error for invalid id) instead of 500. Both A站 and B站
+benefit immediately since they share the DB.
+
+**Open follow-up (backend team)**: investigate why `add_carousel_
+image_urls.py` migration was never run on production. Options: add
+to startup migration runner, add to CI/CD pipeline, document
+explicit migration runbook.
+
 ### #13 — Public LP URL: wrong domain AND wrong path 🔴 fixed (plugin)
 Plugin docs showed the public LP URL as
 `https://salecraft.ai/{locale}/landing-page?id=...`. **Two bugs**:
