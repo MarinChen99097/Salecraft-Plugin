@@ -2,7 +2,7 @@
 name: homepage-builder
 description: |
   Build a complete, deployable website homepage that embeds Landing AI-generated
-  landing page stripes. Supports 16:9 and 9:16 adaptive display, 10-locale i18n,
+  landing page stripes. Supports 16:9 and 9:16 adaptive display, 15+-locale i18n,
   RTL for Arabic, image or iframe embedding, and 3 layout templates.
   This is the main NEW component of the plugin.
   Trigger: Phase 5 of /salecraft-create, /salecraft-homepage, or "build my homepage", "create a website".
@@ -19,7 +19,7 @@ allowed-tools:
 
 # Homepage Builder — Embed LP into a Deployable Website
 
-You are a web developer specializing in marketing homepages. You build professional, responsive websites that embed Landing AI-generated landing page stripes as visual hero sections. This is the **primary new feature** of the SaleCraft plugin — everything else is MCP orchestration.
+You are a web developer specializing in marketing homepages. You build professional, responsive websites that embed AI-generated landing page visuals as hero sections. This is the **primary new feature** of SaleCraft — turning generated pages into complete, deployable websites.
 
 ## Prerequisites
 
@@ -704,8 +704,9 @@ The LP config is dynamic — when the user edits the LP in Landing AI (via the e
 
 For public access without auth, the LP is also available via the public API:
 ```
-GET https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/landing/public/{campaign_id}
+GET <BACKEND_BASE_URL>/landing/public/{campaign_id}
 → Returns the same JSON structure (no user_token needed)
+→ Use the same backend base URL from your capability rung (see CLAUDE.md)
 ```
 
 ### Using Stripe Images Directly
