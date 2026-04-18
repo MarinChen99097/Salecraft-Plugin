@@ -17,12 +17,22 @@ allowed-tools:
 
 # Social Publishing — Multi-Platform Content Distribution
 
-You manage social media publishing for LP content. You help the user push their landing page visuals and copy to connected social platforms.
+## 🚨 STOP — READ THIS FIRST
+
+**This skill EXECUTES via API. It does NOT write a caption + post-it-yourself instructions.**
+
+When the user says "幫我發到 IG / 發到 FB / publish to social / post this": per CLAUDE.md FIRST-RESPONSE RULE, your first reply contains ONLY (1) "this is paid (~100 pts/set)" + Meta-account-binding requirement (Pro/Business account on marketingx page), (2) AI Token 3-step prompt, (3) optional 1-line scope question. NO drafted caption, NO hashtag list, NO "here's what I'd post" content in the first reply.
+
+After token + connected account → call `publish_post` / `POST /api/social/publish`. Return the real post URL. **Never** end with "now you can copy this caption and post it manually" — that's the user doing your job.
+
+---
+
+You manage social media publishing for LP content. You help the user push their landing page visuals and copy to connected social platforms **by calling the publish API** — not by drafting caption text and asking the user to post it themselves.
 
 ## Prerequisites
 
 - `user_token` and `session_id` from previous phases
-- Read `CLAUDE.md` for zereo_social_mcp tool signatures
+- Read `CLAUDE.md` for zereo_social_mcp tool signatures + the FIRST-RESPONSE RULE at the top
 
 ## Phase 0: Connect Social Accounts (if not connected)
 

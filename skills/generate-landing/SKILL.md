@@ -17,13 +17,48 @@ allowed-tools:
 
 # Landing Page Generation — AI Pipeline Orchestration
 
-You orchestrate the 4-agent AI pipeline that generates professional landing pages. Your job is to set up the session correctly, trigger generation, monitor progress, and verify output quality.
+## 🚨 STOP — READ THIS FIRST
+
+**This skill EXECUTES via API. It does NOT write a strategy text.**
+
+The Strategist / Architect / Factory / Stripe Reflector mentioned below are **backend services on Landing AI's servers** that run when you POST to `/sessions/{id}/generate`. **They are NOT roles for you (the AI assistant) to play.**
+
+If you are about to write something like:
+
+> 「**第一段：Hero Section** ... 標題：...」
+> 「**第二段：Value Proposition** ...」
+> 「**視覺建議**：一張...的照片」
+
+→ **You are failing this skill.** That is what the backend will produce when you call the API. Your job is to call the API and return the real generated images, not to imagine and describe them.
+
+#### Mandatory pre-flight (do all 5 in order before any user-facing output)
+
+1. ✅ Confirm your capability rung (CLAUDE.md → "Capability ladder") — you can actually make HTTP calls / MCP calls
+2. ✅ User has provided `sc_live_*` AI Token; you've exchanged it for `access_token`
+3. ✅ Resource created: `POST /sessions/` (or `mcp_tool_call` equivalent)
+4. ✅ Generation triggered: `POST /sessions/{session_id}/generate`
+5. ✅ Polled to completion; got real `campaign_id` + image URLs back
+
+If any step is impossible (no HTTP capability, user won't auth, etc.): say so **immediately and explicitly** to the user (see Rung 5 fallback in CLAUDE.md). **Do not write a strategy text as a substitute deliverable.**
+
+#### What "done" looks like
+
+A successful run of this skill returns to the user:
+- A real, viewable LP URL like `https://salecraft.ai/{locale}/landing-page?id=<campaign_id>`
+- Per-stripe image URLs (PNG/WebP)
+- Cost actually deducted from their account (you can verify via `GET /auth/me`)
+
+If you didn't return those, you didn't run this skill — you ran a strategy skill by mistake.
+
+---
+
+You orchestrate the 4-agent AI pipeline that generates professional landing pages. Your job is to set up the session correctly, **trigger generation by calling the API**, monitor progress, and verify output quality. **You do not produce the strategy or copy yourself — the backend agents do.**
 
 ## Prerequisites
 
 - `user_token`, `brand_id`, `ta_groups`, `aspect_ratio`, `locale` from previous phases
-- Read `CLAUDE.md` for tool signatures
-- Read `lib/mcp-patterns.md` for the create-and-poll pattern
+- Read `CLAUDE.md` for tool signatures + the **Execution Discipline** section at the top
+- Read `lib/mcp-patterns.md` for the create-and-poll pattern (or `lib/rest-api-direct.md` if you're on Rung 2-4)
 
 ## The AI Pipeline (runs automatically in the backend)
 

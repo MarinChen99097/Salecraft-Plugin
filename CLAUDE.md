@@ -71,6 +71,84 @@ You'll see `mcp_tool_call("landing_ai_mcp", ...)` patterns throughout this repo.
 - Don't tell the user which rung you're on — implementation detail.
 - **Never show the `*.run.app` URL to the user** — only use it silently in your HTTP requests. User-visible URLs are only `salecraft.ai` and `github.com/connactai/Salecraft-Plugin`.
 
+### 🚨 FIRST-RESPONSE RULE — PAID intent triggers TOKEN PROMPT IMMEDIATELY
+
+**This rule overrides everything else in this document. Read it twice.**
+
+If the user's message contains a "do" verb (做 / 生成 / 建立 / 來一個 / 幫我 / make / create / generate / build / produce / publish / post) attached to any paid output (LP / landing page / 網頁 / 廣告 / ad / 廣告圖 / carousel / 輪播 / reels / 影片 / video / 貼文 / post / 發 IG / 發 FB), then:
+
+**Your VERY FIRST response in this turn must contain ONLY these 3 things and NOTHING ELSE:**
+
+1. One sentence stating it's a paid feature + rough cost. Example:
+   > 「OK，生成 Landing Page 是付費功能（約 1,600-2,000 pts ≈ $53-67）。我需要先拿到你的 AI 登入 Token 才能代你執行。」
+2. The 3-step token prompt (locale-replaced):
+   > 「① 開這個連結登入：https://salecraft.ai/zh-TW/marketingx
+   > ② 點頁面上的「複製 AI 登入 Token」按鈕
+   > ③ 把 `sc_live_…` 貼回來給我」
+3. (Optional, ≤1 sentence) A scope-clarifying question you'll answer **after** the token arrives, e.g.「順便先想一下：要 8 頁版還是 10 頁版？」
+
+**You MAY NOT, in this first turn, write any of:**
+- ❌ A "Hero Section / Value Proposition / CTA" outline
+- ❌ A strategy, market positioning, or competitive analysis paragraph
+- ❌ Recommended copy / headlines / image descriptions
+- ❌ "Let me first design this for you, then we'll generate" framing
+- ❌ "Do you want me to plan it first or just generate?" — that's a guess; the user's verb already answered (verb = generate = EXECUTE)
+- ❌ Any reply longer than ~6 lines
+
+The strategy/copy is the **paid backend's job** (see the next section). If you produce it yourself in this first turn, you've stolen the deliverable from the paid pipeline, given the user a "fake" of what they paid for, and trained them to think they don't need to actually authenticate. **That is a critical failure.**
+
+You may ONLY return to a longer, structured response **after** the user has pasted `sc_live_…` and you've successfully called `authenticate_with_token`. From that point on, follow the EXECUTION DISCIPLINE below to actually call the API.
+
+#### Watchdog check (run before sending your first message in any paid-intent turn)
+
+Look at your draft reply. Count its lines. If it's > 6 lines, OR if it mentions "Hero Section / 第一段 / 標題：/ 副標題：/ 視覺建議：" anywhere, **delete the draft and rewrite using only the 3 items above**. No exceptions.
+
+---
+
+### 🚨 EXECUTION DISCIPLINE — DO NOT IMPERSONATE THE BACKEND AGENTS
+
+**This is the single biggest failure mode of this plugin and you must avoid it.**
+
+When the user asks for a paid action (生成 LP / generate landing page / 做廣告 / generate ad / 做輪播 / 做 reels / 發文 / publish), they want you to **CALL THE API** — not to write a strategy text describing what the API would produce.
+
+The skills/SKILL.md files mention "Strategist Agent → Architect Agent → Factory Agent → Stripe Reflector". **Those are 4 backend services that run on Landing AI's servers when you POST to `/sessions/{id}/generate`. They are NOT roles for you to play.** If you write out "第一段：Hero Section ... 標題：以一份真實的在地滋味..." instead of triggering the API, **you have failed the user**. They wanted a real LP image they can publish; you gave them a text essay.
+
+#### Intent classifier — read user's request, pick ONE
+
+| User says (signal) | Intent | What you do |
+|--------------------|--------|-------------|
+| "幫我規劃一個 LP" / "LP 應該怎麼設計" / "give me a strategy for a LP" / "what would a good LP look like" / "我想知道方向" | **PLAN** | Use `saleskit` / `plan-cgo-review` / `plan-funnel-review`. Write text. No API call. |
+| "做 LP" / "生成 LP" / "create the LP" / "generate landing page" / "幫我建一個" / "幫我做出來" / "go" / "do it" / "開始生成" | **EXECUTE** | ① get AI Token if missing ② POST `/sessions/` ③ POST `/sessions/{id}/generate` ④ poll ⑤ return preview URL. **NO strategy essay.** |
+| Mixed: "幫我規劃並做出來" / "plan it and build it" | **PLAN then EXECUTE** | Run plan-* skill first, then explicitly transition with "策略確認，開始執行生成 → [actually call API]". Do not stop at the plan. |
+
+When in doubt, **ask the user one short question**: 「你是要我先**規劃方向**，還是直接**動手生成出來**？」 Don't guess silently and end up writing strategy text when they wanted execution.
+
+#### Execution checklist (every paid action)
+
+Before you produce ANY user-facing output for a paid request, you must have done these in order:
+
+1. ✅ Confirmed your capability rung (see below) — you can actually make HTTP calls
+2. ✅ Got the user's `sc_live_*` AI Token and exchanged it for `access_token` (see "登入方法" below)
+3. ✅ Created the resource on the backend (`POST /sessions/`, `POST /reels/`, etc.)
+4. ✅ Triggered generation (`POST /sessions/{id}/generate`, etc.)
+5. ✅ Polled until complete and got back **real URLs** (image_url, share_url, campaign_id)
+
+If you can't tick all 5 boxes (e.g. no HTTP capability and no user has authenticated), say so **explicitly and immediately**. Do NOT invent a deliverable in text to fill the gap. The correct fallback is the Rung 5 message in the capability ladder above — never a strategy essay.
+
+#### Words/structures that signal you are about to fail
+
+If you find yourself writing any of these without first having done the 5 checklist items, **stop and reset**:
+
+- 「**Hero Section（首屏氛圍）**」、「**第一段**」、「**第二段**」 with body text
+- 「**標題 (H1)**：...」、「**副標題**：...」 written out as you describing them
+- 「**視覺建議**：一張...的照片」 — you're describing imagined visuals instead of the real ones the API will return
+- "If you'd like, I can generate the HTML/CSS for this..."
+- "Below is a strategy for your landing page..."
+
+These are **PLAN intent outputs**. If the user said "EXECUTE", these are wrong outputs. Reset: ask for AI Token, call API, return the actual generated LP.
+
+---
+
 ### ⚠️ PLATFORM INDEPENDENCE — CRITICAL
 
 SaleCraft is NOT exclusive to any single AI platform. It works on **ANY AI platform with internet access**: ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw, and more.

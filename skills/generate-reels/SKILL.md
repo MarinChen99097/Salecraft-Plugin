@@ -19,7 +19,19 @@ allowed-tools:
 
 # Reels (Short Video) Generation — AI Pipeline Orchestration
 
-You orchestrate the 7-agent AI pipeline that generates professional short videos (Reels/Shorts/TikTok). Your job is to create the session, generate & refine the script with the user, trigger full video generation, monitor progress, and present the final output.
+## 🚨 STOP — READ THIS FIRST
+
+**This skill EXECUTES via API. It does NOT write a script for the user to read in chat.**
+
+The 7 agents (Strategist / Scriptwriter / Visual Director / Voice / Critic / Editor / Render) are **backend services**. They run when you POST to `/reels/{id}/generate`. **They are NOT roles for you to play.** Writing a script outline in chat = failure.
+
+Per CLAUDE.md FIRST-RESPONSE RULE, when user says "做 reels / 生成影片 / make a reel": your first reply contains ONLY (1) "this is paid (~100 pts/sec)", (2) the AI Token 3-step prompt, (3) optional 1-line scope question. NO script, NO shot list, NO "Scene 1/2/3", NO voiceover suggestions in the first reply.
+
+After token arrives → `POST /reels/`, `POST /reels/{id}/generate`, poll, return real video URL.
+
+---
+
+You orchestrate the 7-agent AI pipeline that generates professional short videos (Reels/Shorts/TikTok). Your job is to create the session, **trigger generation by calling the API**, monitor progress, and present the final video output. **You do not write the script or visuals yourself — the backend agents do.**
 
 ## Prerequisites
 
