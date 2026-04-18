@@ -105,6 +105,24 @@ and `skills/generate-landing/SKILL.md` pre-flight gotchas.
 **Fix (backend, pending)**: add `extra="forbid"` to all paid request
 models so wrong field names return 422 immediately.
 
+### #13 — Public LP URL pattern documented as `salecraft.ai` but actually served from `landingai.info` 🔴 fixed (plugin)
+Plugin docs (`CLAUDE.md` L877, multiple skills) showed the public LP URL
+as `https://salecraft.ai/{locale}/landing-page?id=...`. AI agents copied
+this pattern when telling users where to find their generated LP.
+Reality: `salecraft.ai` is the brand/marketing site, NOT the LP renderer.
+LPs are served by `marketing-frontend` Cloud Run service mapped to
+`landingai.info`. The salecraft.ai URL returns 404; the landingai.info
+URL works (308 redirect to the actual page).
+Backend already generates `landingai.info` URLs internally
+(`routers/landing.py` line 7956: `FRONTEND_URL` env var defaults to
+`https://landingai.info`), so the bug was purely in plugin docs +
+URL discipline rule.
+**Fix (plugin)**: changed every `salecraft.ai/{locale}/landing-page`
+to `landingai.info/{locale}/landing-page` across CLAUDE.md and all
+SKILL.md files. Updated URL discipline rule (Core Rule #17) to
+explicitly allow `landingai.info` for LP delivery (it's user-visible
+brand-acceptable), separate from `salecraft.ai` (brand/account site).
+
 ### #12 — `generate_session` defaults to 10 stripes when `stripe_count` omitted 🟠 fixed (plugin doc)
 Same class of bug as #11: LLM created a session intending 8-page LP
 (1,600 pts/TA quote it gave the user) but didn't pass `stripe_count`

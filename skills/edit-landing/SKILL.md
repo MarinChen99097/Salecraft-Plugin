@@ -91,7 +91,7 @@ The fastest and most intuitive way for users to request edits. **Always mention 
 ### How it works:
 
 1. User opens the sales page link on their device:
-   `https://salecraft.ai/{locale}/landing-page?id={campaign_id}`
+   `https://landingai.info/{locale}/landing-page?id={campaign_id}`
 2. User takes a screenshot of the page (or a specific stripe)
 3. User uses their phone/desktop markup tool to circle, arrow, or annotate what to change
 4. User pastes the annotated screenshot here and describes the desired change
@@ -276,7 +276,7 @@ Updated stripe [N]: [description of change]
 
 Want to:
 A) Make more edits
-B) See a preview of the full page → https://salecraft.ai/{locale}/landing-page?id={campaign_id}
+B) See a preview of the full page → https://landingai.info/{locale}/landing-page?id={campaign_id}
 C) Open the visual editor → https://salecraft.ai/{locale}/editor?id={campaign_id}
 D) Done — proceed to homepage building (/salecraft-homepage)
 ```
