@@ -14,10 +14,14 @@
 ## Base URL
 
 ```
-https://api.salecraft.ai
+https://marketing-backend-v2-s6ykq3ylca-de.a.run.app
 ```
 
-All examples below use this base. If `api.salecraft.ai` returns DNS error in your environment, fall back to the Cloud Run URL `https://marketing-backend-v2-s6ykq3ylca-de.a.run.app` — it serves the same API. **Never show the `*.run.app` URL to the user**; only `salecraft.ai` and `api.salecraft.ai` are user-visible.
+This is the production REST endpoint — it works right now. Use it directly in your HTTP calls.
+
+**A friendlier `https://api.salecraft.ai` is planned but not yet active** (the `salecraft.ai` domain hasn't been verified in this GCP project yet — see the operator note at the bottom of this file). Once it's set up, this doc will be updated; until then, `*.run.app` is correct.
+
+**URL discipline for what you SAY to the user:** the Cloud Run URL is fine to use silently in your HTTP requests, but if you ever need to mention an URL to the user (top-up, login, account settings), only use `https://salecraft.ai/{locale}/marketingx`. Do not display the `*.run.app` URL in chat.
 
 ## Auth (4 steps)
 
@@ -32,7 +36,7 @@ Tell the user (replace `{locale}` with their language code: `zh-TW`, `en`, `ja`,
 ### 2. Exchange `sc_live_*` for an `access_token`
 
 ```http
-POST https://api.salecraft.ai/auth/ai-token/exchange
+POST https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/auth/ai-token/exchange
 Content-Type: application/json
 
 { "ai_token": "sc_live_eyJhbGc..." }
@@ -118,7 +122,7 @@ All endpoints below assume `Authorization: Bearer <access_token>` unless marked 
 | `GET` | `/landing/public/{campaign_id}` | Public LP view (share link) |
 | `POST` | `/landing/{campaign_id}/regenerate-config` | Regenerate config |
 
-(Stripe-level editing endpoints — text/image/overlay/crop/regenerate — are exposed under `/landing/...` and `/sessions/{id}/projects/{pid}/stripes/...`. See OpenAPI at `https://api.salecraft.ai/docs` for the full list once the user logs in.)
+(Stripe-level editing endpoints — text/image/overlay/crop/regenerate — are exposed under `/landing/...` and `/sessions/{id}/projects/{pid}/stripes/...`. See `skills/edit-landing/SKILL.md` for the per-action mappings.)
 
 ### Reels (short video, PAID at 100 pts/sec)
 | Method | Path | Purpose |
@@ -155,13 +159,13 @@ If the social MCP server's REST counterpart is hosted under the same backend, us
 
 ```python
 # 1. Exchange AI Token (once per session)
-r = httpx.post("https://api.salecraft.ai/auth/ai-token/exchange",
+r = httpx.post("https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/auth/ai-token/exchange",
                json={"ai_token": "sc_live_..."})
 access_token = r.json()["access_token"]
 H = {"Authorization": f"Bearer {access_token}"}
 
 # 2. Create session
-r = httpx.post("https://api.salecraft.ai/sessions/", headers=H, json={
+r = httpx.post("https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/sessions/", headers=H, json={
     "session_name": "My Product LP",
     "brand_name": "ACME",
     "product_name": "Widget Pro",
@@ -170,13 +174,13 @@ r = httpx.post("https://api.salecraft.ai/sessions/", headers=H, json={
 session_id = r.json()["id"]
 
 # 3. Update wizard data with selected TAs
-httpx.put(f"https://api.salecraft.ai/sessions/{session_id}", headers=H, json={
+httpx.put(f"https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/sessions/{session_id}", headers=H, json={
     "wizard_ta_groups": [...],   # from /generate-ta-options if used
     "wizard_shared_data": {...},
 })
 
 # 4. Trigger generation
-httpx.post(f"https://api.salecraft.ai/sessions/{session_id}/generate", headers=H, json={
+httpx.post(f"https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/sessions/{session_id}/generate", headers=H, json={
     "ta_group_ids": ["ta_1"],
     "requested_stripe_count": 8,
 })
@@ -184,7 +188,7 @@ httpx.post(f"https://api.salecraft.ai/sessions/{session_id}/generate", headers=H
 # 5. Poll every 10s, max 60 attempts (= 10 min)
 for _ in range(60):
     time.sleep(10)
-    r = httpx.get(f"https://api.salecraft.ai/sessions/{session_id}", headers=H)
+    r = httpx.get(f"https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/sessions/{session_id}", headers=H)
     status = r.json().get("status")
     if status == "complete":
         break
@@ -196,7 +200,7 @@ for _ in range(60):
 
 ```python
 # 1. Trigger
-r = httpx.post(f"https://api.salecraft.ai/sessions/{session_id}/generate-ad",
+r = httpx.post(f"https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/sessions/{session_id}/generate-ad",
                headers=H, json={"platform": "meta", "ta_group_id": "ta_1"})
 project_id = r.json()["project_id"]
 
@@ -204,7 +208,7 @@ project_id = r.json()["project_id"]
 for _ in range(20):
     time.sleep(30)
     r = httpx.get(
-        f"https://api.salecraft.ai/sessions/{session_id}/ad-result/{project_id}",
+        f"https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/sessions/{session_id}/ad-result/{project_id}",
         headers=H,
     )
     if r.json().get("status") == "completed":
@@ -215,7 +219,7 @@ for _ in range(20):
 ### Carousel (multi-image, ~8 min)
 
 ```python
-r = httpx.post(f"https://api.salecraft.ai/sessions/{session_id}/generate-carousel",
+r = httpx.post(f"https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/sessions/{session_id}/generate-carousel",
                headers=H, json={
     "ta_group_id": "ta_1",
     "num_images": 5,
@@ -227,7 +231,7 @@ project_id = r.json()["project_id"]
 for _ in range(20):
     time.sleep(30)
     r = httpx.get(
-        f"https://api.salecraft.ai/sessions/{session_id}/carousel-result/{project_id}",
+        f"https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/sessions/{session_id}/carousel-result/{project_id}",
         headers=H,
     )
     body = r.json()
@@ -241,7 +245,7 @@ for _ in range(20):
 
 ```python
 r = httpx.post(
-    f"https://api.salecraft.ai/brands/{brand_id}/assets/upload-base64",
+    f"https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/brands/{brand_id}/assets/upload-base64",
     headers=H,
     json={
         "filename": "product.jpg",
@@ -288,13 +292,7 @@ If you hit 429, you're calling too aggressively — increase polling intervals (
 
 ## OpenAPI / Swagger
 
-For the canonical machine-readable spec:
-```
-https://api.salecraft.ai/openapi.json     # OpenAPI 3 JSON
-https://api.salecraft.ai/docs             # Swagger UI (browser)
-```
-
-Fetch `openapi.json` if you need an endpoint not listed above — it's the source of truth.
+`/openapi.json` and `/docs` are **disabled in production** for security. The endpoint catalog above is your reference. If you need an endpoint not listed (e.g. a stripe-edit endpoint), check the [SaleCraft Plugin source](https://github.com/connactai/Salecraft-Plugin/tree/master/skills) — every skill's SKILL.md documents the MCP tool names, which map 1:1 to REST resource paths.
 
 ---
 
@@ -318,8 +316,16 @@ Account creation, password reset, and email verification all happen on `https://
 
 ## Setup note for the operator (Landing AI)
 
-The base URL `https://api.salecraft.ai` requires a Cloud Run custom domain mapping:
+To upgrade the API base URL from `https://marketing-backend-v2-s6ykq3ylca-de.a.run.app` (current) to `https://api.salecraft.ai` (target), do these steps in order:
 
+**Step 1 — Verify `salecraft.ai` ownership in Google Search Console** (required because GCP refuses to map a domain you don't own):
+- Visit https://search.google.com/search-console
+- Add property: `salecraft.ai`
+- Choose "Domain" verification → copy the TXT record GCP gives you
+- Add that TXT record at your DNS provider for `salecraft.ai`
+- Wait for verification (usually < 5 min)
+
+**Step 2 — Create the Cloud Run domain mapping**:
 ```
 gcloud beta run domain-mappings create \
   --service=marketing-backend-v2 \
@@ -328,4 +334,8 @@ gcloud beta run domain-mappings create \
   --project=gen-lang-client-0747655769
 ```
 
-Then add the verification CNAME at the DNS provider per Cloud Run instructions. Until that's set up, `https://marketing-backend-v2-s6ykq3ylca-de.a.run.app` works as the temporary base — but document `api.salecraft.ai` in user-facing material.
+**Step 3 — Add the CNAME at your DNS provider** (Cloud Run will print the exact target after step 2 — usually `ghs.googlehosted.com` for subdomains).
+
+**Step 4 — Update this doc**: replace every `https://marketing-backend-v2-s6ykq3ylca-de.a.run.app` with `https://api.salecraft.ai` (single grep+sed in this file). Commit, push.
+
+Until step 4, the `*.run.app` URL is the correct primary base. Both URLs serve the same backend, so a user mid-session won't be disrupted by the swap.

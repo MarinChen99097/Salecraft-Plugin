@@ -1,6 +1,6 @@
 # MCP Call Patterns Reference
 
-> **No MCP in your runtime?** Skip this file and read [`rest-api-direct.md`](./rest-api-direct.md) instead — every MCP tool below has a 1:1 REST counterpart at `https://api.salecraft.ai`. Same auth, same payloads.
+> **No MCP in your runtime?** Skip this file and read [`rest-api-direct.md`](./rest-api-direct.md) instead — every MCP tool below has a 1:1 REST counterpart on the SaleCraft backend (currently `https://marketing-backend-v2-s6ykq3ylca-de.a.run.app`). Same auth, same payloads.
 
 ## Universal Call Pattern
 
