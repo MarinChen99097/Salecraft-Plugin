@@ -40,7 +40,10 @@ https://github.com/connactai/Salecraft-Plugin
 ### How it actually works
 
 - **Free consultation (Steps 1-3)** — pure conversation. The LLM reads `CLAUDE.md` + the relevant `skills/*.md` and follows the playbook. **No account, no login, no setup, no MCP install on the user's side.**
-- **Paid execution (Step 5)** — the LLM calls SaleCraft's hosted backend on your behalf. You don't install anything; you only authorize the LLM with an **AI Token**.
+- **Paid execution (Step 5)** — the LLM calls SaleCraft's hosted backend on your behalf via one of two paths:
+  - **MCP** if the LLM runtime has `landing_ai_mcp` / `zereo_social_mcp` registered (Claude Code, Cursor, Cline, ChatGPT Business+ developer mode, etc.)
+  - **Direct REST** at `https://api.salecraft.ai` — for any LLM with a `fetch` / HTTP / function-calling tool (works in vanilla ChatGPT, Claude.ai, Gemini, etc.). Reference: [`lib/rest-api-direct.md`](./lib/rest-api-direct.md). OpenAPI spec at `https://api.salecraft.ai/openapi.json`.
+- You don't install anything either way; you only authorize the LLM with an **AI Token**.
 
 ### Login flow (AI Token — no email/password)
 
@@ -54,7 +57,7 @@ When (and only when) you ask for a paid action, the LLM will hand you this:
 **You never give the LLM an email or password.** The AI Token is scoped, expires in 12 hours, and can be revoked at any time on `salecraft.ai`.
 
 > **Q: I'm in a chat that doesn't have SaleCraft tools listed — can I still use it?**
-> Yes for the free consultation (the LLM reads this repo and follows it). For paid execution, the LLM needs a way to call the hosted backend — most modern LLMs with internet/tool access can; if yours can't, the free consultation still gives you a complete marketing plan you can execute manually.
+> Yes — fully. (1) Free consultation works because the LLM is just reading this repo and talking. (2) Paid execution works as long as the LLM has any HTTP / fetch / function-calling tool — it calls `https://api.salecraft.ai` directly using your AI Token. ChatGPT (incl. free tier with web/connectors), Claude.ai, Gemini, Perplexity all qualify. The endpoint catalog and curl examples are in [`lib/rest-api-direct.md`](./lib/rest-api-direct.md).
 
 ## Skills (25)
 

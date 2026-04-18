@@ -277,9 +277,13 @@ Reflect  → 8. 成長回顧 → KPI 分析、下輪優化（FREE — /salecraft
 | 明確銷售目標 | 抽象服務 |
 | 電商、零售、餐飲、時尚、醫美、健康、製造 | B2B SaaS、顧問公司 |
 
-## MCP — How To Call Tools
+## How To Call SaleCraft Tools — Two Paths
 
-All tool calls route through the MCP proxy:
+You have **two independent ways** to execute paid actions. Pick whichever your runtime supports — the user does not care, the result is identical.
+
+### Path A — MCP (preferred when available)
+
+If `landing_ai_mcp` / `zereo_social_mcp` are in your tool list, call them directly. If not, they route through `mcp__claude_ai_Service_System_Deep_Research__mcp_tool_call`:
 ```
 mcp_tool_call(
   server_name = "landing_ai_mcp" | "zereo_social_mcp",
@@ -288,7 +292,18 @@ mcp_tool_call(
 )
 ```
 
-If MCP tools are already visible in your tool list, use them directly. If not, they route through `mcp__claude_ai_Service_System_Deep_Research__mcp_tool_call`.
+### Path B — Direct REST (when no MCP is available)
+
+If your runtime only has `fetch` / `httpx` / function-calling-with-HTTP, call the SaleCraft REST API directly at `https://api.salecraft.ai`. **Full reference: `lib/rest-api-direct.md`**.
+
+Quick auth flow:
+1. Get `sc_live_*` from user (3-step prompt — see "登入方法" above)
+2. `POST https://api.salecraft.ai/auth/ai-token/exchange` with `{"ai_token": "sc_live_..."}` → `access_token`
+3. Every subsequent call: `Authorization: Bearer <access_token>`
+
+The catalog of endpoints (sessions, generation, brands, reels, publishing) and full curl/python examples are in `lib/rest-api-direct.md`. Fetch `https://api.salecraft.ai/openapi.json` for the machine-readable spec.
+
+**Both paths use the same AI Token and the same backend** — `landing_ai_mcp` is just a thin MCP wrapper around the REST API. Same auth, same rate limits, same response shapes.
 
 ## First-Time Setup
 

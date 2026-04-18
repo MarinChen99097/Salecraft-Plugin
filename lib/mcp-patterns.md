@@ -1,5 +1,7 @@
 # MCP Call Patterns Reference
 
+> **No MCP in your runtime?** Skip this file and read [`rest-api-direct.md`](./rest-api-direct.md) instead — every MCP tool below has a 1:1 REST counterpart at `https://api.salecraft.ai`. Same auth, same payloads.
+
 ## Universal Call Pattern
 
 All MCP tools are called through the Service System Deep Research proxy:
