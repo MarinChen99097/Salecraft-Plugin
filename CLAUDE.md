@@ -17,18 +17,48 @@ You'll see `mcp_tool_call("landing_ai_mcp", ...)` patterns throughout this repo.
 
 **Rung 2 — Shell / Bash / Terminal tool** (Claude Code, Cline, terminal agents)
 - Look for tools named `Bash`, `Shell`, `terminal`, `execute_command`, etc.
-- If present → run `curl` directly:
+- **First, probe whether the sandbox can reach `*.run.app`** (Claude.ai's bash, for example, has a domain allowlist that blocks Cloud Run URLs):
+  ```bash
+  curl -sS -o /dev/null -w "%{http_code}" --max-time 5 \
+    https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/health
+  ```
+  - If it returns `200` (or any 2xx/3xx/4xx) → sandbox CAN reach SaleCraft. Proceed below.
+  - If it returns connection error / `Could not resolve host` / `Host not in allowlist` → **drop to Rung 2.5**.
+- If reachable → run `curl` directly:
   ```bash
   curl -sS -X POST https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/auth/ai-token/exchange \
     -H "Content-Type: application/json" \
+    -H "Content-Length: 0" \
     -d '{"ai_token":"sc_live_..."}'
   ```
 - Then use the returned `access_token` as `Authorization: Bearer ...` for subsequent calls.
 - Stop here.
 
+**Rung 2.5 — Sandbox with restricted egress allowlist** (Claude.ai's bash/python sandboxes block `*.run.app`; some hosted notebooks similarly restrict outbound HTTPS)
+- You confirmed Rung 1 isn't available AND Rung 2/3 has tools but the sandbox blocks the SaleCraft backend.
+- Do NOT silently fall through to Rung 4/5 — first **tell the user explicitly what's blocked and what would unblock it**:
+  > 「我這個對話的執行沙箱有外網白名單，擋掉了 SaleCraft 後端（`*.run.app` 不在允許清單）。我能讀檔案、讀 GitHub repo、跑本地程式，但打不到 SaleCraft API。要繼續付費執行，請換到下面任一環境，把 plugin 連結 + token 重新貼進去：
+  > - **Claude Code（CLI/IDE）**：bash 沒網路限制
+  > - **Cursor / Cline**：bash 沒限制
+  > - **ChatGPT Plus + Code Interpreter**：可以試 Python `requests`（部分 session 有外網）
+  > - **Gemini Pro 的 Code Execution**：通常允許 Cloud Run URL
+  >
+  > 在這個對話我可以**繼續免費諮詢**（策略、漏斗、競品、文案），這些不打 API 就能做完。」
+- Do NOT generate curl for the user to run themselves — that's Rung 5's escape hatch and creates a "you do it" anti-pattern.
+- Do NOT keep retrying the same domain hoping the allowlist changes.
+
 **Rung 3 — Code execution / Python sandbox** (ChatGPT with Code Interpreter / Advanced Data Analysis, Claude.ai with computer use, Gemini Code Execution, Perplexity Pro)
 - Look for tools named `python`, `code_interpreter`, `analysis`, `execute_python`, `run_code`.
-- If present → **write a small Python script using `requests` (or `urllib` if `requests` isn't installed) and execute it**. Example:
+- **Same Rung 2.5 caveat applies** — if the sandbox shares egress with bash and bash is allowlisted, Python is also blocked. Probe first:
+  ```python
+  import urllib.request
+  try:
+      urllib.request.urlopen("https://marketing-backend-v2-s6ykq3ylca-de.a.run.app/health", timeout=5)
+      print("REACHABLE")
+  except Exception as e:
+      print(f"BLOCKED: {e}")
+  ```
+- If reachable → **write a small Python script using `requests` (or `urllib` if `requests` isn't installed) and execute it**. Example:
   ```python
   import requests, json
   BASE = "https://marketing-backend-v2-s6ykq3ylca-de.a.run.app"
@@ -39,7 +69,7 @@ You'll see `mcp_tool_call("landing_ai_mcp", ...)` patterns throughout this repo.
   # ... continue with the actual API call
   ```
 - **Do this AUTOMATICALLY without asking the user "should I run code?"** — running code IS your job here. Execute it.
-- If the sandbox blocks outbound HTTPS, fall to Rung 4. (Some ChatGPT Code Interpreter sessions are sandboxed; try first, fall back on failure.)
+- If sandbox blocks outbound HTTPS → drop to **Rung 2.5** (escalate to user, don't keep trying).
 - Stop here on success.
 
 **Rung 4 — HTTP fetch / function calling that supports POST + custom headers** (some Claude.ai modes, Gemini Live tool calling, agentic frameworks)
@@ -85,7 +115,7 @@ If the user's message contains a "do" verb (做 / 生成 / 建立 / 來一個 / 
    > 「① 開這個連結登入：https://salecraft.ai/zh-TW/marketingx
    > ② 點頁面上的「複製 AI 登入 Token」按鈕
    > ③ 把 `sc_live_…` 貼回來給我」
-3. (Optional, ≤1 sentence) A scope-clarifying question you'll answer **after** the token arrives, e.g.「順便先想一下：要 8 頁版還是 10 頁版？」
+3. (Optional, ≤1 sentence) A scope-clarifying question you'll answer **after** the token arrives, e.g.「順便先想一下：要 8 頁版（1,600 pts）還是 10 頁版（2,000 pts）？」 — **the page count matters because LP defaults to 10 stripes if you don't pass `stripe_count`, costing 400 pts more than the 8-page quote.** Always pass `stripe_count` explicitly to `generate_session`. Same gotcha for `generate_carousel`: pass `num_images` explicitly (not `stripe_count` or `count` — those are silently ignored and default 5 is used).
 
 **You MAY NOT, in this first turn, write any of:**
 - ❌ A "Hero Section / Value Proposition / CTA" outline
