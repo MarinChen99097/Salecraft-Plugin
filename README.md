@@ -57,7 +57,13 @@ When (and only when) you ask for a paid action, the LLM will hand you this:
 **You never give the LLM an email or password.** The AI Token is scoped, expires in 12 hours, and can be revoked at any time on `salecraft.ai`.
 
 > **Q: I'm in a chat that doesn't have SaleCraft tools listed — can I still use it?**
-> Yes — fully. (1) Free consultation works because the LLM is just reading this repo and talking. (2) Paid execution works as long as the LLM has any HTTP / fetch / function-calling tool — it calls the SaleCraft backend directly using your AI Token (see `lib/rest-api-direct.md` for the current base URL and full endpoint catalog). ChatGPT (incl. free tier with web/connectors), Claude.ai, Gemini, Perplexity all qualify.
+> Almost certainly yes. The plugin's `CLAUDE.md` includes a **capability ladder** that tells the LLM to silently scan its own tools (MCP → bash → Python sandbox → HTTP fetch) and pick the highest available. Concretely:
+> - **Claude Code / Cursor / Cline / Claude Desktop with MCP** → works via MCP path (Path A)
+> - **ChatGPT Plus** → tell it "use Code Interpreter to run this" and it executes via Python sandbox (`requests` library)
+> - **Claude.ai / Gemini / Perplexity Pro** → built-in code execution handles it
+> - **Free ChatGPT with browsing only** → can do free consultation; for paid actions it'll explicitly tell you to either ask it to "use Python" or switch to one of the above. It will NOT generate curl for you to run yourself.
+>
+> Free consultation (strategy, competitor analysis, funnel, copy) works in 100% of cases because it's pure conversation — no API calls needed.
 
 ## Skills (25)
 
