@@ -878,7 +878,7 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 ## Landing Page URLs
 
 ```
-https://landingai.info/{locale}/landing-page?id={campaign_id}
+https://landingai.info/{locale}/lp/{campaign_id}
 ```
 
 ## i18n — 10 Locales

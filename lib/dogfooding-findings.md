@@ -105,23 +105,28 @@ and `skills/generate-landing/SKILL.md` pre-flight gotchas.
 **Fix (backend, pending)**: add `extra="forbid"` to all paid request
 models so wrong field names return 422 immediately.
 
-### #13 — Public LP URL pattern documented as `salecraft.ai` but actually served from `landingai.info` 🔴 fixed (plugin)
-Plugin docs (`CLAUDE.md` L877, multiple skills) showed the public LP URL
-as `https://salecraft.ai/{locale}/landing-page?id=...`. AI agents copied
-this pattern when telling users where to find their generated LP.
-Reality: `salecraft.ai` is the brand/marketing site, NOT the LP renderer.
-LPs are served by `marketing-frontend` Cloud Run service mapped to
-`landingai.info`. The salecraft.ai URL returns 404; the landingai.info
-URL works (308 redirect to the actual page).
-Backend already generates `landingai.info` URLs internally
-(`routers/landing.py` line 7956: `FRONTEND_URL` env var defaults to
-`https://landingai.info`), so the bug was purely in plugin docs +
-URL discipline rule.
-**Fix (plugin)**: changed every `salecraft.ai/{locale}/landing-page`
-to `landingai.info/{locale}/landing-page` across CLAUDE.md and all
-SKILL.md files. Updated URL discipline rule (Core Rule #17) to
-explicitly allow `landingai.info` for LP delivery (it's user-visible
-brand-acceptable), separate from `salecraft.ai` (brand/account site).
+### #13 — Public LP URL: wrong domain AND wrong path 🔴 fixed (plugin)
+Plugin docs showed the public LP URL as
+`https://salecraft.ai/{locale}/landing-page?id=...`. **Two bugs**:
+1. Wrong domain — `salecraft.ai` is the brand/marketing site (where the
+   marketingx token page lives), NOT the LP renderer. LPs are served by
+   `marketing-frontend` Cloud Run service mapped to `landingai.info`.
+   `salecraft.ai/.../landing-page?id=...` returns 404.
+2. Wrong path — even on the correct domain, `/landing-page?id=X` is the
+   legacy form that 301-redirects. The canonical user-facing URL is
+   `/lp/<X>` (path param, no query string).
+
+Backend already returns the legacy form internally
+(`routers/landing.py` line 7958: `f"{base_url}/landing-page?id={...}"`),
+which works via redirect — so end users don't break, but URLs we hand
+out look uglier than necessary.
+**Fix (plugin)**: every `salecraft.ai/{locale}/landing-page?id=...` →
+`landingai.info/{locale}/lp/<id>` across CLAUDE.md, generate-landing,
+edit-landing, homepage-builder skills. URL discipline rule (Core Rule
+\#17) updated to allow both domains for distinct purposes.
+**Fix (backend, optional)**: change `published_url` to canonical
+`f"{base_url}/{locale}/lp/{project.id}"` so legacy redirect can be
+deprecated later.
 
 ### #12 — `generate_session` defaults to 10 stripes when `stripe_count` omitted 🟠 fixed (plugin doc)
 Same class of bug as #11: LLM created a session intending 8-page LP

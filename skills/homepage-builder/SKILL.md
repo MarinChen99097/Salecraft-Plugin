@@ -541,7 +541,7 @@ See **Phase 9: For Developers — LP Config JSON Integration** below for the ful
 If the user does not want to host anything at all, the LP is already live on the Landing AI frontend:
 
 ```
-https://landingai.info/{locale}/landing-page?id={campaign_id}
+https://landingai.info/{locale}/lp/{campaign_id}
 ```
 
 - No deployment needed — the page is already hosted and served

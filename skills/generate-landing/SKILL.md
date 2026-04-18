@@ -44,7 +44,7 @@ If any step is impossible (no HTTP capability, user won't auth, etc.): say so **
 #### What "done" looks like
 
 A successful run of this skill returns to the user:
-- A real, viewable LP URL like `https://landingai.info/{locale}/landing-page?id=<campaign_id>` (LPs are hosted on the marketing-frontend at `landingai.info`, NOT on `salecraft.ai` — that's the marketing site, not the LP renderer)
+- A real, viewable LP URL like `https://landingai.info/{locale}/lp/<campaign_id>` (LPs are hosted on the marketing-frontend at `landingai.info`, NOT on `salecraft.ai` — that's the marketing site, not the LP renderer. The legacy form `?id=...` still 301-redirects but the canonical share URL is `/lp/<id>`)
 - Per-stripe image URLs (PNG/WebP)
 - Cost actually deducted from their account (you can verify via `GET /auth/me`)
 
@@ -310,7 +310,7 @@ LP Generated Successfully!
 
 Links:
 1. Sales Page (interactive preview):
-   https://landingai.info/{locale}/landing-page?id={campaign_id}
+   https://landingai.info/{locale}/lp/{campaign_id}
 
 2. Visual Editor (drag & drop editing):
    https://salecraft.ai/{locale}/editor?id={campaign_id}
@@ -381,11 +381,11 @@ If user selected "both" in Phase 2:
 Both versions generated!
 
 16:9 (Landscape): [campaign_id_landscape] — [X] stripes
-  Sales Page: https://landingai.info/{locale}/landing-page?id={campaign_id_landscape}
+  Sales Page: https://landingai.info/{locale}/lp/{campaign_id_landscape}
   Editor: https://salecraft.ai/{locale}/editor?id={campaign_id_landscape}
 
 9:16 (Portrait):  [campaign_id_portrait] — [Y] stripes
-  Sales Page: https://landingai.info/{locale}/landing-page?id={campaign_id_portrait}
+  Sales Page: https://landingai.info/{locale}/lp/{campaign_id_portrait}
   Editor: https://salecraft.ai/{locale}/editor?id={campaign_id_portrait}
 
 Which version would you like to edit first?
