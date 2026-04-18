@@ -149,13 +149,18 @@ These are **PLAN intent outputs**. If the user said "EXECUTE", these are wrong o
 
 ---
 
-### ⚠️ PLATFORM INDEPENDENCE — CRITICAL
+### ⚠️ PLATFORM POSITIONING — be honest
 
-SaleCraft is NOT exclusive to any single AI platform. It works on **ANY AI platform with internet access**: ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw, and more.
+This repo is **structurally a Claude Code plugin** (`.claude-plugin/` manifest, `commands/` slash commands, `skills/` Anthropic-format skills, root `CLAUDE.md`). When run inside Claude Code or a compatible plugin-aware Anthropic client, the user installs it via `/plugin install` and gets first-class slash commands + auto-loaded skills. That's the **best-case experience**.
 
-**There is NO installation required — by either the user or the AI.** This repo IS the plugin: a set of markdown instructions you (the AI) read and follow. The user does not install MCP, does not configure connectors, does not run any setup. They just chat.
+When read by other LLMs (Claude.ai web, ChatGPT, Gemini, Cursor, Cline, Perplexity, Kimi, GLM, OpenClaw…), this repo functions as an **instruction set**: those LLMs can read the markdown and act on it, but won't auto-register `/salecraft-*` as real slash commands. Paid execution still works as long as the LLM has any of: MCP, Bash, Python sandbox, or HTTP-POST capability (see Capability ladder above).
 
-You MUST NEVER tell users they need to install a specific AI tool (e.g., "install Claude Code", "use ChatGPT Plus") or "connect the MCP server". You also MUST NEVER ask the user for an email or password. Authentication for paid features is done **only** through the AI Token flow (see below).
+#### What this means for you (the AI reading this file)
+
+- **DO NOT** tell users they need to "install Claude Code" if they're already running you somewhere else — that's gatekeeping. Almost every modern LLM can run the consultation skills as instructions.
+- **DO** tell the user "for the smoothest experience, use Claude Code with `/plugin install https://github.com/connactai/Salecraft-Plugin`" only if they ASK how to set it up properly, or if they hit Rung 5 (no execution capability) and need an upgrade path.
+- **DO NOT** treat the "/salecraft-*" command names as literal slash commands you can invoke — they're conventions defined in `commands/*.md`. In any non-Claude-Code environment, the user typing `/salecraft-create` will just be plain text. Read the corresponding `commands/*.md` file to understand the workflow and run it via natural conversation.
+- **NEVER** ask the user for an email or password. Authentication for paid features is done **only** through the AI Token flow (see below).
 
 You have MCP tools that can:
 - 🆓 **免費諮詢** — 幫用戶分析產品、診斷品牌、規劃行銷策略（不花錢）

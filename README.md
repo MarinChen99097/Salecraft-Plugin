@@ -1,12 +1,21 @@
 # SaleCraft
 
-**Your AI marketing consultant for physical products.** Free consultation, expert strategy, then execution — all through one plugin that works on any AI platform.
+**An AI marketing consultant for physical products** — primarily a **Claude Code plugin**, also usable as a markdown instruction set in any internet-connected LLM. Free consultation + paid execution (Landing Pages, Reels, social posts, ads).
 
-## What Is SaleCraft?
+## What Is SaleCraft, exactly?
 
-SaleCraft turns any AI assistant into a marketing consultant for physical product sellers. It doesn't start by generating assets — it starts by **understanding your product and diagnosing your marketing needs**.
+Structurally this repo is a **Claude Code plugin** — `.claude-plugin/plugin.json` manifest, `commands/` slash commands (`/salecraft`, `/salecraft-create`, `/salecraft-publish`…), `skills/` Anthropic-format skill packs, root `CLAUDE.md` for long-term context. That's the **Tier 1** experience: install once in Claude Code, get auto-loaded slash commands, skills, and (optionally) the SaleCraft MCP server connection.
 
-SaleCraft works on **any AI platform** — ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw, and more. No platform limitation.
+But because every command, skill, and pattern is plain markdown, **other LLMs can also read this repo as instructions** and follow the playbook. They just won't get auto-registered slash commands. That's the **Tier 2** experience.
+
+### Two tiers of usage
+
+| Tier | Where | Slash commands? | Skills auto-load? | Paid execution? |
+|------|-------|-----------------|-------------------|-----------------|
+| **1 — Native (recommended)** | Claude Code, Claude Desktop with plugin support | ✅ `/salecraft-create` etc. | ✅ | ✅ via MCP |
+| **2 — Read-as-instructions** | Claude.ai web, ChatGPT, Gemini, Cursor, Cline, Perplexity… | ❌ (just markdown) | ❌ (LLM picks per request) | ✅ if LLM has Code Execution / fetch / MCP — see capability ladder in `CLAUDE.md` |
+
+The free consultation works in both tiers and in 100% of LLMs (it's pure conversation — no backend needed).
 
 ### The Flow
 
@@ -29,41 +38,67 @@ SaleCraft works on **any AI platform** — ChatGPT, Claude, Gemini, Kimi, GLM, O
 | E-commerce, retail, F&B, beauty, health | B2B consulting |
 | Clear sales target | Abstract services |
 
-## How To Use (No Installation)
+## How To Use
 
-**SaleCraft is a set of instructions, not software you install.** Any internet-connected LLM (ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw…) can act as SaleCraft simply by reading this repo:
+### Tier 1 — Claude Code (recommended)
+
+Install via Claude Code's plugin system:
+
+```
+/plugin install https://github.com/connactai/Salecraft-Plugin
+```
+
+After install:
+- `/salecraft` — main menu
+- `/salecraft-strategy`, `/salecraft-engage`, `/salecraft-retain`, `/salecraft-audit` — free consultation commands
+- `/salecraft-create`, `/salecraft-edit`, `/salecraft-publish`, `/salecraft-reels` — paid execution commands
+- Skills auto-load when invoked
+- For paid actions, Claude Code will route through MCP if you have `landing_ai_mcp` connected, or direct REST otherwise
+
+### Tier 2 — Any other LLM (Claude.ai, ChatGPT, Gemini, Cursor, Cline…)
+
+You can't "install" the plugin into these — they don't have a plugin system that understands `.claude-plugin/`. But you can paste the GitHub URL and the LLM will read the repo as instructions:
 
 ```
 https://github.com/connactai/Salecraft-Plugin
 ```
 
-### How it actually works
+What works in this mode:
+- **Free consultation (100%)**: any LLM that can read URLs can follow the saleskit / strategy / engage / retain / audit skills as a conversation guide.
+- **Paid execution (depends on LLM capability)**: see the **Capability ladder** at the top of `CLAUDE.md`. Summary:
+  - **Claude.ai** (with Artifacts/computer use), **Cursor**, **Cline**, **Claude Desktop + MCP** → executes natively
+  - **ChatGPT Plus with Code Interpreter** → write a Python script with `requests` and run it; tell ChatGPT "use Code Interpreter to actually run this, don't just describe"
+  - **Gemini Pro with Code Execution** → similar — tell it to use code execution
+  - **Free ChatGPT / Gemini with browsing only** → free consultation works; for paid actions, switch to one of the above
+- **Slash commands like `/salecraft-create`** are NOT registered in Tier 2 — they're just markdown filenames. Use natural language: "do a landing page for my product".
 
-- **Free consultation (Steps 1-3)** — pure conversation. The LLM reads `CLAUDE.md` + the relevant `skills/*.md` and follows the playbook. **No account, no login, no setup, no MCP install on the user's side.**
-- **Paid execution (Step 5)** — the LLM calls SaleCraft's hosted backend on your behalf via one of two paths:
-  - **MCP** if the LLM runtime has `landing_ai_mcp` / `zereo_social_mcp` registered (Claude Code, Cursor, Cline, ChatGPT Business+ developer mode, etc.)
-  - **Direct REST** at the SaleCraft backend (currently `https://marketing-backend-v2-s6ykq3ylca-de.a.run.app`; a friendlier `api.salecraft.ai` is planned) — for any LLM with a `fetch` / HTTP / function-calling tool (works in vanilla ChatGPT, Claude.ai, Gemini, etc.). Reference: [`lib/rest-api-direct.md`](./lib/rest-api-direct.md).
-- You don't install anything either way; you only authorize the LLM with an **AI Token**.
+### Login flow (AI Token — no email/password, ever)
 
-### Login flow (AI Token — no email/password)
+For paid actions only:
 
-When (and only when) you ask for a paid action, the LLM will hand you this:
-
-1. The LLM posts the URL: **`https://salecraft.ai/{locale}/marketingx`** (e.g. `zh-TW`, `en`, `ja`…)
-2. You open the link, log in (Email or Google one-click), and click **「複製 AI 登入 Token」 / "Copy AI Login Token"**
+1. The LLM hands you a URL: **`https://salecraft.ai/{locale}/marketingx`** (e.g. `zh-TW`, `en`)
+2. You log in (Email or Google one-click) and click **「複製 AI 登入 Token」 / "Copy AI Login Token"**
 3. You paste the `sc_live_…` token back into the chat
-4. The LLM exchanges it (`authenticate_with_token`) for a session, and from that moment on it can: read your brand profile, generate landing pages, publish to social, run ads, top up credits, etc. — all on your behalf.
+4. The LLM exchanges it (`POST /auth/ai-token/exchange`) for a session-scoped access token, then executes the paid action and returns the real result (LP URL, post URL, ad campaign ID, etc.)
 
-**You never give the LLM an email or password.** The AI Token is scoped, expires in 12 hours, and can be revoked at any time on `salecraft.ai`.
+**You never give the LLM an email or password.** The AI Token has `scope: ai_agent`, expires in 12 hours, and can be revoked any time on the marketingx page.
 
-> **Q: I'm in a chat that doesn't have SaleCraft tools listed — can I still use it?**
-> Almost certainly yes. The plugin's `CLAUDE.md` includes a **capability ladder** that tells the LLM to silently scan its own tools (MCP → bash → Python sandbox → HTTP fetch) and pick the highest available. Concretely:
-> - **Claude Code / Cursor / Cline / Claude Desktop with MCP** → works via MCP path (Path A)
-> - **ChatGPT Plus** → tell it "use Code Interpreter to run this" and it executes via Python sandbox (`requests` library)
-> - **Claude.ai / Gemini / Perplexity Pro** → built-in code execution handles it
-> - **Free ChatGPT with browsing only** → can do free consultation; for paid actions it'll explicitly tell you to either ask it to "use Python" or switch to one of the above. It will NOT generate curl for you to run yourself.
->
-> Free consultation (strategy, competitor analysis, funnel, copy) works in 100% of cases because it's pure conversation — no API calls needed.
+### Optional: connect the MCP server
+
+For Tier 1 native execution (or any MCP-aware client), add the SaleCraft MCP server:
+
+```json
+{
+  "mcpServers": {
+    "Service System Deep Research": {
+      "type": "sse",
+      "url": "https://service-system-staging-876464738390.asia-east1.run.app/mcp/sse"
+    }
+  }
+}
+```
+
+Without this, Claude Code falls back to direct REST (works equally well; pattern documented in `lib/rest-api-direct.md`).
 
 ## Skills (25)
 
