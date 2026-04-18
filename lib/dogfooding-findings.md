@@ -105,7 +105,84 @@ and `skills/generate-landing/SKILL.md` pre-flight gotchas.
 **Fix (backend, pending)**: add `extra="forbid"` to all paid request
 models so wrong field names return 422 immediately.
 
-### #20 — No API to delete published posts; recovery requires manual UI 🟠 open (backend)
+### #29 — `creative_id` not resolved by `create_ad_campaign`; caller forced to pass `creative_image_url` 🟡 open (backend)
+Plugin doc + schema suggest passing `creative_id` (returned by
+`upload_ad_image` / `upload_ad_video`) to `create_ad_campaign`. In
+practice the route handler doesn't look up the creative by id; it
+expects raw `creative_image_url` / `creative_video_url`. AI agents
+get a confusing "missing creative" error after dutifully calling the
+upload step.
+
+**Fix recommendation**: either (a) add creative_id resolution path
+in social_ads.py route handler, or (b) update plugin doc + Pydantic
+schema to remove the misleading creative_id reference.
+
+### #28 — Plugin doc says `account_id`, backend wants `social_account_id` 🟡 open (plugin doc)
+`skills/publish-ads/SKILL.md` line 179 references parameter
+`account_id`; the actual Pydantic schema field is `social_account_id`
+(matches publish_post for consistency). AI agents trying to follow
+the doc get 422 validation errors on the first try.
+
+**Fix**: rename the doc reference to match the schema. Same gotcha
+as #11 (carousel num_images) — plugin doc and backend schema must
+stay in lockstep, ideally auto-generated from one source of truth.
+
+### #27 — Failed campaigns leave orphans in Meta ad account; no cleanup endpoint 🟠 open (backend)
+When `create_ad_campaign` succeeds at the Campaign step but fails
+at the AdSet step (per #25), Meta has already created an empty
+Campaign shell. The backend records `status=failed` in its DB but
+doesn't call DELETE on the orphan Meta campaign — and no
+`cleanup_failed_campaigns` endpoint exists.
+
+In dogfooding 2026-04-18, ~10 orphan campaigns had piled up in
+test1's ad account (`act_642463704665856`) since 2026-03-25.
+They don't spend money (no AdSet = no impressions) but pollute
+the user's Meta Ads Manager UI.
+
+**Fix recommendation**: in the route handler's exception path,
+when AdSet creation fails after Campaign succeeded, call
+`account.api_call('DELETE', f'/{platform_campaign_id}')` to roll
+back. Add a `POST /social/ads/cleanup-orphans` endpoint for
+historical cleanup.
+
+### #26 — `campaign_objective` appears overwritten in DB record 🟡 needs-investigation
+Claude.ai reported that passing `OUTCOME_AWARENESS` resulted in DB
+record showing `OUTCOME_TRAFFIC`. Code review of route handler
+doesn't show an obvious overwrite — `body.campaign_objective` is
+passed directly to both `create_campaign(objective=...)` and the
+DB insert. Possible explanations:
+1. The DB record was auto-default-populated before user request
+   bound (possible but unlikely)
+2. `AdCampaignCreateRequest.campaign_objective` Pydantic default
+   `"OUTCOME_TRAFFIC"` was applied because the LLM payload was
+   silently rejected by an earlier validation layer
+3. Different code path inserted the DB row
+
+Needs more dogfooding evidence (full request/response capture) to
+confirm whether this is a real bug or Claude.ai's misread.
+
+### #25 — `create_ad_campaign` AdSet step always defaults `optimization_goal` to LINK_CLICKS 🔴 P0 fixed (backend bcfbaf1)
+`routers/social_ads.py:360` called `create_adset()` without passing
+`optimization_goal`, so the helper's default `"LINK_CLICKS"` was
+always used. Meta API rejects LINK_CLICKS on
+`OUTCOME_AWARENESS` / `OUTCOME_LEADS` / `OUTCOME_SALES`
+objectives — those need REACH, LEAD_GENERATION, OFFSITE_CONVERSIONS
+respectively.
+
+Result: every non-TRAFFIC campaign failed at AdSet creation, leaving
+an empty Campaign shell in the user's Meta ad account. Confirmed
+~10 orphan campaigns piled up in the test ad account from
+2026-03-25 to 2026-04-18 — bug had been live ~25 days.
+
+**Fix (backend bcfbaf1)**: added `default_optimization_goal_for()`
+helper in `meta_ads_publisher.py` with the per-objective safe-default
+mapping. Route handler now derives the value from
+`body.campaign_objective` and passes it explicitly to `create_adset`.
+
+After deploy: AWARENESS / LEADS / SALES campaigns should reach the
+AdSet step successfully. (Existing orphans are Meta-side state and
+must be deleted manually via Meta Ads Manager — see #27 for the
+cleanup-endpoint follow-up.)
 After successful publish to IG/FB via `publish_post`, the only available
 post-management endpoint is `cancel_post`, which only cancels posts
 with `status=scheduled` (not yet sent to Meta). Once Meta has accepted
