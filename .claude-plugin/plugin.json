@@ -1,6 +1,6 @@
 {
   "name": "salecraft",
-  "description": "End-to-end marketing automation: Landing Page generation, homepage building, and ad publishing via MCP orchestration. Works on any AI platform (ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw, etc.) to create professional landing pages, build websites, and run Meta/Google ad campaigns through 200+ MCP tools. Includes built-in login/register tools — users can authenticate directly through the AI without installing anything.",
+  "description": "End-to-end marketing automation as a markdown instruction set — no installation required. Any internet-connected LLM (ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw, etc.) can read this repo and act as a SaleCraft marketing consultant: free strategy/funnel/competitor consultation through pure conversation, plus paid Landing Page generation, social publishing, Reels, and Meta/Google ad campaigns through the hosted backend. Authentication is AI-Token-only (user copies a token from salecraft.ai/{locale}/marketingx and pastes it back) — the AI never asks for an email or password.",
   "author": {
     "name": "Landing AI",
     "email": "support@landing-ai.com"

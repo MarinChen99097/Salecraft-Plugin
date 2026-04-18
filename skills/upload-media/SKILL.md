@@ -27,7 +27,7 @@ You help users upload photos, voice samples, and product images to their brand p
 - `sp_id` — which spokesperson (for photo/voice; not needed for product images)
 
 If any of these are missing, help the user find them:
-- No token → call `login(email, password)`
+- No token → run the **AI Token** flow (NEVER ask for email/password): hand user `https://salecraft.ai/{locale}/marketingx`, ask them to click 「複製 AI 登入 Token」 and paste `sc_live_...`, call `authenticate_with_token`
 - No brand → call `list_brands` and ask user to pick
 - No spokesperson → call `list_spokespersons` or `create_spokesperson`
 

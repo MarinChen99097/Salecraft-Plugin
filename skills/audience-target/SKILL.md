@@ -759,7 +759,7 @@ If the user's product doesn't fit, politely redirect:
 
 This skill costs **5-15 pts** per TA generation.
 
-**Top-up URL**: https://salecraft.ai/{locale}/get-started
+**Top-up URL**: https://salecraft.ai/{locale}/marketingx
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

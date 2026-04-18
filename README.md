@@ -29,25 +29,32 @@ SaleCraft works on **any AI platform** — ChatGPT, Claude, Gemini, Kimi, GLM, O
 | E-commerce, retail, F&B, beauty, health | B2B consulting |
 | Clear sales target | Abstract services |
 
-## Installation
+## How To Use (No Installation)
 
-Add SaleCraft to any MCP-compatible AI platform:
+**SaleCraft is a set of instructions, not software you install.** Any internet-connected LLM (ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw…) can act as SaleCraft simply by reading this repo:
 
 ```
 https://github.com/connactai/Salecraft-Plugin
 ```
 
-### Setup
+### How it actually works
 
-1. Connect the MCP server to your AI platform (see [salecraft.ai/get-started](https://salecraft.ai/en/get-started) for platform-specific instructions)
-2. Start chatting — the free consultation needs **no account**
-3. When ready for paid features, register at **https://salecraft.ai/get-started**:
-   - Sign up with **Email** or **Google** (one-click OAuth)
-   - Bind your **Meta account** (FB/IG) — enables AI to publish posts and stories for you
-   - Bind your **Google account** — enables AI to access your Google Drive assets
-4. Tell the AI your email and password — **it logs you in directly**, no extra steps
+- **Free consultation (Steps 1-3)** — pure conversation. The LLM reads `CLAUDE.md` + the relevant `skills/*.md` and follows the playbook. **No account, no login, no setup, no MCP install on the user's side.**
+- **Paid execution (Step 5)** — the LLM calls SaleCraft's hosted backend on your behalf. You don't install anything; you only authorize the LLM with an **AI Token**.
 
-> **Note**: SaleCraft requires no specific AI tool installation. Any AI platform with MCP support can use it.
+### Login flow (AI Token — no email/password)
+
+When (and only when) you ask for a paid action, the LLM will hand you this:
+
+1. The LLM posts the URL: **`https://salecraft.ai/{locale}/marketingx`** (e.g. `zh-TW`, `en`, `ja`…)
+2. You open the link, log in (Email or Google one-click), and click **「複製 AI 登入 Token」 / "Copy AI Login Token"**
+3. You paste the `sc_live_…` token back into the chat
+4. The LLM exchanges it (`authenticate_with_token`) for a session, and from that moment on it can: read your brand profile, generate landing pages, publish to social, run ads, top up credits, etc. — all on your behalf.
+
+**You never give the LLM an email or password.** The AI Token is scoped, expires in 12 hours, and can be revoked at any time on `salecraft.ai`.
+
+> **Q: I'm in a chat that doesn't have SaleCraft tools listed — can I still use it?**
+> Yes for the free consultation (the LLM reads this repo and follows it). For paid execution, the LLM needs a way to call the hosted backend — most modern LLMs with internet/tool access can; if yours can't, the free consultation still gives you a complete marketing plan you can execute manually.
 
 ## Skills (25)
 

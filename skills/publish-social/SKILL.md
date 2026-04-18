@@ -36,15 +36,17 @@ If user has no connected accounts, **direct them to the SaleCraft frontend** —
 
 **正確步驟**：
 > 「請到這個頁面連結你的 Meta 帳號：
-> https://salecraft.ai/{locale}/get-started
-> 
+> https://salecraft.ai/{locale}/marketingx
+>
 > 注意：你的 IG 帳號必須是**專業帳戶**或**商業帳戶**，個人帳戶無法透過 API 發文。
-> 如果還不是，到 IG App → 設定 → 帳號 → 切換為專業帳號。」
+> 如果還不是，到 IG App → 設定 → 帳號 → 切換為專業帳號。
+>
+> 連結完成後，回到對話複製頁面上的「**AI 登入 Token**」貼給我，我就能直接幫你發文。」
 
 連結完成後，用 `list_accounts(user_token)` 確認是否已連結。
 
 ### Connect TikTok
-同樣引導用戶到 get-started 頁面操作。
+同樣引導用戶到 `https://salecraft.ai/{locale}/marketingx` 頁面操作；連結後回來複製「AI 登入 Token」給你。
 
 ## Social Post Generation (Image + Caption)
 
@@ -453,7 +455,7 @@ If the user's product doesn't fit, politely redirect:
 
 Social copy generation costs **100 pts per set** (~$3). Publishing itself is free; the cost is in content generation (social_copy = 100 pts, quick ad image = 200 pts).
 
-**Top-up URL**: https://salecraft.ai/{locale}/get-started
+**Top-up URL**: https://salecraft.ai/{locale}/marketingx
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

@@ -11,7 +11,7 @@ Execute these phases in order:
 
 ## Phase 1: Brand Onboarding
 Invoke the `brand-onboard` skill.
-- Authenticate user (ask email + password, call `login`)
+- Authenticate user via **AI Token** (NEVER email/password): hand them `https://salecraft.ai/{locale}/marketingx`, ask them to click 「複製 AI 登入 Token」 and paste `sc_live_...`, then call `authenticate_with_token`
 - Verify brand assets
 - Fill gaps if needed
 - Output: `brand_id`, `user_token`
@@ -50,8 +50,8 @@ Carry these values across all phases — never re-ask:
 - `user_token`, `brand_id`, `ta_groups`, `aspect_ratio`, `locale`
 - `session_id`, `campaign_id`, `landing_page_id`
 
-## Login Awareness
-**You CAN log users in directly.** Call `login` with email + password. If user has no account, direct to `https://salecraft.ai/get-started`.
+## Login Awareness (AI Token only)
+**Authenticate via AI Token — NEVER email/password.** Direct user to `https://salecraft.ai/{locale}/marketingx` (replace `{locale}` to their language), have them click 「複製 AI 登入 Token」, paste back `sc_live_...`, then call `authenticate_with_token`. If they have no account, the same page handles registration.
 
 ## No Jargon Rule
 Never mention MCP, tokens, skills, or technical internals to users. Just do the work.

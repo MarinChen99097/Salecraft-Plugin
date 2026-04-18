@@ -289,7 +289,7 @@ If the user's product doesn't fit, politely redirect:
 
 This skill's cost depends on the ad creative generation: quick ad image = 200 pts (~$7), carousel = 300 + 100×N pts. Campaign creation itself uses the generated creative.
 
-**Top-up URL**: https://salecraft.ai/{locale}/get-started
+**Top-up URL**: https://salecraft.ai/{locale}/marketingx
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

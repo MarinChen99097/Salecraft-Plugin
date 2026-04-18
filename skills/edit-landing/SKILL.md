@@ -614,7 +614,7 @@ If the user's product doesn't fit, politely redirect:
 
 Stripe regeneration costs **100 pts** per regeneration (regeneration_credit_cost). Text-only edits (`update_stripe_texts`, `update_stripe_text_styling`) are free.
 
-**Top-up URL**: https://salecraft.ai/{locale}/get-started
+**Top-up URL**: https://salecraft.ai/{locale}/marketingx
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

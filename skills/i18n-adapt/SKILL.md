@@ -188,7 +188,7 @@ If the user's product doesn't fit, politely redirect:
 
 Text translation (`update_stripe_texts`) and styling changes are free. If stripe regeneration is needed for cultural adaptation, each regeneration costs **100 pts**.
 
-**Top-up URL**: https://salecraft.ai/{locale}/get-started
+**Top-up URL**: https://salecraft.ai/{locale}/marketingx
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

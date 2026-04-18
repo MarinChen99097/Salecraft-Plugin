@@ -229,7 +229,7 @@ Based on answers, recommend the appropriate **SaleCraft Toolbox**:
 
 - **1 USD = 30 pts**
 - **最低儲值**: $20 USD = 600 pts
-- **儲值方式**: Stripe 信用卡（在 get-started 頁面）
+- **儲值方式**: Stripe 信用卡（在 `https://salecraft.ai/{locale}/marketingx` 頁面）
 
 **常見組合包價格估算**：
 | 組合 | 內容 | 預估 pts | 約 USD |
@@ -257,26 +257,27 @@ through AI conversation. No login, no token, no credits needed.
 
 > 「到目前為止的策略分析都是免費的！
 >
-> 接下來如果你想做 [LP / 發文 / 廣告]，需要先建立帳號。
-> 很快，2 分鐘搞定：
+> 接下來如果你想做 [LP / 發文 / 廣告]，需要先登入一下。
+> 很快，3 個動作搞定，**完全不用 email、不用密碼**：
 >
-> 👉 https://salecraft.ai/zh-TW/get-started
+> ① 開這個連結登入：👉 https://salecraft.ai/zh-TW/marketingx
+>     （第一次來可以用 Google 一鍵註冊，也支援 Email 註冊）
+> ② 登入後，點頁面上的「**複製 AI 登入 Token**」按鈕
+> ③ 把那串 `sc_live_…` 貼回來給我，我就能直接幫你做後面的事
 >
-> 在那裡可以：
-> - 用 Google 快速註冊
+> 同一個頁面也可以：
 > - 綁定 FB/IG（社群發佈需要）
 > - 綁定 Google Drive（直接讀取素材）
 > - 儲值點數（$20 起 = 600 pts）
 >
-> 註冊完告訴我你的 email 和密碼，我直接幫你登入！
->
-> 或者，如果你想先繼續做免費的策略規劃，完全不用帳號！」
+> 或者，如果你想先繼續做免費的策略規劃，完全不用登入！」
 
-**⚠️ You CAN and MUST log users in directly.** Ask for their email + password, then call the login tool:
+**⚠️ AI Token 是唯一登入方式。永遠不問 email、永遠不問密碼。** 用戶貼回 `sc_live_...` 後呼叫：
 ```
-mcp_tool_call("landing_ai_mcp", "login", {"email": "...", "password": "..."})
+mcp_tool_call("landing_ai_mcp", "authenticate_with_token", {"ai_token": "sc_live_..."})
+→ { access_token, token_type: "bearer", scope: "ai_agent" }
 ```
-Never say "I can't log you in" or redirect users elsewhere for login. You have the tool — use it.
+拿到 `access_token` 後當 `user_token` 用。**禁止呼叫** `login`、`register`、`forgot_password`、`reset_password`、`verify_email`、`resend_verification` — 這些工具不再給 AI 使用。
 
 If user wants to stay in free mode → skip entirely, continue with Sprint Plan.
 
