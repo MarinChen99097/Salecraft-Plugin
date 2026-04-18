@@ -105,6 +105,76 @@ and `skills/generate-landing/SKILL.md` pre-flight gotchas.
 **Fix (backend, pending)**: add `extra="forbid"` to all paid request
 models so wrong field names return 422 immediately.
 
+### #20 — No API to delete published posts; recovery requires manual UI 🟠 open (backend)
+After successful publish to IG/FB via `publish_post`, the only available
+post-management endpoint is `cancel_post`, which only cancels posts
+with `status=scheduled` (not yet sent to Meta). Once Meta has accepted
+the post and stored a `platform_post_id`, the backend has no way to
+delete it.
+
+This becomes critical when an AI agent publishes erroneous content
+(wrong brand, hallucinated stats, wrong account). The user has to open
+the Instagram or Facebook app and manually delete each post — there's
+no programmatic rollback.
+
+Confirmed during dogfooding 2026-04-18 when an AI agent published 4
+posts (2 IG + 2 FB) with hallucinated metrics; no API existed to undo.
+
+**Recommended fix**: add `DELETE /social/publish/{post_id}` that, when
+post status is `published`, calls Meta Graph API DELETE on the
+platform_post_id. Should require explicit `confirm=true` query param to
+avoid accidental deletes. Log all deletes prominently.
+
+### #19 — No brand-ownership / authorization guardrail in the entire publish pipeline 🔴 P0 legal
+The plugin pipeline `analyze_brand_url` → `create_brand` →
+`create_session` → `generate_session` → `publish_post` has zero steps
+that verify the user owns or is authorized to use the brand they're
+generating content for. An AI agent can:
+1. Scrape a competitor's website with `analyze_brand_url`
+2. Build a brand profile from it
+3. Generate full Landing Pages, ads, and social posts
+4. Publish them to the user's own social accounts under that competitor's brand name
+
+In dogfooding 2026-04-18 this was demonstrated end-to-end with the
+微熱山丘 brand without any consent — 4 posts went live publicly.
+
+Legal exposure: trademark infringement (商標法), unfair competition
+(公平交易法), false advertising (公平交易法第 21 條, especially when
+the LP contains fabricated metrics — see finding #9).
+
+**Recommended fix (multi-layer)**:
+- `create_brand`: require user to attest brand ownership (boolean +
+  text reason). Log + audit.
+- `analyze_brand_url`: when source URL domain doesn't match user's
+  registered domain, mark the resulting brand as `ownership_unverified`
+  and tag downstream sessions accordingly.
+- `publish_post`: refuse to publish if `brand.ownership_verified=False`
+  unless user explicitly bypasses with `i_attest_authorized=true` query
+  param. Even then, log loudly.
+- Top of plugin `CLAUDE.md`: hard rule that AI must ask user to confirm
+  brand authorization before any `publish_*` call when the brand was
+  auto-created from analyze_brand_url within the same session.
+
+### #18 — `get_account_capability.can_publish` flag misaligned with actual publish capability 🟠 fixed (backend logic, pending)
+FB Page reports `can_publish: false` and `tasks: []` (no MANAGE /
+CREATE_CONTENT permissions visible to the API), yet `publish_post`
+calls Meta Graph API successfully and the post goes live.
+
+Likely cause: capability check queries the page's `tasks` field via the
+user-level access token, but the publish path uses the page's own
+long-lived page access token which has different (broader) scopes.
+
+This misleads AI agents into refusing to publish when they actually
+could — and worse, into publishing when they thought they couldn't,
+which becomes the user's surprise.
+
+Confirmed dogfooding 2026-04-18: `can_publish: false` on FB Page
+"測試" but 2 posts still published successfully.
+
+**Recommended fix**: align capability check with actual publish path.
+Either (a) query capability with the page token (matches publish path),
+or (b) attempt a dry-run publish for capability detection.
+
 ### #14 — `zereo_social_posts.image_urls` column missing → all publish endpoints 500 🔴 fixed (DB migration)
 Triggered when AI agent called `publish_post` / `publish_multi` /
 `publish_content` with a properly-formed payload. Backend logs showed:
