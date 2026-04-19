@@ -1306,11 +1306,15 @@ mcp_tool_call("landing_ai_mcp", "validate_images", {
 #   summary_message_zh / product_type / internal_color_visible
 
 # 2) digitize_product_text — OCR 包裝所有文字、建 product_text_model
+# 參數格式**跟 validate_images 完全一樣**（flat args、不是包在 data_json 裡）
 mcp_tool_call("landing_ai_mcp", "digitize_product_text", {
   "user_token": token,
-  "data_json": "{\"image_urls\":[\"url1\"],\"industry_category\":\"cosmetics\",\"product_name\":\"面膜\",\"session_id\":\"<current_session_id>\"}"
+  "image_urls_json": "[\"url1\", \"url2\"]",
+  "industry_category": "cosmetics",
+  "product_name": "面膜",
+  "brand_name": "XXX",
+  "session_id": "<current_session_id>"      # 帶了就自動存到 wizard_shared_data.product_text_model
 })
-# session_id 帶進 data_json 後會自動存到 wizard_shared_data.product_text_model，
 # Architect 寫文案時以這個 model 為 ground truth（claims / spec / 認證字樣）
 ```
 

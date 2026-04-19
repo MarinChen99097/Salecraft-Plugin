@@ -235,22 +235,38 @@ mcp_tool_call("landing_ai_mcp", "get_session", {
 - ❌ 只掃一個桶（如只檢查 product_images），忽略其他三個
 - ❌ 發現全空但使用者態度積極就跳過警告；**態度不等於授權**，要明確書面同意
 
-### ⚠️ 同時必做：Phase 3.9 Quality Gate 回溯檢查（backup enforcement）
+### ⚠️ Phase 3.9 Quality Gate 回溯檢查（backup — 只在 primary gate 沒跑時觸發）
 
-Phase 2.85 掃完**有沒有**圖之後，還要檢查那些圖**品質過不過關**。理想路徑是 `brand-onboard` 已經在 Phase 3.9 跑過 `validate_images` + `digitize_product_text`（session 裡會有 `session.image_censor_results[]` 和 `session.wizard_shared_data.product_text_model`）。若使用者直接從舊 session 或跳過 brand-onboard 進來，這兩個欄位會是空的。
+Phase 2.85 掃完**有沒有**圖之後，還要檢查那些圖**品質過不過關**。
 
-**檢查邏輯**：
+**執行決策（照順序判斷、第一個滿足就停止）**：
+
 ```
 session_data = get_session(session_id)
 product_images = wizard_shared_data.product_images + wizard_shared_files.product_images
-if product_images 非空:
-    if session.image_censor_results 是空陣列 或 沒有 overall_passed=true 的最新紀錄:
-        → 立刻 call validate_images(session_id, ...) + digitize_product_text(session_id in data_json, ...)
-        → 把 summary_message_zh + missing_categories_labels_zh 給使用者看
-        → overall_passed=false 時等使用者明確同意才進 Phase 2.9
+
+# Case A: 沒任何產品圖 → primary gate 本來就該 skip，這裡也 skip
+if product_images 是空:
+    略過 backup gate、直接進 Phase 2.9
+    Phase 2.85 image-sufficiency 警告已經涵蓋這個 case
+
+# Case B: primary gate 已跑過（正常流程：brand-onboard Phase 3.9）
+elif session.image_censor_results 最新一筆 overall_passed == true
+     OR (最新一筆 overall_passed == false AND session.wizard_shared_data._quality_gate_override == true):
+    略過 backup gate（使用者已經在 brand-onboard 看過、要嘛通過要嘛明確授權繼續）
+    直接進 Phase 2.9
+
+# Case C: primary gate 從未跑、或從未看到 overall_passed=true 的紀錄
+# （例：使用者從舊 session 進來、別的 AI 建的 session、繞過 brand-onboard）
+else:
+    **立刻 call** validate_images + digitize_product_text（兩個都帶 session_id）
+    把 summary_message_zh + missing_categories_labels_zh 給使用者看
+    overall_passed == false → 等明確書面同意（接受詞同 brand-onboard Phase 3.9）才進 Phase 2.9
 ```
 
-這是 backup — 正常流程 `brand-onboard` Phase 3.9 應該已經做過。若 MCP client 曾 restart / session 被其他 AI 建立 / 使用者直接餵 session_id 進來繞過 brand-onboard，這個 backup 能擋最後一道。
+**不要無條件重跑**。若 primary gate 已成功、這裡**必須**跳過、不要浪費 28 秒跟使用者的 token 再跑一次。Backup 的角色是**兜底**，不是「雙重保險」。
+
+使用者在 brand-onboard Phase 3.9 回了「我知道品質會打折、還是要跑」時，brand-onboard 會把 `session.wizard_shared_data._quality_gate_override = true` 寫進 session（實作上當下 call `update_session` 把這個 flag 加進去）。這裡讀到 flag 就尊重、不再問第二次。
 
 ---
 

@@ -606,10 +606,16 @@ Returns an `ImageCensorReport`:
 
 #### 2. `digitize_product_text` — OCR + mandatory-field cross-check
 
+**Same flat arg shape as `validate_images` above** — copy the call and change the tool name:
+
 ```
 mcp_tool_call("landing_ai_mcp", "digitize_product_text", {
   "user_token": token,
-  "data_json": "{\"image_urls\": [\"<product_img_1>\", ...], \"industry_category\": \"<industry>\", \"product_name\": \"<name>\", \"brand_name\": \"<brand>\", \"session_id\": \"<current_session_id>\"}"
+  "image_urls_json": "[\"<product_img_1>\", \"<product_img_2>\", ...]",
+  "industry_category": "<industry from wizard_shared_data>",
+  "product_name": "<product_name>",
+  "brand_name": "<brand_name>",
+  "session_id": "<current_session_id>"
 })
 ```
 
@@ -648,6 +654,17 @@ With `session_id`, the resulting `product_text_model` is auto-saved to `session.
 4. If OCR cross-check found gaps (e.g. cert detected but bucket empty):
    → Ask the user one specific question per gap. Don't batch 4 gaps into one
      wall of text.
+
+5. When user explicitly accepts degraded assets ("我知道品質會打折，還是要跑"):
+   → Write the override flag so downstream skills (generate-landing Phase 2.85
+     backup gate) don't re-ask the same question:
+     mcp_tool_call("landing_ai_mcp", "update_session", {
+       "user_token": token,
+       "session_id": session_id,
+       "data_json": "{\"wizard_shared_data\": {\"_quality_gate_override\": true}}"
+     })
+   → Only set this flag when the user has seen the failure report and still
+     chose to proceed. Do NOT set it preemptively.
 ```
 
 ### Anti-patterns (you WILL lose the user's trust)
