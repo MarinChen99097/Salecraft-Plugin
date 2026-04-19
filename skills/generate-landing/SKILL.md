@@ -270,7 +270,10 @@ else:
 
 ---
 
-## Phase 2.9: Pre-Generation spec confirmation（Step 5-6；不是 interrogation）
+## Phase 2.9: Pre-Generation spec confirmation（Wizard Phase 2 完成 + Phase 3 開始；不是 interrogation）
+
+> **Backend phase 對應**：Step 5 的 aspect_ratio / **language** / color / font / CTA / Q&A / testimonials 全屬 **Wizard Phase 2**。Step 6 的**頁數** (`requested_stripe_count`) 是 **Wizard Phase 3**（這個 phase 只有這一項、完成即觸發生成）。別把頁數問題混到 Phase 2 裡、也別把語言拖到 Phase 3。
+
 
 ### ❌ 反模式：13 題大通關
 
