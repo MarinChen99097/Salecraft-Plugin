@@ -221,12 +221,49 @@ Supports:
 The backend auto-classifies imported images (product, logo, evidence) and saves them to the brand buffer.
 Use the returned `url` values in `update_session` wizard fields, just like signed URL uploads.
 
-### If user provides neither URL nor Drive -> Manual collection
+### If user provides a PDF (型錄 / 規格書 / 品牌介紹書 / 產品 deck) -> 3-step upload flow
+
+PDF 是第四個常見來源（除了 URL / Drive / 手動圖片）。backend OCR + 結構化解析會自動把 PDF 裡的品牌敘述、產品規格、認證文字抽出、寫進 brand buffer。走 signed-URL 流程（不吃 MCP multipart）：
+
+```
+# 1. 拿 signed upload URL
+upload_info = mcp_tool_call("landing_ai_mcp", "get_pdf_upload_url", {
+  "user_token": token
+})
+# 回傳：{ upload_url: "https://storage.googleapis.com/...signed", file_key: "..." }
+
+# 2. 使用者 / AI 幫忙 PUT PDF 到 upload_url（bash: curl -X PUT -T file.pdf "...")
+#    若 AI 沒有 Bash tool 就直接請使用者手動上傳（貼 curl 一行、或開 salecraft.ai 網頁上傳）
+
+# 3. 告訴 backend 解析
+task = mcp_tool_call("landing_ai_mcp", "process_pdf_import", {
+  "user_token": token,
+  "data_json": '{"file_key": "<file_key from step 1>"}'
+})
+# 回傳 task_id，進 polling
+
+# 4. Poll status
+status = mcp_tool_call("landing_ai_mcp", "get_pdf_import_status", {
+  "user_token": token,
+  "task_id": task_id
+})
+# 等到 status: "completed" → 把抽出的文字 + 分類好的圖 URL 讀進來、update_session 寫入
+```
+
+**對使用者講什麼**（用人話、不講 signed URL 這類術語）：
+
+```
+有 PDF 型錄 / 產品規格書嗎？直接傳給我、我會把裡面的文字、圖、規格都抽出來放進品牌資料裡。
+```
+
+處理完 → 走 Phase 1 確認關（像 URL scrape 一樣逐欄位列給使用者確認）。
+
+### If user provides neither URL / Drive / PDF / 圖片 -> Manual collection
 
 Proceed to the Deep Discovery section below. But still periodically remind the user:
 
 ```
-提醒：如果您之後想到有網站或 Google Drive 連結，
+提醒：如果您之後想到有網站、Google Drive 連結或 PDF 型錄，
 隨時可以提供，系統會自動補充素材。
 ```
 
@@ -379,9 +416,60 @@ Ask ALL of the following:
 
 The LP uses a "spokesperson" — a person's image that appears across multiple stripes as the visual face of the brand. This could be:
 
+0. **Pick from your brand's existing spokesperson library** — if this brand already has spokespersons uploaded / AI-generated before, **show them to the user first** (so they don't duplicate work). Only offer the 3 options below if library is empty OR user rejects all existing ones.
 1. **User's own photo** — their headshot, graduation photo, professional portrait
 2. **AI-generated person** — the system auto-generates a realistic fictional person based on the TA description
 3. **No person** — text + graphics only, no human face
+
+### 🔴 Step 0 (before the 3-option dialogue) — Check existing brand assets
+
+Before asking "which option", call `list_spokespersons` to see if the brand already has spokespersons saved:
+
+```
+mcp_tool_call("landing_ai_mcp", "list_spokespersons", {
+  "user_token": token,
+  "brand_id": brand_id
+})
+```
+
+Response shape:
+```json
+[
+  {
+    "id": "sp_abc123",
+    "name": "...",
+    "description": "...",
+    "photo_urls": ["https://storage.googleapis.com/.../front.jpg", "https://.../side.jpg"],
+    "is_ai_generated": true,
+    ...
+  },
+  ...
+]
+```
+
+**If non-empty**: **display the photos to the user** using markdown image syntax (most hosts render these inline), ask them to pick or reject-all:
+
+```
+你這個品牌裡已經有這些代言人，要直接挑一個用嗎？
+
+**代言人 A — [name]**（[如果 is_ai_generated=true 標 "AI 生成" 否則 "自備照片"]）
+![front view]({photo_urls[0]})
+[description 摘要]
+
+**代言人 B — [name]**
+![front view]({photo_urls[0]})
+...
+
+回「用 A」/「用 B」我就幫你套用；回「都不要、重新決定」就跳下面三選一。
+```
+
+使用者選既有代言人 → update_session 寫 `wizard_shared_data.selected_spokesperson_id` = 那個 id，跳過下方三選一。
+
+**If empty OR user rejects all**: 往下跑三選一對話。
+
+### You MUST proactively explain this with FULL clarity
+
+Most users don't realize the AI will GENERATE a realistic human image. Be explicit about what happens with each option. Example dialogue (zh-TW):
 
 ### You MUST proactively explain this with FULL clarity
 
@@ -440,39 +528,88 @@ Use this dialogue template (zh-TW; adapt language to user):
 不用每題都答——沒答的我補預設值。大方向講一下就好。
 ```
 
-### 組 prompt + 建立 spokesperson（收到使用者回答後）
+### 組 prompt + 生成 + 展示給使用者看 + 建立（收到使用者回答後）
 
-把使用者回答整理成**英文的 `generation_prompt`**（backend 圖片生成用英文），
-並把同一組資訊寫成 `description`（給後端稽核 / 日後可讀）：
+把使用者回答整理成**英文的 `generation_prompt`**（backend 圖片生成用英文），然後走兩步：
+**(A) 先 `generate_ta_spokesperson` 生 2 張預覽給使用者看**，
+**(B) 使用者點頭才 `create_spokesperson` 登記進 brand 資產庫**。
 
 ```
-# 1. 依使用者偏好，組 generation_prompt（英文）：
+# 1. 依使用者偏好組 generation_prompt（英文）
 #    例：A professional Asian female, 35-45, shoulder-length dark hair,
-#         wearing business casual blouse, wearing metal-frame glasses,
-#         medium build, warm and knowledgeable expression, clean studio lighting.
+#         wearing business casual blouse, metal-frame glasses,
+#         warm and knowledgeable expression, clean studio lighting.
 generation_prompt = compose_english_prompt(user_answers)
 
-# 2. description（繁中/英文皆可，留存用）:
+# 2. 呼叫 generate_ta_spokesperson（這步會扣規格-generation-count、但不扣使用者點數）
+# 先檢查產生額度：
+status = mcp_tool_call("landing_ai_mcp", "get_spokesperson_generation_status", {
+  "user_token": token
+})
+# 回傳 { used: 2, limit: 5, remaining: 3 }
+# 若 remaining <= 0，告訴使用者「這期帳號的 AI 代言人生成次數用完」、先不生
+
+result = mcp_tool_call("landing_ai_mcp", "generate_ta_spokesperson", {
+  "user_token": token,
+  "prompt": generation_prompt,
+  "ta_name": ta_name_if_available  # 選填
+})
+# 回傳（~30-60 秒，會等）：
+# {
+#   "success": true,
+#   "images": { "front_url": "https://.../front.jpg", "side_url": "https://.../side.jpg" },
+#   "ta_name": "...",
+#   "spokesperson_id": "sp_xxx",
+#   "generation_status": { used, limit, remaining }
+# }
+```
+
+### 🔴 Step after generation — **必須把兩張圖展示給使用者看、等他點頭**
+
+**絕對禁止** 生完就直接 `create_spokesperson` 靜默登記。使用者沒看過、覺得不像就得重生（浪費配額）。
+
+```
+剛才 AI 依你的設定生了這位代言人，你覺得可以嗎？
+
+**正面**
+![front view]({images.front_url})
+
+**側面**
+![side view]({images.side_url})
+
+回「OK」就登記、「重生」就再跑一次（剩 {remaining} 次額度）、
+「調整 XXX」就把你要改的講給我、我修 prompt 再跑。
+```
+
+使用者回：
+- **OK** → 進 Step 3 create_spokesperson
+- **重生** → 再 call generate_ta_spokesperson（同樣的 prompt 或微調）、remaining - 1
+- **調整 X**（例如「眼鏡拿掉、膚色深一點」）→ 修改 prompt 對應部分、再 call、再展示
+
+使用者點頭後才登記：
+
+```
+# 3. description（繁中/英文皆可、留存用）
 description = (
     f"AI-generated spokesperson. 性別={gender}, 年齡={age_range}, "
     f"族裔={ethnicity}, 眼鏡={glasses}, 體態={build}, "
     f"穿著={outfit}, 氣質={traits}, 髮型={hair}, 補充={extra}"
 )
 
-# 3. 呼叫 create_spokesperson
+# 4. 把上一步生出來的 front_url / side_url 寫進 spokesperson record
 mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
   "user_token": token,
   "brand_id": brand_id,
-  "name": "AI 代言人",   # 或讓使用者取一個稱呼
+  "name": "AI 代言人",   # 或讓使用者取個名
   "description": description,
-  "photo_urls_json": "[]",
+  "photo_urls_json": f'["{images.front_url}", "{images.side_url}"]',
   "is_ai_generated": true
 })
 ```
 
-**一律不收費**：目前呼叫 `create_spokesperson` 本身不扣點（代言人在 LP 生成流程裡一起出圖、費用包在 stripe_cost 裡）。不要嚇使用者。
+**一律不收費**：`create_spokesperson` 本身不扣點（代言人在 LP 生成流程裡一起出圖、費用包在 stripe_cost 裡）。`generate_ta_spokesperson` 只扣生成配額、不扣使用者點數。不要嚇使用者。
 
-**收尾確認**：建立完之後回報：「✅ AI 代言人已登記：[一句話總結如「亞洲女性、40 歲左右、戴金屬眼鏡、商務休閒風格、專業知性氣質」]。生成 LP 時會以這個形象渲染。要改的話現在講、之後要重生每張 100 pts。」
+**收尾確認**：登記完回報：「代言人已登記到你的 brand、生成 LP 時會用這個形象。之後要在 LP 裡改（例如換另一個代言人 / 重生 LP 的人物形象）可以再回來挑。」
 
 ### 反模式（這些都是實際會扣點的後果）
 
