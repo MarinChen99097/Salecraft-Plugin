@@ -377,10 +377,75 @@ Most users don't realize the AI will GENERATE a realistic human image. Be explic
 ```
 
 **If user chooses option 1** -> Upload their photo as spokesperson (see upload flow below)
-**If user chooses option 2** -> Leave it to the generation pipeline (default). Explain: "AI 會在生成階段自動創建代言人，您不需要做任何事。"
-**If user chooses option 3** -> Note this preference for the session config
+**If user chooses option 2** -> **Do NOT just say "AI 會自己生一張"**. Collect AI-generation parameters (see below). Default silently = random output the user won't recognize
+**If user chooses option 3** -> Note this preference for the session config (no spokesperson generation / upload needed)
 
-### Spokesperson Upload Flow
+### AI-Generated Spokesperson — Parameter Collection (MANDATORY when user chooses option 2)
+
+If the user picks "AI 自動生成代言人", you MUST collect structured preferences before calling `create_spokesperson`. **Absolute prohibitions**: do NOT call `create_spokesperson` with `is_ai_generated=true` and an empty description. Do NOT silently default to "Asian female 30s". Ask.
+
+Use this dialogue template (zh-TW; adapt language to user):
+
+```
+好，AI 幫你生代言人之前、要先知道你心目中的形象。回幾個就好、我會幫你配平
+你沒講的部分：
+
+1️⃣ **性別**：男 / 女 / 不拘
+2️⃣ **年齡範圍**：20-30 / 30-40 / 40-50 / 50-60 / 60+ / 不拘
+3️⃣ **族裔外觀**：亞洲 / 歐美 / 拉丁 / 混血 / 不拘
+4️⃣ **眼鏡**：戴 / 不戴 / 不拘
+5️⃣ **體態**：纖瘦 / 中等 / 健壯 / 豐腴 / 不拘
+6️⃣ **穿著風格**：商務正式（西裝）/ 商務休閒（襯衫）/ 休閒 / 制服（特定行業）/ 創意穿搭 / 不拘
+7️⃣ **氣質關鍵字**（選 1-3 個）：專業 / 親切 / 知性 / 沉穩 / 熱情 / 冷靜 / 溫暖 / 高冷 / 睿智 / 活潑
+8️⃣ **髮型 / 髮色**（選填）：短髮 / 中長 / 長髮、深色 / 中等 / 淺色、綁髮 / 放下（自由描述）
+9️⃣ **其他加分細節**（選填、自由文字）：例如「戴手錶」、「有鬍子」、「金屬眼鏡」、
+   「感覺像葡萄酒講師」等
+
+不用每題都答——沒答的我補預設值。大方向講一下就好。
+```
+
+### 組 prompt + 建立 spokesperson（收到使用者回答後）
+
+把使用者回答整理成**英文的 `generation_prompt`**（backend 圖片生成用英文），
+並把同一組資訊寫成 `description`（給後端稽核 / 日後可讀）：
+
+```
+# 1. 依使用者偏好，組 generation_prompt（英文）：
+#    例：A professional Asian female, 35-45, shoulder-length dark hair,
+#         wearing business casual blouse, wearing metal-frame glasses,
+#         medium build, warm and knowledgeable expression, clean studio lighting.
+generation_prompt = compose_english_prompt(user_answers)
+
+# 2. description（繁中/英文皆可，留存用）:
+description = (
+    f"AI-generated spokesperson. 性別={gender}, 年齡={age_range}, "
+    f"族裔={ethnicity}, 眼鏡={glasses}, 體態={build}, "
+    f"穿著={outfit}, 氣質={traits}, 髮型={hair}, 補充={extra}"
+)
+
+# 3. 呼叫 create_spokesperson
+mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
+  "user_token": token,
+  "brand_id": brand_id,
+  "name": "AI 代言人",   # 或讓使用者取一個稱呼
+  "description": description,
+  "photo_urls_json": "[]",
+  "is_ai_generated": true
+})
+```
+
+**一律不收費**：目前呼叫 `create_spokesperson` 本身不扣點（代言人在 LP 生成流程裡一起出圖、費用包在 stripe_cost 裡）。不要嚇使用者。
+
+**收尾確認**：建立完之後回報：「✅ AI 代言人已登記：[一句話總結如「亞洲女性、40 歲左右、戴金屬眼鏡、商務休閒風格、專業知性氣質」]。生成 LP 時會以這個形象渲染。要改的話現在講、之後要重生每張 100 pts。」
+
+### 反模式（這些都是實際會扣點的後果）
+
+- ❌ 使用者說「OK AI 幫我生」→ AI 只回「好，那就交給 AI」→ 直接去生 LP（使用者最後看到一個跟他腦海完全不一樣的人，要求改要重生每張 100 pts）
+- ❌ 把 9 題全部一次丟出來，使用者嚇跑
+- ❌ 用中文當 `generation_prompt`（backend 圖片生成模型吃英文，中文會 degrade）
+- ❌ `description` 只寫「AI-generated spokesperson」沒有細節（之後無從回溯使用者說過什麼）
+
+### Spokesperson Upload Flow (Option 1 — 使用者自備照片)
 
 If the user provides a personal photo (headshot, portrait, graduation photo, etc.),
 **upload it as a spokesperson** — it will appear in the LP as the "face" of the brand:
@@ -391,7 +456,8 @@ mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
   "brand_id": brand_id,
   "name": "User's Name",
   "description": "Professional headshot",
-  "photo_urls": ["<file_url_or_gcs_path>"]
+  "photo_urls_json": "[\"<file_url_or_gcs_path>\"]",
+  "is_ai_generated": false
 })
 ```
 
