@@ -170,7 +170,73 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 
 Must be done BEFORE `generate_session` — Factory reads images from session at generation time.
 
+## Phase 2.9: Pre-Generation Confirmation Gate (MANDATORY — 不可跳過)
+
+**⚠️ 這是這個 skill 最容易失敗的一關。** 上面 Phase 1-2.8 都只是準備，**真正扣點的是 Phase 3 的 `generate_session`**。一旦呼叫 `generate_session`，使用者的點數就扣了，LP 規格也鎖死——所以在這之前必須走完 **12 個 HARD STOP GATES**（定義在 CLAUDE.md → "HARD STOP GATES — 啟動付費生成前必問的 12 個確認點"）。
+
+### 12 Gate Checklist（全部勾完才能進 Phase 3）
+
+- [ ] 1. 素材來源（URL / Google Drive / 手動 / 都沒有——4 選項必列）
+- [ ] 2. Logo 再三確認（有沒有？沒提供的話 AI 會隨便配）
+- [ ] 3. 產品圖 / 代言人圖再三確認
+- [ ] 4. TA 數量（每組多 1,600 pts 寫清楚）
+- [ ] 5. 長寬比（橫版 / 直版 / 兩者都要）
+- [ ] 6. 頁數（8 = 1,600 pts / 10 = 2,000 pts）
+- [ ] 7. 語言（15 個選項）
+- [ ] 8. 色系（品牌色 / 情緒詞 / 交給 AI）
+- [ ] 9. 字體風格（手寫 / 襯線 / 無襯線 / 交給 AI）
+- [ ] 10. CTA 按鈕連結（官網 / 購買頁 / LINE / 預約 / 先不填）
+- [ ] 11. 是否加 Q&A / 常見問題區塊
+- [ ] 12. 是否加客戶見證 / 評價區塊
+
+**問法**：分 3 批（素材組 1-3 / 規格組 4-7 / 風格組 8-12），每批 3-4 題，維持對話節奏。**不要一次把 12 題全丟出來**。
+
+### 最後 Cost 複誦 + 啟動確認（強制範本）
+
+12 題問完後，**停下來複誦總規格 + 總扣點，等明確啟動詞**：
+
+```
+好，幫你整理一下：
+- 受眾：[X 組 TA 名稱列出]
+- 頁數：[N] 頁 × [M] 組 = [total_stripes] 頁
+- 長寬比：[橫版 / 直版 / 兩者]
+- 語言：[zh-TW / en / ...]
+- 色系：[描述]
+- 字體：[描述]
+- CTA：[destination 描述]
+- 附加：[Q&A ✓/✗，見證 ✓/✗]
+- 預計扣點：[total] pts（約 $[USD]）
+
+你目前餘額 [X] pts。確認要開始嗎？
+回「開始」我就跑；回「改 XX」就調整；回「取消」就先不動。
+```
+
+### 啟動詞白名單
+
+- **接受**：開始 / go / 執行 / 開跑 / start / do it / 跑吧 / 動手
+- **拒絕**（模糊，要再確認一次）：好 / OK / 嗯 / 可以 / alright / sure / 應該可以
+
+遇到拒絕類回覆，**不要自行解讀為同意**，再問一次：「確認要『開始』嗎？點數會立刻扣。」
+
+### 跳過 Gate 的唯一合法情境
+
+使用者明確說「我不想回答這麼多問題，直接用預設跑」時：
+1. **明確警告**：「OK，那系統會自己配色、字體、logo 樣子——之後不滿意要重生，每頁 100 pts。確定用預設跑？」
+2. 等他再說一次 YES 才進 Phase 3
+3. 即使走預設，**仍要確認頁數（8 / 10）和 TA 數量**——這兩項直接決定扣點，不能幫使用者決定
+
+---
+
 ## Phase 3: Trigger Generation
+
+### Step 0 (NEW): Verify Phase 2.9 Gate passed
+
+**DO NOT call `generate_session` if any of these are true:**
+- 12 gates 沒全問完
+- 使用者沒給明確啟動詞（只回「好」「OK」不算）
+- 成本複誦沒做
+
+違反這條 = 未經授權扣點 = **嚴重失誤**，使用者可申訴退費。
 
 ### Step 1: Set expectations BEFORE triggering
 
