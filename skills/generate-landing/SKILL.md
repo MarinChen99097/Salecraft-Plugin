@@ -170,6 +170,73 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 
 Must be done BEFORE `generate_session` — Factory reads images from session at generation time.
 
+## Phase 2.85: Image Sufficiency Scan (MANDATORY — 在 Phase 2.9 前執行)
+
+**LLM 最愛跳過這關。** 不要「再三口頭確認」就算數——**實際呼叫 `get_session` 掃 session state**，親眼確認四個 asset 桶有什麼。使用者 5 輪前對話講的「我有產品圖」，不代表真的有上傳進系統。你的工作是在扣點之前抓到這個落差，否則使用者會拿到一份 AI 瞎編的 LP。
+
+### 掃描動作
+
+進 Phase 2.9 之前，呼叫 `get_session` 檢查：
+
+```
+mcp_tool_call("landing_ai_mcp", "get_session", {
+  "user_token": token,
+  "session_id": session_id
+})
+```
+
+檢查四個 asset 桶：
+
+| Asset 類別 | 在 session 的路徑 | 空 = 什麼問題 |
+|---|---|---|
+| 產品圖 | `wizard_shared_data.product_images` (array) | AI 從文字瞎想產品樣子，常跟實品差很遠 |
+| Logo | `wizard_shared_files.logo_image` (string) | AI 自己配一個 logo，日後很難換 |
+| 代言人 | `wizard_shared_data.spokesperson_faces` (array) | AI 生成虛擬人臉，法律風險 + 無法真實行銷 |
+| 認證 / 檢驗 | `wizard_shared_data.certification_images` (array) | Factory 的 CERTIFICATE GUARD 會跳過所有認證 badge |
+
+### 若四個桶**全空**（純文字敘述）
+
+**必須停下來問**，即使使用者已經說「你直接跑就好」：
+
+> 「先打住——我掃了你的 session 資料，**四個素材桶（產品圖 / logo / 代言人 / 認證）全部都沒有實際圖片，全是文字敘述**。
+>
+> 這代表 AI 會自己想像：
+>   - **產品樣子**（可能跟實品差很遠，之後截圖給客戶一看就露餡）
+>   - **Logo**（AI 瞎編一個，跟你真實品牌識別完全無關）
+>   - **代言人**（AI 生一張虛擬臉，不能用在真實行銷、還有法律風險）
+>   - **認證 / 檢驗圖**（沒提供就不會出現任何認證 badge，信任感下降）
+>
+> 你手邊有以下任何一項嗎？
+>   1. 產品實拍（手機隨便拍都可以）
+>   2. 品牌 logo 圖檔
+>   3. 代言人照片
+>   4. 認證 / 專利 / 檢驗報告
+>   5. 公司/產品網站連結（我可以自動抓）
+>   6. Google Drive 連結（可批次匯入）
+>
+> 如果真的都沒有、就是要跑 **AI 想像版**——OK，但我需要你明確回『我知道這是 AI 想像版，還是要跑』才會繼續。」
+
+**除非下列任一成立，否則不准進 Phase 2.9**：
+- 至少有 1 張真實圖片進入任一桶，或
+- 使用者明確書面同意「AI 想像版、繼續跑」
+
+### 若部分有、部分空
+
+不要只問「確認沒有 logo 喔？」——**針對空的桶逐個問**：
+
+> 「我看到你有產品圖（很好），但沒有 logo / 代言人 / 認證。這幾項是打算 AI 生，還是你手邊有可以傳給我？」
+
+等使用者對每個缺的桶做出明確選擇（自備 or AI 生），再進 Phase 2.9。
+
+### ⚠️ 反模式
+
+- ❌ 只在對話裡「再三確認」，沒實際呼叫 `get_session` 掃資料
+- ❌ 假設使用者前面答過就等於有上傳（使用者可能只是嘴巴講「有 logo」但沒實際丟檔）
+- ❌ 只掃一個桶（如只檢查 product_images），忽略其他三個
+- ❌ 發現全空但使用者態度積極就跳過警告；**態度不等於授權**，要明確書面同意
+
+---
+
 ## Phase 2.9: Pre-Generation Confirmation Gate (MANDATORY — 不可跳過)
 
 **⚠️ 這是這個 skill 最容易失敗的一關。** 上面 Phase 1-2.8 都只是準備，**真正扣點的是 Phase 3 的 `generate_session`**。一旦呼叫 `generate_session`，使用者的點數就扣了，LP 規格也鎖死——所以在這之前必須走完 **12 個 HARD STOP GATES**（定義在 CLAUDE.md → "HARD STOP GATES — 啟動付費生成前必問的 12 個確認點"）。

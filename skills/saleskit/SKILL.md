@@ -169,6 +169,55 @@ Ask the user these questions naturally (not all at once):
 4. **有品牌素材嗎？** — Logo, product photos, brand description?
 5. **預算範圍？** — This determines which tools to recommend
 
+**⚠️ CRITICAL — open-ended only for #1 and #3**: Never use
+AskUserQuestion with multipleChoice / chip-style options for the
+"what do you sell" or "what's your goal" questions. Chip options
+(「美妝 / 保養 / 食品 / 服飾 / ...」) force users into categorical
+answers that can only produce categorical strategy ("for cosmetics
+brands, try IG") instead of consultant-level strategy for THEIR
+specific product. The user must TYPE a free-text description. Chip
+options are OK for #5 (budget ranges) because budget really is
+categorical, but for product / goal / unique selling point / customer
+profile — always open text.
+
+### Step 1.5: Product Concreteness Gate (MANDATORY — before Step 2)
+
+**Real failure case (2026-04-19)**: AI asked 8 chip-style questions
+(類別 / 階段 / 痛點 / 功效 / 價格帶 / 預算 / 賣點 / 產出格式), got
+answers like 「美妝/保養」「中高端」「獨家配方」「MIT」, declared
+「資訊齊全了」and started generating a strategy .docx — without knowing
+the brand name, the actual product, the key ingredient, or any
+concrete customer profile. Output was Wikipedia-level generic advice.
+Useless to the user.
+
+**Before you output ANY strategy / report / Sprint Plan**, verify you
+have all 4 concrete data points:
+
+| # | What you need | ❌ Not concrete enough | ✅ Concrete enough |
+|---|---|---|---|
+| 1 | **Specific product** (item + format, not category) | 「美妝/保養」「抗老產品」 | 「薰衣草手工皂 120g」「YY 紅藜精華液 30ml」 |
+| 2 | **Brand name** (or explicit "not named yet") | (skipped entirely) | 「月光」/「還沒取名，暫稱 Working Title」 |
+| 3 | **≥ 1 concrete USP** (specific fact, not adjective) | 「獨家配方」「有品牌故事」「MIT」 | 「含 5% 台灣紅藜萃取，SGS 檢驗過」「採冷壓製程，無化學界面活性劑」 |
+| 4 | **≥ 1 concrete customer profile** (quantified) | 「年輕女性」「有品味的人」 | 「25-35 F 上班族，月收 3-6 萬，買過天然保養品」 |
+
+**All 4 satisfied → proceed to Step 2.**
+
+**Any missing → ask ONE focused open-ended follow-up** (not a list
+of 5 categorical questions):
+
+> 「我想幫你做得更精準一點——能多告訴我一些嗎？**具體賣什麼品項、什麼規格？品牌叫什麼、跟市場其他同類最不一樣的特色是什麼？心目中典型的客人會是誰？**用一段話描述就好。」
+
+**If user resists concreteness** ("你就隨便給個方向"), explain the
+cost:
+
+> 「我懂你想快，但『保養品行銷策略』跟『XX 牌紅藜精華液行銷策略』差很多，後者才是能真正幫到你的顧問建議。至少給我品牌名、產品品項、1 個具體特色——3 件事就夠，之後我就能產出有落地價值的策略。」
+
+**If user gave a URL in Step 0** and `analyze_brand_url` populated the
+brand profile: verify each of the 4 points against the extracted data
+before proceeding. URL extraction typically captures #1 and #2 (brand
++ product) but often misses #3 and #4 (USP / customer profile) — ask
+a focused follow-up for whichever is missing.
+
 ### Step 2: Diagnose & Recommend
 
 Based on answers, recommend the appropriate **SaleCraft Toolbox**:
