@@ -212,7 +212,8 @@ mcp_tool_call("landing_ai_mcp", "update_stripe_text_styling", {
 | "換 logo" / "swap the logo" / "左上那個 logo 換一下" | **`upload_logo`** | `logo_url: str` 公開 URL（先走 `upload_base64` 取得）|
 | "CTA 按鈕連到 [網址]" / "點 CTA 要去 [哪]" | **`update_cta_link`** | `url: str`（必填）、`text: str`（可選，不帶就不改按鈕文字）|
 | "CTA 按鈕改成紅色 / 圓角 / 字大一點" | **`update_cta_style`** | `background_color` / `text_color` / `border_radius` / `font_size`（全部選填，可只給要改的那幾個）|
-| "改 SEO title / 描述 / 關鍵字 / OG 圖" | **`update_seo`** | `title` / `description` / `keywords` / `og_image`（全部選填）|
+| **"幫我做 SEO" / "優化 SEO" / "一鍵 SEO"** | **`run_seo_optimize`** | `force: bool = False`（**AI 一鍵全自動**：meta / JSON-LD / FAQ / llms.txt / GEO summary 全包。預設 500 pts，beta 期免費——呼叫前可用 `seo_preflight` 查實際扣點） |
+| "只想改 SEO title" / "手動調 meta description / keywords / OG 圖" | **`update_seo`** | `title` / `description` / `keywords` / `og_image`（全部選填，**免費**、純欄位微調、不走 AI 生成） |
 
 **Generic 退回方案**（當上面沒對應 tool 時才用）：
 
