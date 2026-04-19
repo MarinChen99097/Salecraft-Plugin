@@ -235,6 +235,23 @@ mcp_tool_call("landing_ai_mcp", "get_session", {
 - ❌ 只掃一個桶（如只檢查 product_images），忽略其他三個
 - ❌ 發現全空但使用者態度積極就跳過警告；**態度不等於授權**，要明確書面同意
 
+### ⚠️ 同時必做：Phase 3.9 Quality Gate 回溯檢查（backup enforcement）
+
+Phase 2.85 掃完**有沒有**圖之後，還要檢查那些圖**品質過不過關**。理想路徑是 `brand-onboard` 已經在 Phase 3.9 跑過 `validate_images` + `digitize_product_text`（session 裡會有 `session.image_censor_results[]` 和 `session.wizard_shared_data.product_text_model`）。若使用者直接從舊 session 或跳過 brand-onboard 進來，這兩個欄位會是空的。
+
+**檢查邏輯**：
+```
+session_data = get_session(session_id)
+product_images = wizard_shared_data.product_images + wizard_shared_files.product_images
+if product_images 非空:
+    if session.image_censor_results 是空陣列 或 沒有 overall_passed=true 的最新紀錄:
+        → 立刻 call validate_images(session_id, ...) + digitize_product_text(session_id in data_json, ...)
+        → 把 summary_message_zh + missing_categories_labels_zh 給使用者看
+        → overall_passed=false 時等使用者明確同意才進 Phase 2.9
+```
+
+這是 backup — 正常流程 `brand-onboard` Phase 3.9 應該已經做過。若 MCP client 曾 restart / session 被其他 AI 建立 / 使用者直接餵 session_id 進來繞過 brand-onboard，這個 backup 能擋最後一道。
+
 ---
 
 ## Phase 2.9: Pre-Generation Confirmation Gate (MANDATORY — 不可跳過)

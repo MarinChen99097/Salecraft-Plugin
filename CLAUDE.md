@@ -557,6 +557,9 @@ saleskit（免費諮詢 — 了解產品、痛點、目標）
 ║  Step 1-4: Gap-fill 缺的（代言人？認證？）——一次一題        ║
 ║  Step 1-5: 寫入 wizard_shared_data + wizard_shared_files    ║
 ║            （兩邊都要寫，對照 brand-onboard SKILL.md 的欄位表） ║
+║  ★ MANDATORY：素材寫入完成（上傳完最後一張產品圖）＝ 自動      ║
+║     進入 Step 1-6 品質審查、不等使用者問、不等 Phase 4。      ║
+║     LLM 這裡常跳關直接衝 Phase 4 checklist——禁止。            ║
 ║  Step 1-6: 🔴 Phase 3.9 Quality Gate（brand-onboard SKILL）— ║
 ║            並行呼叫 `validate_images` + `digitize_product_  ║
 ║            text`（兩個都要帶 `session_id`）：               ║
@@ -575,7 +578,12 @@ saleskit（免費諮詢 — 了解產品、痛點、目標）
 ║            Patent」等字眼但對應桶（certification_images /  ║
 ║            specification_images）是空，逐項追問使用者       ║
 ║            （一次問一題、不要 wall of text）                ║
-║  Step 1-7: 確認 Wizard Phase 1 完成 → 進 Phase 2           ║
+║  Step 1-7: Phase 4 re-confirmation checklist（brand-onboard）║
+║            **Step 0 硬性 precondition**：Phase 3.9 沒跑 →    ║
+║            Phase 4 不准顯示。checklist 裡必含「🔍 商品圖品質 ║
+║            審查」一列，把 overall_passed / 失敗項 / 跳過原因  ║
+║            顯示給使用者。                                    ║
+║  Step 1-8: 確認 Wizard Phase 1 完成 → 進 Phase 2           ║
 ╠════════════════════════════════════════════════════════════╣
 ║  Wizard Phase 2 = audience-target                          ║
 ║  ───────────────────────────────────────                   ║

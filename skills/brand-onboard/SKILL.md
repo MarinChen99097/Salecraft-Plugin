@@ -463,6 +463,16 @@ mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
 
 ---
 
+### 🔴 MANDATORY TRANSITION: Phase 3.5 → Phase 3.9 Quality Gate
+
+**The moment you finish Phase 3.5 (spokesperson), you MUST proceed to Phase 3.9 Quality Gate below — do NOT skip to Phase 4.**
+
+If the user has uploaded at least one product image (`wizard_shared_data.product_images` or `wizard_shared_files.product_images` non-empty), you are REQUIRED to call `validate_images` + `digitize_product_text` before presenting the Phase 4 re-confirmation checklist. Phase 4 will refuse to proceed without the gate's result.
+
+If the user uploaded ZERO product images (all-text onboarding, or user explicitly declined image uploads): skip the gate but set an internal flag `quality_gate_skipped_no_images=true` so Phase 4 can note it in the checklist summary.
+
+---
+
 ## File Upload Flows (Universal — works for ALL file types)
 
 ### Flow A: Signed URL Upload (user provides a local file path)
@@ -654,6 +664,19 @@ With `session_id`, the resulting `product_text_model` is auto-saved to `session.
 
 **Goal**: Before proceeding to brand creation or audience targeting, present a COMPLETE summary of everything collected vs everything missing. **Do NOT let users silently skip assets.** Proactively point out gaps and ask about each one.
 
+### Step 0 (MANDATORY pre-condition — block if skipped)
+
+**Before generating the checklist**, verify one of these is true:
+- ✅ Phase 3.9 Quality Gate ran and `ImageCensorReport.overall_passed == true`, OR
+- ✅ Phase 3.9 ran but `overall_passed == false` AND the user explicitly typed something like「我知道品質會打折，還是要繼續」(interpret flexibly — "還是要做", "就這樣生", "I know, keep going"), OR
+- ✅ The user uploaded ZERO product images (Phase 3.9 was legitimately skipped)
+
+**If none of the above holds** (the gate was never called, or result never shown to user, or user hasn't acknowledged a `overall_passed=false` result):
+- **STOP. Do not show Step 1's checklist. Do not call brand creation or audience-target.**
+- Go back to Phase 3.9 and run the gate now.
+- Then show the result to the user verbatim via `summary_message_zh` + translated `issue_codes` + specific `missing_categories_labels_zh` prompts.
+- Wait for user response before returning here.
+
 ### Step 1: Generate the Checklist
 
 After all discovery and uploads are complete, compile and display a comprehensive summary organized by category. Use this exact format (zh-TW):
@@ -689,6 +712,15 @@ After all discovery and uploads are complete, compile and display a comprehensiv
 🎨 視覺偏好：
 - 品牌主色: #2fa067 ✅
 - 風格: 科技感 ✅
+
+🔍 商品圖品質審查（Phase 3.9 Quality Gate）：
+- 審查結果: ✅ 通過 (overall_passed=true)
+- 包裝文字讀取: ✅ 完成（N 項 claims / spec / 認證字樣已進 product_text_model）
+- 內部色見度: 可見 / 不可見（cosmetics/supplements/food 才顯示）
+  ─ 若 overall_passed=false 且使用者選擇強制繼續，顯示：
+    「⚠️ 品質審查未通過（使用者確認仍要生成）：<issue list>」
+  ─ 若使用者沒上傳產品圖，顯示：
+    「品質審查跳過（未提供產品圖，AI 會完全從文字想像產品樣子）」
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ 缺少（選填但建議提供）：
