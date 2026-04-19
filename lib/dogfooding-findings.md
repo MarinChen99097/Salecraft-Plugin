@@ -15,6 +15,48 @@ SaleCraft plugin against the production backend.
 
 ## Findings
 
+### #39 — Meta orphan campaigns accumulated in test ad account ⚪ accepted / won't-clean
+Pre-extra=forbid cascade left ~11 orphan campaigns in the test1
+Meta Ads account (status=PAUSED, $0 spend). With #36 landed, no new
+orphans accumulate. User decision 2026-04-19: do not run the
+cleanup script — the orphans don't affect billing, just UI clutter
+in Meta Ads Manager. `scripts/list_meta_orphans.py` is ready if
+anyone changes their mind later.
+
+### #38 — No `cancel_generation` endpoint 🟡 won't-fix (by design)
+User decision 2026-04-19: generation cannot be cancelled mid-flight.
+Once the pipeline starts, the cost has been committed (Gemini API
+calls, Seedance GPU time, etc.). Adding a cancel path would promise
+a refund we can't provide without losing money per call.
+
+Acknowledged limitation — documented in Salecraft-Plugin SKILL docs
+for LLMs to communicate clearly: "once generation starts, it runs
+to completion; there is no cancel". Interrupted generations from
+crashes / timeouts still get full refunds via
+`core/refund_service.py`.
+
+### #37 — `deducted_amount` ≠ final cost confusion ⚪ no-op (already correct)
+Previous Claude reported `deducted_amount=2000` for a session with
+`actual_stripe_count=8` and assumed the system was overcharging.
+Root cause: `SessionTAGroup.deducted_amount` stores the
+**pre-charge** (requested × cost_per_stripe), not the **net cost
+after stripe_adjustment refund**. A snapshot taken before the
+Factory pipeline finished will always show the pre-charge.
+
+Verified via transaction log for test1@test.com:
+- 18:43:11 pre-deduct: -2000 (10 stripes × 200)
+- 18:50:27 stripe_adjustment: +200 (9 actual vs 10 requested)
+- **net: 1800 = 9 × 200** ← Option A (「多生成無償、少生成補償」) working as designed.
+
+No refund owed. Code in `core/credit_utils.py:calculate_stripe_credit_adjustment`
+already implements the user's preferred policy:
+- `actual >= requested` → no extra charge (free overdelivery)
+- `actual < requested` → refund the difference
+
+Finding downgraded from "pricing bug" to "confusing UI field name".
+Future polish: expose a computed `net_cost` field on
+`SessionTAGroupResponse` so clients don't have to do the math.
+
 ### #36 — `extra="forbid"` missing on publish/ads request schemas (root of #25/#26 cascade) 🔴 fixed (backend)
 The chain that burned all three of #25/#26/#30 was:
 1. MCP docstring listed wrong field names (`account_id`, `objective`,
