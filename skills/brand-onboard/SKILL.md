@@ -80,26 +80,53 @@ logout(user_token) -> end session
 
 **Goal**: Collect as much brand material as possible with MINIMUM effort from the user. The fastest path is always URL or Google Drive import — explain this upfront.
 
-### Step 0: Explain the Auto-Import Advantage
+**🧠 Psychology Design Principles for This Phase:**
+- **Frame as investment, not homework**: "The more I know about your brand, the better the result"
+- **Progressive commitment**: Start with the easiest action (paste a URL), escalate only if needed
+- **Show immediate value**: After every piece of data, show what it unlocked
+- **Never block on missing assets**: Always have a fallback ("I can work with what we have")
+- **Reduce decision fatigue**: Recommend the best path, don't list 10 options
 
-**You MUST proactively tell the user WHY providing a URL or Google Drive link is valuable.** Most users don't realize the system can auto-extract brand assets. Frame it as saving them significant time.
+### Step 0: Guide the User to Share Product Data
 
-Example dialogue (zh-TW):
+**You MUST proactively show the user HOW to share their product info.** Frame it as "the key to a great result" — not as a requirement.
 
-```
-我們的系統可以自動從您的網站或 Google Drive 中擷取品牌素材——
-包括 Logo、品牌色、產品圖片、文案說明等等。
+Example dialogue (adapt to user's language):
 
-只要給我您的網址或 Google Drive 連結，系統就能自動抓取大部分資料，
-幫您省下 10 分鐘以上的手動上傳時間。
+> 「接下來我需要了解你的品牌素材。給我越多資料，做出來的東西品質越好。
+>
+> 你可以選一個最方便的方式：
+>
+> 📎 **貼網址**（最推薦，30 秒搞定）
+>    官網、蝦皮、IG、任何產品頁面都行
+>    → 我會自動抓取品牌名、產品圖、品牌色
+>
+> 📄 **傳檔案**
+>    直接丟圖片、PDF 型錄、品牌介紹給我
+>    → 支援 JPG / PNG / WebP / PDF
+>
+> ☁️ **Google Drive**
+>    分享資料夾連結，我批次讀取
+>    → 需要先在 salecraft.ai/get-started 綁定 Google 帳號
+>
+> 先來一個網址？這樣最快！」
 
-您有以下任何一項嗎？
-1. 公司/產品網站 URL
-2. Google Drive 共享資料夾（含品牌素材）
-3. 都沒有——我手動提供
+**After user provides data, show what was extracted immediately** — this creates a "wow" moment:
 
-建議優先提供 URL，系統會自動填入大部分欄位！
-```
+> 「太好了！我從你的網站讀到了這些：
+>
+> ✅ 品牌名稱：[detected]
+> ✅ 主色系：[color]
+> ✅ 產品圖：[N] 張
+> ✅ 品牌描述：[extracted]
+>
+> 還有幾個小東西可以補充（不一定要，但會讓成品更好）：
+> - 代言人/形象照片（可以用 AI 生成）
+> - 認證/證書（如果產業需要）
+>
+> 要補充嗎？還是直接開始？」
+
+**The "wow" moment is critical** — it validates the user's decision to share data and builds confidence in the system.
 
 ### If user provides a URL -> Auto-scrape
 ```

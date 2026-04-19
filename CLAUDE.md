@@ -802,6 +802,30 @@ PAID 不是升級版。PAID 只是執行工具。
 >
 > 先聊聊 — **你賣什麼產品？**」
 
+### 蒐集用戶產品資料的三種方式
+
+在諮詢過程中，主動引導用戶提供產品資料。三種方式由易到難：
+
+1. **📎 貼網址**（最推薦）— 官網、電商、社群任何連結
+   - 免費用戶：用 `WebFetch` 快速分析
+   - 登入用戶：用 `analyze_brand_url` 做結構化擷取
+   - 複雜網站：用 `scrape_landing_page(mode="full")` 做 Playwright 深度掃描
+   
+2. **📄 傳檔案** — 圖片（JPG/PNG/WebP）、PDF 型錄、文字
+   - 用 `upload_base64` 或 `get_asset_upload_url` 上傳
+   - 用 `parse_pdf` 解析 PDF 內容
+   - 用 `digitize_product_text` 做圖片文字辨識
+   
+3. **☁️ Google Drive** — 批次匯入整個資料夾
+   - 需要先到 `salecraft.ai/get-started` 綁定 Google 帳號
+   - 用 `gdrive_import_shared_link` 批次匯入
+
+**⚠️ 規則**：
+- 免費諮詢不需要任何素材 — 純對話就能完成
+- 素材讓 AI 做更精準的診斷和更好的成品，但**不是必要條件**
+- 永遠不要讓用戶覺得「不提供素材就不幫忙」
+- 擷取到資料後，立即展示結果（「我從你的網站看到了...」）— 建立信任
+
 ### 完整流程（8 階段 Sprint）
 
 ```
