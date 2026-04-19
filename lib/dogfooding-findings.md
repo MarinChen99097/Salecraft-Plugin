@@ -15,6 +15,32 @@ SaleCraft plugin against the production backend.
 
 ## Findings
 
+### #40 — `landing_ai_mcp` full docstring audit ⚪ clean (0 real drift)
+Ran automated `scripts/audit_mcp_docstrings.py` against all 85
+@mcp.tool() functions in `Service_system/landing_ai_mcp/tools/`
+that accept a `*_json` parameter. Cross-referenced 992 known
+Pydantic field names from `marketing_backend/routers/*.py` and
+`marketing_backend/core/schemas.py`.
+
+Result:
+- **10 clean** (every named field resolves to a schema)
+- **54 vague** (docstring says only "JSON with ... parameters" —
+  doc quality backlog but not correctness)
+- **21 drift-candidates** — manually verified all 21 are false
+  positives:
+  - enum values inline (awareness / conversion / meta)
+  - example placeholder values (ta_1, url1, id1)
+  - wrapper-tool-specific surface that maps to multiple backend
+    endpoints (update_header.font_size → re-shaped into
+    /stripes/0/text-styling call)
+  - cross-references in "see also" sections (update_stripe_text ↔
+    update_stripe_texts)
+
+**No truly-wrong field names in `landing_ai_mcp` like the #30
+generate_ad.platform drift.** The audit script
+(`Service_system/scripts/audit_mcp_docstrings.py`, commit f699125)
+is reusable — re-run on every schema change or new MCP tool.
+
 ### #39 — Meta orphan campaigns accumulated in test ad account ⚪ accepted / won't-clean
 Pre-extra=forbid cascade left ~11 orphan campaigns in the test1
 Meta Ads account (status=PAUSED, $0 spend). With #36 landed, no new
