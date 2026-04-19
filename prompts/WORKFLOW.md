@@ -176,7 +176,7 @@ Phase 10: Growth Retrospective [growth-retro]
 | "Undo that change" | `undo_stripe` |
 | "Move this stripe up/down" | `reorder_stripes` |
 | "Hide this stripe" | `hide_stripe` |
-| "Update SEO title/description" | `update_seo` |
+| "Optimize SEO" / "改 SEO" / "幫我做 SEO" | `run_seo_optimize` (one-click AI, 500 pts / beta free) |
 | "Edit the FAQ section" | `update_faq_content` |
 
 **Editing loop**: After each edit, offer to show preview. Continue until user says "done" or "looks good".

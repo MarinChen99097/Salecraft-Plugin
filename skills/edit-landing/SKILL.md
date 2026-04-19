@@ -212,8 +212,7 @@ mcp_tool_call("landing_ai_mcp", "update_stripe_text_styling", {
 | "換 logo" / "swap the logo" / "左上那個 logo 換一下" | **`upload_logo`** | `logo_url: str` 公開 URL（先走 `upload_base64` 取得）|
 | "CTA 按鈕連到 [網址]" / "點 CTA 要去 [哪]" | **`update_cta_link`** | `url: str`（必填）、`text: str`（可選，不帶就不改按鈕文字）|
 | "CTA 按鈕改成紅色 / 圓角 / 字大一點" | **`update_cta_style`** | `background_color` / `text_color` / `border_radius` / `font_size`（全部選填，可只給要改的那幾個）|
-| **"幫我做 SEO" / "優化 SEO" / "一鍵 SEO"** | **`run_seo_optimize`** | `force: bool = False`（**AI 一鍵全自動**：meta / JSON-LD / FAQ / llms.txt / GEO summary 全包。預設 500 pts，beta 期免費——呼叫前可用 `seo_preflight` 查實際扣點） |
-| "只想改 SEO title" / "手動調 meta description / keywords / OG 圖" | **`update_seo`** | `title` / `description` / `keywords` / `og_image`（全部選填，**免費**、純欄位微調、不走 AI 生成） |
+| **"幫我做 SEO" / "優化 SEO" / "一鍵 SEO" / "改 SEO"** | **`run_seo_optimize`** | `force: bool = False`（**AI 一鍵全自動**：meta / JSON-LD / FAQ / llms.txt / GEO summary 全包。預設 500 pts，beta 期免費——呼叫前可用 `seo_preflight` 查實際扣點。**想改 SEO 一律走這個**，沒有其他分支） |
 
 **Generic 退回方案**（當上面沒對應 tool 時才用）：
 
@@ -275,12 +274,11 @@ mcp_tool_call("landing_ai_mcp", "undo_stripe", {
 })
 ```
 
-### SEO / Metadata
+### SEO / Metadata / FAQ
 
 | User says | Tool |
 |-----------|------|
-| "Update the page title" | `update_seo` |
-| "Change meta description" | `update_seo` |
+| "Update the page title" / "改 SEO" / any SEO intent | `run_seo_optimize` (AI 一鍵全自動，見上方 Page-Level Edits 表) |
 | "Edit the FAQ section" | `update_faq_content` |
 
 ## Editing Workflow
@@ -427,50 +425,64 @@ mcp_tool_call("landing_ai_mcp", "set_stripe_overlay", {
 - Dark text on dark backgrounds → light overlay
 - User says "I can't read the text" or "text is hard to see"
 
-## SEO & Search Optimization
+## SEO & Search Optimization — one-click AI
 
-You can optimize any LP for search engines and AI citation systems.
+SEO 優化是**單一按鈕 + AI 全自動**的付費功能（500 pts，beta 期免費）。使用者沒有「手動填 title / description / keywords」的路徑——AI 會根據 LP 內容和 Strategist 產出，一次生齊 meta / Open Graph / JSON-LD / FAQ schema / llms.txt / GEO summary。
 
-### Basic SEO — Meta Tags & Open Graph
+### 呼叫流程（2 步）
 
-```
-mcp_tool_call("landing_ai_mcp", "update_seo", {
-  "user_token": token,
-  "campaign_id": campaign_id,
-  "seo_json": "{\"title\": \"Product Name — Tagline | Brand\", \"description\": \"Compelling 150-char meta description with primary keyword.\", \"keywords\": [\"primary keyword\", \"secondary keyword\", \"brand name\"]}"
-})
-```
+1. **（可選）先 preflight 查扣點與餘額**：
+   ```
+   mcp_tool_call("landing_ai_mcp", "seo_preflight", {
+     "user_token": token,
+     "campaign_id": campaign_id
+   })
+   → { credit_cost, will_charge, current_balance, has_cached, sufficient }
+   ```
 
-### What SEO optimization covers:
+2. **執行優化**：
+   ```
+   mcp_tool_call("landing_ai_mcp", "run_seo_optimize", {
+     "user_token": token,
+     "campaign_id": campaign_id,
+     "force": False   # True 時強制重新生成（即使已有快取結果）
+   })
+   → 返回完整 SEO 套件，自動寫入 landing_page_config["seo_optimization"]
+   ```
 
-| Element | What you optimize | Impact |
-|---------|-------------------|--------|
-| Page title | Keyword-rich, under 60 chars, brand included | Google search result title |
-| Meta description | Compelling, 150-160 chars, includes CTA | Search result snippet |
-| Keywords | Primary + secondary + long-tail terms | Search ranking signals |
-| Open Graph tags | Title, description, image for social sharing | Facebook/LINE/Twitter previews |
-| JSON-LD structured data | Product, Organization, FAQ schema | Google rich results |
-| Heading hierarchy | H1 (headline) → H2 (section) → H3 (detail) | Content structure signals |
-| Image alt text | Descriptive alt text on all stripe images | Image search + accessibility |
-| FAQ schema | Question/answer pairs for Google "People Also Ask" | Featured snippet eligibility |
+### 一次產出包含（AI 自動生成，不用使用者填）
 
-### How to optimize (workflow):
+| 輸出欄位 | 用途 |
+|---|---|
+| `meta_title` / `meta_description` / `meta_keywords` | Google 搜尋結果標題 + 摘要 |
+| `og_title` / `og_description` / `og_type` | Facebook / LINE / Twitter 分享預覽 |
+| `schema_article` / `schema_organization` / `schema_product` / `schema_faq` | JSON-LD 結構化資料（Google rich results） |
+| `faq_items` | Q&A 陣列，供 FAQ schema + "People Also Ask" 使用 |
+| `llms_txt_content` | `/llms.txt` 讓 AI 爬蟲（ChatGPT / Perplexity / Claude）更好引用 |
+| `geo_summary` | 給 AI 搜尋引擎的**實體關聯摘要**（GEO = Generative Engine Optimization） |
+| `canonical_url_path` / `robots_directive` | 規範性與索引控制 |
+| `entity_connections` | 品牌實體關聯（wikidata-style） |
+| `seo_score` / `recommendations` | AI 自評分數 + 改進建議 |
 
-1. **Analyze the LP content** — Read all stripe headlines, body text, and CTA
-2. **Identify target keywords** — Based on brand, product, and audience
-3. **Generate SEO fields** — Title, description, keywords, FAQ pairs
-4. **Apply via `update_seo`** — One call updates all meta fields
-5. **Update FAQ if applicable** — Add Q&A pairs for FAQ schema
+### 什麼時候主動推薦 SEO
 
-### FAQ Schema (for "People Also Ask")
+- 使用者對 LP 視覺滿意後，**主動問一次**：「要不要順手把 SEO 做了？AI 一鍵全自動、beta 期免費」
+- 使用者講「想讓 Google / ChatGPT 搜得到」、「上架前準備」、「怕沒人看到」
+- 使用者準備嵌到自家官網前（SEO 要先做好再嵌）
+
+### FAQ 單獨編輯（不跑完整 SEO 時）
+
+若使用者只想改 FAQ 內容（例如覆蓋 AI 生成的 FAQ 用自己的答案）：
 
 ```
 mcp_tool_call("landing_ai_mcp", "update_faq_content", {
   "user_token": token,
   "campaign_id": campaign_id,
-  "faq_json": "[{\"question\": \"What is [product]?\", \"answer\": \"[Product] is...\"}, {\"question\": \"How much does [product] cost?\", \"answer\": \"Starting from...\"}]"
+  "faq_json": "[{\"question\": \"...\", \"answer\": \"...\"}]"
 })
 ```
+
+但**多數情況**直接跑 `run_seo_optimize` 更省事——AI 會連 FAQ 一起生。
 
 **When to proactively suggest SEO:**
 - After LP generation is complete and user is satisfied with the visuals
