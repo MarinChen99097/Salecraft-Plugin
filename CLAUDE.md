@@ -557,7 +557,25 @@ saleskit（免費諮詢 — 了解產品、痛點、目標）
 ║  Step 1-4: Gap-fill 缺的（代言人？認證？）——一次一題        ║
 ║  Step 1-5: 寫入 wizard_shared_data + wizard_shared_files    ║
 ║            （兩邊都要寫，對照 brand-onboard SKILL.md 的欄位表） ║
-║  Step 1-6: 確認 Wizard Phase 1 完成 → 進 Phase 2           ║
+║  Step 1-6: 🔴 Phase 3.9 Quality Gate（brand-onboard SKILL）— ║
+║            並行呼叫 `validate_images` + `digitize_product_  ║
+║            text`（兩個都要帶 `session_id`）：               ║
+║              ① validate_images → ImageCensorReport：       ║
+║                 overall_passed / missing_categories /       ║
+║                 image_results.issue_codes / product_type / ║
+║                 internal_color_visible                      ║
+║              ② digitize_product_text → product_text_model  ║
+║                 （OCR 包裝所有文字、auto-save 到 session）   ║
+║            若 overall_passed=false：**不准進 Phase 2**。     ║
+║            把 summary_message_zh 整段給使用者 + 把每張失敗圖 ║
+║            的 issue_codes 翻成人話（blurry=模糊、low_res=   ║
+║            解析度太低、text_unreadable=字看不清、          ║
+║            off_product=不是目標產品），要求重傳。           ║
+║            OCR 交叉比對：若偵測到「SGS / FDA / 檢驗 /      ║
+║            Patent」等字眼但對應桶（certification_images /  ║
+║            specification_images）是空，逐項追問使用者       ║
+║            （一次問一題、不要 wall of text）                ║
+║  Step 1-7: 確認 Wizard Phase 1 完成 → 進 Phase 2           ║
 ╠════════════════════════════════════════════════════════════╣
 ║  Wizard Phase 2 = audience-target                          ║
 ║  ───────────────────────────────────────                   ║
@@ -1259,15 +1277,36 @@ mcp_tool_call("landing_ai_mcp", "analyze_image", {
 → Gemini Vision 回傳圖片內容描述（產品、風格、顏色、文字、行銷建議）
 ```
 
-### 圖片驗證（生成前品質檢查）
+### 圖片驗證 + 商品文字建模（Phase 1 → Phase 2 Quality Gate — MANDATORY）
+
+完整流程定義在 `skills/brand-onboard/SKILL.md` → "Phase 3.9: Product Image Quality Gate"。
+兩個工具**並行呼叫**、兩個都要帶 `session_id` 才會留稽核紀錄：
+
 ```
+# 1) validate_images — Gemini Flash 檢查圖片品質 + 行業覆蓋
 mcp_tool_call("landing_ai_mcp", "validate_images", {
   "user_token": token,
   "image_urls_json": "[\"url1\", \"url2\"]",
   "industry_category": "cosmetics",
-  "product_name": "面膜"
+  "product_name": "面膜",
+  "brand_name": "XXX",
+  "session_id": "<current_session_id>"      # 必帶，否則 ImageCensorReport 不會存 session
 })
+# 回傳 ImageCensorReport：
+#   overall_passed / has_enough_images / missing_categories_labels_zh /
+#   image_results[].issue_codes（blurry / text_unreadable / low_res / off_product）/
+#   summary_message_zh / product_type / internal_color_visible
+
+# 2) digitize_product_text — OCR 包裝所有文字、建 product_text_model
+mcp_tool_call("landing_ai_mcp", "digitize_product_text", {
+  "user_token": token,
+  "data_json": "{\"image_urls\":[\"url1\"],\"industry_category\":\"cosmetics\",\"product_name\":\"面膜\",\"session_id\":\"<current_session_id>\"}"
+})
+# session_id 帶進 data_json 後會自動存到 wizard_shared_data.product_text_model，
+# Architect 寫文案時以這個 model 為 ground truth（claims / spec / 認證字樣）
 ```
+
+**Gate 規則**：`overall_passed=false` → **不准進 Phase 2**；把 `summary_message_zh` 原文給使用者、`issue_codes` 翻成人話、`missing_categories_labels_zh` 逐項追問。OCR 偵測到「SGS / FDA / 檢驗 / Patent」等字眼但對應圖桶空 → 逐項補傳要求。
 
 ### ⚠️ 寫入 Session — 必須寫兩邊！
 

@@ -561,6 +561,95 @@ mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
 
 ---
 
+## Phase 3.9: Product Image Quality Gate (MANDATORY before audience-target)
+
+**Goal**: After all Phase 1/2/3/3.5 uploads complete — and BEFORE you move to audience-target / TA selection — run two AI checks in parallel to catch quality problems and missing packaging info. If these fail silently the user pays for LP generation with bad source material and the output looks wrong.
+
+### The two MCP tools (run them together, BOTH required)
+
+#### 1. `validate_images` — image quality + coverage check
+
+```
+mcp_tool_call("landing_ai_mcp", "validate_images", {
+  "user_token": token,
+  "image_urls_json": "[\"<product_img_1>\", \"<product_img_2>\", ...]",
+  "industry_category": "<industry from wizard_shared_data>",
+  "product_name": "<product_name>",
+  "brand_name": "<brand_name>",
+  "session_id": "<current_session_id>"
+})
+```
+
+**Always pass `session_id`** — without it the report runs but isn't saved to the session audit trail.
+
+Returns an `ImageCensorReport`:
+
+| Field | Meaning | How to use |
+|---|---|---|
+| `overall_passed` (bool) | true = safe to proceed | If `false`, STOP before Phase 4 and raise issues to user |
+| `has_enough_images` (bool) | false = coverage gap | Combine with `missing_categories` — don't say "upload more", say "upload the inner packaging shot" |
+| `missing_categories` / `missing_categories_labels_zh` | Specific missing shot types (e.g. `inner_packaging`, `handheld`, `spec_sheet`) | Ask the user specifically for these |
+| `image_results[]` | Per-image verdict + `issue_codes` (`blurry` / `text_unreadable` / `low_res` / `off_product`) | Map each failing URL back to "the photo with X issue" and ask for replacement |
+| `summary_message_zh` / `summary_message_en` | Ready-to-show user summary | Copy directly into your next message (adapt to user's language) |
+| `product_type` | `powder` / `solid` / `liquid` / `cream` / `gel` / `other` | Helps you judge whether `internal_color_visible` matters |
+| `internal_color_visible` | true if inside-the-container shot captured | For cosmetics/supplements/food: if `false`, ask for a "取一匙/倒出來/剖半" shot |
+
+#### 2. `digitize_product_text` — OCR + mandatory-field cross-check
+
+```
+mcp_tool_call("landing_ai_mcp", "digitize_product_text", {
+  "user_token": token,
+  "data_json": "{\"image_urls\": [\"<product_img_1>\", ...], \"industry_category\": \"<industry>\", \"product_name\": \"<name>\", \"brand_name\": \"<brand>\", \"session_id\": \"<current_session_id>\"}"
+})
+```
+
+With `session_id`, the resulting `product_text_model` is auto-saved to `session.wizard_shared_data.product_text_model` — the Architect uses it as source of truth for claims/spec/ingredient text. **Never paraphrase claims from memory; the OCR is authoritative.**
+
+**Cross-check pattern** — use the OCR output to validate the asset buckets:
+
+| OCR detects | Expected bucket | If bucket empty → ask user |
+|---|---|---|
+| "SGS", "FDA", "認證", "檢驗報告", "GMP" | `certification_images` | 「圖上有看到 SGS / 檢驗字樣，但認證圖桶是空的——把那張認證掃描也傳給我比較好」 |
+| Nutrition / spec table / ingredients list | `specification_images` | 「包裝上有成分表，建議傳一張清楚的規格表，LP 裡可以放乾淨的版本」 |
+| "專利號" / "Patent No" | `certification_images` (patent) | 「有專利號碼，要把專利證書圖也傳嗎？會加分」 |
+| Claims like "第一名"、"百萬銷售" | Require evidence | 「這種銷售數字宣稱在 LP 上需要有佐證、不然會被平台擋——有新聞報導 / 榜單截圖嗎？」 |
+
+### Gate logic — what to do with the results
+
+```
+1. Call validate_images + digitize_product_text IN PARALLEL (both are read-only
+   on the user's uploaded assets; no race condition)
+
+2. If validate_images.overall_passed == true AND no cross-check gaps found:
+   → proceed to Phase 4 checklist, then audience-target
+
+3. If overall_passed == false:
+   → Do NOT proceed. Show the user:
+     a) summary_message_zh verbatim (it's already human-friendly)
+     b) For each failing image_results[]: which URL + issue_codes translated
+        to human words (blurry → 「這張有點模糊」, low_res → 「解析度太低」,
+        text_unreadable → 「包裝上的字看不清楚」, off_product → 「這張不是
+        目標產品」)
+     c) For each missing_categories_labels_zh: ask specifically
+     d) Ask the user to re-upload or confirm proceeding anyway
+   → Only proceed if user either uploads replacements OR explicitly types
+     「我知道品質會打折，還是要跑」 — do NOT infer consent from vague "OK"
+
+4. If OCR cross-check found gaps (e.g. cert detected but bucket empty):
+   → Ask the user one specific question per gap. Don't batch 4 gaps into one
+     wall of text.
+```
+
+### Anti-patterns (you WILL lose the user's trust)
+
+- ❌ Skip this gate because "the user seems eager to generate"
+- ❌ Call `validate_images` without `session_id` — the admin team loses audit trail, and if something goes wrong you can't forensically retrace what was uploaded
+- ❌ Summarize `image_results` as "some images have issues" — be specific: which image, what issue
+- ❌ Ignore `digitize_product_text` result — it's the cheapest way to catch missing certs/specs BEFORE the user pays for generation
+- ❌ Re-word the OCR output when writing copy later — Factory renders text into the image; paraphrasing risks legal/compliance issues (「全台第一」 vs「業界領先」 matters)
+
+---
+
 ## Phase 4: Asset Re-Confirmation Checklist (CRITICAL — do NOT skip)
 
 **Goal**: Before proceeding to brand creation or audience targeting, present a COMPLETE summary of everything collected vs everything missing. **Do NOT let users silently skip assets.** Proactively point out gaps and ask about each one.
