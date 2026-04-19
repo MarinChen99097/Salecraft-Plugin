@@ -15,21 +15,90 @@ SaleCraft plugin against the production backend.
 
 ## Findings
 
-### #31 — `marketing-backend-staging` image has startup `NameError` on `config.py:712` 🔴 open (backend, env update blocked)
-Any `gcloud run services update --update-env-vars` on `marketing-backend-staging`
-spawns a new revision that fails STARTUP TCP probe with
-`NameError: name 'settings' is not defined` at `config.py:712`
-(`_seedream_settings = settings.get("seedream_image", {})` — should be
-`_settings.get`). Cloud Run correctly keeps traffic on the last healthy
-revision (`marketing-backend-staging-00403-tzt`) so the service is still
-200-healthy from the outside, but any env change / secret rotation on
-staging is frozen until a fresh image is built without the typo.
+### #36 — `extra="forbid"` missing on publish/ads request schemas (root of #25/#26 cascade) 🔴 fixed (backend)
+The chain that burned all three of #25/#26/#30 was:
+1. MCP docstring listed wrong field names (`account_id`, `objective`,
+   `creative_id`) — **fixed** in Service_system commits 1038be9 /
+   5f9e834.
+2. LLMs copied those names into `data_json`.
+3. Pydantic schemas (`SocialPublishRequest` / `AdCampaignCreateRequest`
+   / `AdsPromoteRequest`) did **not** set `extra="forbid"`, so the
+   wrong keys were silently dropped, `campaign_objective` defaulted to
+   `OUTCOME_TRAFFIC`, the AdSet `default_optimization_goal_for` picked
+   `LINK_CLICKS`, and Meta rejected the resulting AWARENESS-campaign +
+   LINK_CLICKS-adset combo.
 
-Impact: attempted to set `AI_TOKEN_ENABLED=true` on staging (to close
-finding #3's staging-path 404) and could not deploy. Local
-`marketing_backend/config.py` HEAD doesn't contain the bad line, so the
-deployed image is from a partial / stale branch. Owner: marketing_backend
-— rebuild + redeploy staging.
+**Fix (Zereo_backend commit dfde270)**: added
+`model_config = ConfigDict(extra="forbid")` to `SocialPublishRequest`,
+`SocialMultiPublishRequest`, `AdsPromoteRequest`, and
+`AdCampaignCreateRequest`. All known callers (asia-agentic-commerence
+TypeScript interfaces, zereo_social_mcp wrappers, Salecraft-Plugin
+examples) already use correct field names, so this tightening is
+safe. Verified: E2E test sending `account_id`/`objective`/`platform`
+now returns 422 with specific `extra_forbidden` on the offending key
+— no more silent drop.
+
+Downgrades #25, #26, #30 from open to fixed by schema enforcement.
+
+### #35 — `regenerate_stripe.user_feedback` CJK mojibake 🟡 diagnostic logging added
+Dogfooding repeatedly reports `娘 → 岣` mojibake on the regenerate
+path only. REST/MCP round-trips on other paths are clean. Root cause
+is between DB-stored feedback text and Gemini prompt assembly, but we
+need byte-level samples to isolate. marketing_backend commit 627658c
+ancestor adds a diagnostic INFO log of the first 30 bytes (hex) of
+user_feedback when it contains CJK. Next reproduction will show us
+both what the HTTP body delivered and what we're storing. No
+behavioral fix yet — see plugin `lib/api-reference.md` "Unicode in
+data_json strings — narrow scope" for the current workaround.
+
+### #34 — `update_stripe_text` (singular) vs `update_stripe_texts` (plural) naming trap 🟡 fixed (MCP docstring)
+Two tools with nearly identical names take differently-shaped bodies
+and different arg counts. LLMs confuse them, getting 422 errors on the
+other's body shape. MCP docstrings for both tools now explicitly
+cross-reference each other and describe the expected JSON shape
+(object for singular, array for plural). See Service_system commit
+27117ff.
+
+### #33 — `publish_post` no image URL pre-flight 🟠 fixed (backend)
+Meta rejected bad image URLs (non-image MIME, unreachable) with a
+generic "Only photo or video can be posted" error, and users waited
+~60s for Meta's error loop before seeing the problem. Zereo_backend
+commit dfde270 adds a HEAD request pre-flight in
+`routers/social_publish.py` that catches HTTP 4xx and non-image
+`content-type` before handing off to Meta. Failures say exactly
+which URL failed and why. Network hiccups in the pre-flight are
+non-fatal (we let Meta have the final say). Verified: E2E test sends
+`https://www.google.com/` as image_url and gets `status=failed,
+error_message="Image URL content-type is 'text/html; charset=iso-8859-1',
+not image/*. Meta rejects non-image URLs with a generic error."`.
+
+### #32 — `can_publish=false` but FB page publish actually succeeds 🟠 fixed (backend)
+The FB page capability check marked accounts `can_publish=False` when
+Meta's `/{page_id}` response omitted the `tasks` field, even though
+the same token could successfully publish. Plugin advice was to
+ignore the flag (finding #18), but the flag was still misleading
+mobile UI and LLM reasoning. Zereo_backend commit dfde270 extends the
+fallback: if the response carries any identifying field
+(`name`/`id`/`category`/`username`), trust OAuth-verified tokens and
+mark `can_publish=True`. Dogfooding #18 downgraded from open to fixed.
+
+### #31 — `marketing-backend-staging` image had startup `NameError` on `config.py:712` 🔴 fixed (backend)
+Commit 3be018c ("feat: add Seedream 5.0 as primary image generation
+provider with Gemini fallback") wrote `settings.get("seedream_image", {})`
+at `config.py:712`, but the module-level dict is named `_settings`
+(underscore prefix). Every Cloud Run startup crashed in config.py before
+FastAPI could bind PORT=8080, so any `gcloud run services update` on
+`marketing-backend-staging` was rejected at the STARTUP TCP probe.
+
+Cloud Run correctly kept traffic on the last healthy revision, so the
+service stayed 200-healthy externally, but this blocked every env
+change for hours — including setting AI_TOKEN_ENABLED=true on staging
+to close finding #3's staging-path 404.
+
+**Fix (commit 627658c)**: replace `settings.get` with `_settings.get`
+on line 712, matching the pattern on line 289. Verified: subsequent
+`services update --update-env-vars=AI_TOKEN_ENABLED=true` succeeded,
+staging revision `00408-vjh` live.
 
 ### #30 — `generate_ad` schema rejects `platform` field 🟠 fixed (plugin doc + MCP docstring)
 `/sessions/{id}/generate-ad` (`GenerateAdRequest`) has
