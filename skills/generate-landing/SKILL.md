@@ -270,31 +270,103 @@ else:
 
 ---
 
-## Phase 2.9: Pre-Generation Confirmation Gate (MANDATORY — 不可跳過)
+## Phase 2.9: Pre-Generation spec confirmation（Step 5-6；不是 interrogation）
 
-**⚠️ 這是這個 skill 最容易失敗的一關。** 上面 Phase 1-2.8 都只是準備，**真正扣點的是 Phase 3 的 `generate_session`**。一旦呼叫 `generate_session`，使用者的點數就扣了，LP 規格也鎖死——所以在這之前必須走完 **12 個 HARD STOP GATES**（定義在 CLAUDE.md → "HARD STOP GATES — 啟動付費生成前必問的 12 個確認點"）。
+### ❌ 反模式：13 題大通關
 
-### 13 Gate Checklist（全部勾完才能進 Phase 3）
+先前版本把這段寫成「13 HARD STOP GATES 照順序問」。LLM 照字面跑 → 對話變成 interrogation、使用者像填表單。**這不是 SaleCraft 的生成 LP 路線**。
 
-- [ ] 1. 素材來源（URL / Google Drive / 手動 / 都沒有——4 選項必列）
-- [ ] 2. Logo 再三確認（有沒有？沒提供的話 AI 會隨便配）
-- [ ] 3. 產品圖再三確認（有產品實拍嗎？沒有的話 AI 會從文字瞎想產品樣子，截圖給客戶就露餡）
-- [ ] 4. 代言人再三確認（**獨立一題、不可跟 Gate 3 合問**）— 必列三選一：
-    - 📸 **上傳自己的照片**（個人品牌 / 履歷適用）→ 走 `brand-onboard` Phase 3.5 上傳流程、`create_spokesperson(is_ai_generated=false, photo_urls_json=[...])`
-    - 🤖 **AI 自動生成代言人**（AI 會生一張擬真人臉、看起來很真但不是真人——不能拿去做對外代言、避免法律風險）→ **必須另外問 9 題參數**：性別 / 年齡 / 族裔 / 眼鏡 / 體態 / 穿著 / 氣質 / 髮型 / 加分細節。詳見 `brand-onboard` Phase 3.5 → "AI-Generated Spokesperson — Parameter Collection"。**絕對禁止略過這 9 題直接 `is_ai_generated=true`**，否則使用者拿到的人不會是他腦海中的樣子
-    - 🚫 **不使用人物**（純文字 + 圖形 + 產品圖）→ 跳過代言人、不 `create_spokesperson`
-  **絕對禁止因使用者有產品圖就假設代言人也處理完** — 這兩件事是獨立 gate
-- [ ] 5. TA 數量（每組多 1,600 pts 寫清楚）
-- [ ] 6. 長寬比（橫版 / 直版 / 兩者都要）
-- [ ] 7. 頁數（**8-21 頁範圍**，200 pts/頁；依使用者內容量推薦，不要上來就給 8/10 二選一）
-- [ ] 8. 語言（15 個選項）
-- [ ] 9. 色系（品牌色 / 情緒詞 / 交給 AI）
-- [ ] 10. 字體風格（手寫 / 襯線 / 無襯線 / 交給 AI）
-- [ ] 11. CTA 按鈕連結（官網 / 購買頁 / LINE / 預約 / 先不填）
-- [ ] 12. 是否加 Q&A / 常見問題區塊
-- [ ] 13. 是否加客戶見證 / 評價區塊
+### ✅ 正確心智模型：讀 session 狀態、只補缺的、立刻扣點
 
-**問法**：分 3 批（素材組 1-4 / 規格組 5-8 / 風格組 9-13），每批 3-4 題，維持對話節奏。**不要一次把 13 題全丟出來**。
+到 generate-landing 被觸發時，session 裡**應該已經有**以下（來自 brand-onboard Step 2-3 + audience-target Step 4）：
+
+| 欄位 | 來源 | 若缺少 |
+|------|------|--------|
+| `wizard_shared_data.brand_name / product_name / industry_category / base_description` | brand-onboard Step 2 | 回 brand-onboard |
+| `wizard_shared_files.logo_image / product_images` | brand-onboard Step 2 | 回 brand-onboard |
+| `wizard_shared_data.spokesperson_choice` + params | brand-onboard Phase 3.5 | 回 brand-onboard |
+| `session.image_censor_results[-1].overall_passed == true`（或 `_quality_gate_override=true`）| brand-onboard Phase 3.9 | 回 brand-onboard |
+| `session.wizard_shared_data.product_text_model` | brand-onboard Phase 3.9 | 回 brand-onboard |
+| `session.wizard_ta_groups[]` ≥ 1 組 | audience-target Step 4 | 回 audience-target |
+
+**你在這裡的 scope 只有 Step 5-6 的欄位**：aspect_ratio / language / primary_color / font_style / cta / Q&A / testimonials / requested_stripe_count。其他都是前面 skill 的事、**不准在這裡重新問**。
+
+### Step 0 — 讀 session、列出還缺什麼
+
+```python
+session = get_session(session_id)
+shared  = session["wizard_shared_data"]
+tas     = session["wizard_ta_groups"]
+
+# 前置條件檢查（缺就請使用者回去跑對應 skill、不准自己補）
+missing_prereq = []
+if not tas:                                  missing_prereq.append("TA — audience-target 還沒跑")
+if not session.get("image_censor_results"):  missing_prereq.append("Quality Gate — brand-onboard Phase 3.9 還沒跑")
+if not shared.get("brand_name"):             missing_prereq.append("brand 基本資訊 — brand-onboard Step 2 還沒跑")
+if missing_prereq:
+    # 告訴使用者缺什麼、回去跑對應 skill、這邊不動
+    return
+
+# Step 5-6 自己 scope 的欄位，缺就問
+needs = []
+if not shared.get("aspect_ratio"):     needs.append("aspect_ratio")
+if not shared.get("language"):         needs.append("language")
+if not shared.get("primary_color") and not shared.get("color_mood_keyword"):
+                                       needs.append("color")
+if not shared.get("font_style"):       needs.append("font_style")
+if not shared.get("cta_url") and not shared.get("cta_skipped"):
+                                       needs.append("cta")
+if "include_qa_section" not in shared:     needs.append("qa")
+if "include_testimonials" not in shared:   needs.append("testimonials")
+# requested_stripe_count 永遠最後問（不管其他欄位狀態）
+```
+
+### Step 5 — 自然問缺的 spec（**不包含頁數**）
+
+`needs` 裡除了 `page_count` 以外的項目，**2-4 題一組問**、用人話、給選項。**絕對不要照 gate 編號 1-12 念給使用者聽**——那是內部 audit list。
+
+問的範例（使用者只缺 aspect / language / cta）：
+
+```
+再三題就開工：
+
+1. LP 主要在哪裡看？
+   ① 手機直版（9:16，IG 限時 / TikTok 適合）
+   ② 桌機橫版（16:9，官網 / Google Ads 適合）
+   ③ 兩邊都要（預設）
+
+2. 主要語言？（給當下推薦的 2-3 個，不要列全部 15 個）
+
+3. 最下面的行動按鈕要連去哪？
+   ① 官網 ② 購買頁 ③ LINE ④ 預約頁 ⑤ 先不填
+```
+
+若 `needs` 某項 session 早已寫過（例：brand-onboard 爬官網時 `primary_color` 已抓到）→ **不要重問**。讀到什麼、略過什麼。
+
+**每組答完立刻 `update_session` 寫進去 + `get_session` 驗寫入**（protocol 見下方「每組答完就寫進 backend」段）。
+
+### Step 6 — 最後問頁數、立刻 Cost 複誦
+
+前面 spec 都到位才問頁數。頁數一答完 → `update_session` 寫 `requested_stripe_count` → 立刻算 cost → 進 Cost 複誦。
+
+```
+最後一題——**頁數**。
+每頁 200 pts，配合你內容量：
+• 8 頁（1,600 pts）：活動頁 / 單品促銷
+• 10 頁（2,000 pts）：一般品牌首發（預設）
+• 12-14 頁（2,400-2,800 pts）：複雜體驗 / 多面向
+• 16-21 頁（3,200-4,200 pts）：完整品牌史 / 多產品線
+
+你內容量大概多少？
+```
+
+### ⚠️ 絕對不准做的事
+
+- ❌ 把 CLAUDE.md 的 13 gate 表照念給使用者聽。**那是內部 audit**（check session 欄位存在與否）、**不是對使用者的問題清單**
+- ❌ 在這裡重問素材 / logo / 產品圖 / 代言人（brand-onboard Step 2-3 已處理）
+- ❌ 在這裡重選 TA（audience-target Step 4 的事）
+- ❌ 把頁數塞中間。頁數永遠是最後
+- ❌ 一次丟 7-8 題讓使用者填完。一組 2-4 題、答完再下一組
 
 ### 🔴 MANDATORY: 每批答完就 `update_session` 寫進 backend（不要只在對話裡記）
 
@@ -661,13 +733,18 @@ Stripe Overview:
 ... (list all)
 
 What you can do now:
-A) Edit text, images, or layout → just tell me what to change
-B) Screenshot editing → open the sales page, take a screenshot, circle what to change, paste here
-C) SEO optimization → I'll generate meta tags, schema markup, and keywords
-D) Crop & adjust → fine-tune individual stripe images
-E) Build homepage → embed this LP into a full website (/salecraft-homepage)
-F) Publish → push to social media or run ads (/salecraft-publish)
-G) Generate another variant (different TA or aspect ratio)
+A) Edit text only (free, no regen) → tell me the stripe + new headline/subheadline/body, I'll update instantly
+B) Edit visuals or layout → regenerate the affected stripe (100 pts/regen, free allowance = page count)
+C) Screenshot editing → open the sales page, take a screenshot, circle what to change, paste here (I'll red-box annotate then regen)
+D) Crop stripe image → `crop_stripe` tool, adjust the visible rectangle (free, no regen)
+E) Soft-edge adjustment → `set_stripe_soft_edge` for smooth gradient edges between stripes (free)
+F) Download individual stripes → `download_stripe` for one, `download_all_stripes` for full zip
+G) Export HTML / full static image → `export_html` (full single-page HTML), stitched image from `export_landing_image`
+H) SEO optimization → `seo_preflight` to check, then `run_seo_optimize` (500 pts) to generate meta tags, schema markup, keywords
+I) Build homepage → embed this LP into a full website (/salecraft-homepage)
+J) Publish → push to social media or run ads (/salecraft-publish)
+K) Self-host the LP on your own domain → download stripes + LP config JSON, embed as static HTML block on your own site (see Phase 7 below)
+L) Generate another variant (different TA or aspect ratio)
 
 Tip: Open the sales page link on your phone to see the mobile experience!
 ```
@@ -696,12 +773,50 @@ Just paste the URL and I'll update it for you.
 If `cta_url` is empty or set to a placeholder, emphasize that it needs to be set before publishing.
 
 **CRITICAL RULES for link presentation:**
-- The **sales page link** (salecraft.ai) is the PRIMARY link to show — this is the actual rendered page
+- The **sales page link** (landingai.info) is the PRIMARY link to show — this is the actual rendered page (landingai.info, not salecraft.ai — salecraft.ai is the marketing site, NOT the LP renderer)
 - The **visual editor link** is the SECONDARY link for self-service editing
 - The stitched_image_url is a tertiary static preview
 - If multiple LPs were generated (different TAs), provide a sales page link for EACH campaign_id
 - The locale in the URL should match the user's language (zh-TW, en, ja, etc.)
 - ALWAYS include the visual editor link — many users prefer drag-and-drop
+
+---
+
+## Phase 7: Self-Host Deploy Guidance (只在使用者問「能不能放到自己官網」才主動說明)
+
+使用者若說「我想把這個 LP 嵌到自己的網站」「放到我自己的 domain」「不想用 landingai.info 的網址」——那才走這個流程。**不要主動推**、使用者多半用 salecraft.ai 託管版就夠了。
+
+### 兩種佈署模式
+
+**A. 輕量嵌入（只要圖）**：
+```
+# 下載所有 stripe 圖
+mcp_tool_call("landing_ai_mcp", "download_all_stripes", {
+  "user_token": token,
+  "campaign_id": campaign_id
+})
+→ 回傳 zip 連結，含每 stripe 的 WebP / PNG
+```
+使用者把 zip 下載到自己機器、再上傳到自己網站 static assets。自己寫 HTML `<img>` 堆疊即可、LP 的 interactivity（scroll / CTA hover）要自己補。
+
+**B. 完整帶 config（保留動線互動）**：
+```
+# 匯出 HTML + config
+mcp_tool_call("landing_ai_mcp", "export_html", {
+  "user_token": token,
+  "campaign_id": campaign_id
+})
+→ 回傳完整 standalone HTML（含 stripe 圖 URL + CTA button + font + 所有 stripe 結構）
+```
+把回傳的 HTML 放進自己網站的 `<iframe>` 或直接用 `<div>` 嵌入。LP config JSON 保留 stripe order / cta_text / primary_color 等，之後要改可回 salecraft.ai 編輯再重新 export。
+
+### 需要提醒使用者的事
+
+- ❗ **圖 URL 是 GCS host 的**（`storage.googleapis.com/...`）。自己網站直接引用會繼續從 GCS 拉圖、**不佔你網站流量**、圖跟著 LP 一起 refresh
+- ❗ 若要完全斷開 salecraft 依賴（自己 host 圖），得把 GCS URL 的圖全部下載下來、改成自己網站的 `<img src>`，然後 CTA button 的 click tracking 會失效（salecraft.ai 的追蹤 pixel 不在）
+- ❗ LP 在 salecraft.ai 編輯、export 一次 → 放到自己站 → 再改時要重新 export 一次貼回去。沒有自動同步
+
+---
 
 ## Generating Both Aspect Ratios
 
