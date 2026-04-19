@@ -39,30 +39,80 @@
 
 ---
 
-### STEP 3 — 使用者回答後，你照這個順序走
+### STEP 3 — 使用者回答後，你照這個順序走（這就是唯一 SOP、沒有其他版本）
+
+**Tier 0 免費諮詢**（使用者還在了解產品、沒說要做 LP）：
+```
+saleskit（診斷）→ plan-cgo-review（成長）→ plan-funnel-review（漏斗）
+  → engage-operator + conversion-closer（互動 + 成交）
+  [以上全免費、不用登入；大多使用者到這裡就夠了]
+```
+
+**Tier 2 付費生成 LP**（使用者說「做 LP / 生成 / 開跑」時切到這條）：
+
+**這就是 SOP — 逐 Step 照做、不要自己重新組織成「12 gates 分 3 批」或「brand-onboard → audience-target → gates → generate」那種抽象層。每個 Step 都有具體 tool call、照打。**
 
 ```
-saleskit（診斷產品 + 痛點）
-    ↓
-plan-cgo-review（成長方向：擴張 / 聚焦 / 縮減）
-    ↓
-plan-funnel-review（漏斗設計：9 節點顧客旅程）
-    ↓
-engage-operator + conversion-closer（互動 + 成交腳本）
-    ↓  [以上全免費、不用登入；大多使用者到這裡就夠了]
+Step 0  authenticate_with_token(sc_live_...)
+        使用者沒貼 token → 給他 3-step prompt、停在這、不准往下
 
-   ↓ 只在使用者明確說「幫我做出來 / 做 LP / 生成」才繼續
+Step 1  create_session(session_name="[LP] 新建中", brand_name="Pending")  ← FREE
+        拿 session_id、後面每步都 update_session 寫回來、不要攢
+        create_session / update_session 全免費、儘早建
 
-brand-onboard（收集素材：URL / Google Drive / 手動上傳 / 沒有 — 4 選項必問）
-    ↓
-audience-target（TA 生成）
-    ↓
-[Wizard 6-step — 本檔搜尋 `Wizard 結構`，按 Step 1→6 順序走、不可顛倒]
-    ↓
-[使用者明確回「開始」才呼叫付費 API]
-    ↓
-generate-landing（扣點生成）
+Step 2  填品牌資料（brand-onboard skill）
+        2a  問素材來源 4 選項：網址 / Google Drive / PDF / 手動傳
+        2b  有網址 → analyze_brand_url(url) → update_session(wizard_shared_data={抓到的})
+        2c  🛑 逐欄位列給使用者確認（品牌名、產品名、產業、主色、logo、產品圖、語言、社群連結）
+            不是「幫你抓進來了」一句帶過、要使用者對每項點頭
+        2d  Gap-fill 缺的桶、一次一題
+        2e  代言人 Phase 3.5：先 list_spokespersons → 既有就展示用 ![](url) 挑
+            沒有再走三選一（上傳自己 / AI 生 9 參數 / 不用）
+            AI 生要 SHOW front_url + side_url 等使用者點頭才 create_spokesperson
+
+Step 3  Quality Gate（有產品圖才跑）
+        並行 call：validate_images(session_id, ...) + digitize_product_text(session_id, ...)
+        overall_passed=false → 給使用者看 summary_message_zh、修完或書面同意才往下
+
+Step 4  選 TA（audience-target skill）
+        generate_ta_options → 後端產 4-6 個候選
+        🛑 逐組列（每組 名稱 / 年齡 / 動機 / 顧慮 4 欄位）、不准自己編 TA
+        使用者挑 N 組 → update_session(wizard_ta_groups=[...])
+        ⚠️ Step 4 做完就停、不要接著問 aspect / 色系 / 頁數（那是 Step 5 的事）
+
+Step 5  Wizard Phase 2 spec（generate-landing skill Phase 2.9）
+        能推就推、推完宣告、使用者反對才改。**頁數不在這步**
+        Shared（所有 TA 共用）：aspect_ratio / cta_url / cta_text /
+                                include_qa_section / include_testimonials
+        Per-TA（每 TA 可不同）：language / primary_color / visual_style
+        寫進對應位置（wizard_shared_data vs wizard_ta_groups[i]）
+        推斷的欄位標 _spec_inferred_by_llm、Cost 複誦時標「（我幫你配）」
+
+Step 6  頁數（這是唯一 Wizard Phase 3 欄位、最後一題）
+        8-21 頁、依使用者內容量推薦、不要二選一
+        使用者答 → update_session(wizard_shared_data.requested_stripe_count=N)
+
+Step 6.5  Cost 複誦（從 session 讀、不靠對話記憶）
+        列所有 spec + 推斷欄位標「（我幫你配）」+ 總扣點
+        絕對禁止列 Page 1 / Page 2 / 每頁內容（那是 Architect 的事）
+
+Step 7  使用者啟動詞 + Pre-Flight Self-Audit
+        啟動詞：「開始 / go / 執行 / 開跑 / start / do it / 跑吧」之一
+        模糊「好 / OK」不算、要再問一次
+        啟動詞確認後 → get_session 逐項對 checklist、全綠才 Step 8
+
+Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
+        ← 唯一扣點的 tool。這之前所有動作都免費
+        Poll 狀態、presentsion results（landingai.info/{locale}/lp/{campaign_id}）
 ```
+
+**絕對不要做的事**：
+- ❌ 跳過 Step 1 create_session（「等所有答案齊了再建」＝錯誤心智模型）
+- ❌ 跳過 Step 2 URL import 而憑記憶編品牌資料（「饗 A Joy 是高端餐飲」這種幻覺是 Step 2 沒跑）
+- ❌ 把 Step 2 + 4 + 5 + 6 壓成「12 gates 3 批」（這個結構已廢止、plugin 不再有）
+- ❌ 使用者說「直接生」就跳過 Step 2-6 所有 tool call、1 問就 generate
+- ❌ Step 4 完接著問 Step 5 全部 7 題（要分批、用 infer-then-announce）
+- ❌ Step 6 頁數塞到 Step 5 中間問
 
 ---
 
