@@ -292,6 +292,10 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
      3. 有 preflight 工具（如 `seo_preflight`）就先跑、拿實際數字
      4. 沒 preflight、call 完看 response 有沒有 `credits_deducted` / `deducted_amount`
 
+   ❌ LLM 讀 stripe metadata（`image_prompt` / `requires_spokesperson` / `spokesperson_treatment`）、基於 metadata 對使用者說「這頁沒有人、你講的大拇指不成立」、試圖用 metadata 推翻使用者的視覺觀察
+   → 使用者看到實際圖（有人、有大拇指）、LLM 硬要說沒有、對話繞遠路、信任下降
+   原因：見 JARGON BLACKLIST #15。**Factory Agent 常偏離 `image_prompt`**（加人、加物、改構圖）、metadata 是「當初想生什麼」、實際圖是「真的生了什麼」、兩者常不同。**使用者看到實際圖、永遠比 metadata 權威**。LLM 看不到圖時要請使用者描述、不是搬 metadata 反駁
+
    ❌ LLM 對使用者講 stripe 內部實作細節：`stitched_image_url` / `y=1600 到 y=2400` / `index=2` / `pain_point 類型` / `requires_spokesperson: false` / `soft_edge_config.strength: 0.2`
    → 使用者不知道這些是什麼、失去對話信任、以為對方在講 code
    原因：見 JARGON BLACKLIST #13（stripe 內部實作）。對使用者講位置用視覺描述（「大拇指以上保留、以下裁掉」）、不用座標；講 stripe 用「第 X 頁」不用 `index`；講強度用「最強 / 關閉」不用 `strength: 0.2`
@@ -846,6 +850,28 @@ Stripe metadata 很多欄位 LLM 呼叫 tool 時會看到、但**使用者面前
 - ✅ （使用者看得到 LP、LLM 看不到時）「你指著圖告訴我位置、我直接調」
 
 **簡單判斷**：你要講的這件事、**是關於使用者要做的動作**（滑到 X / 看 Y / 告訴我 Z）？還是**關於你自己的工具壞了**（web_fetch / allowlist / MCP）？後者一律吞掉、換成前者。
+
+#### 15. Stripe metadata ≠ 實際生成圖（2026-04 加入）
+
+**絕對禁止**單憑 stripe metadata 斷定圖片內容、拒絕使用者指向的視覺元素。
+
+Backend Factory Agent **常偏離 `image_prompt`** — 加人、加物、改構圖、重新詮釋氛圍。實測 2026-04：
+- `image_prompt` 寫「空蕩會議室」+ `requires_spokesperson: false` + `spokesperson_treatment: "none"`
+- 實際生成：一個憂鬱企業家坐在 101 前的餐桌、手放桌上、畫面底緣有拇指
+
+LLM 若只讀 metadata、會**斷然告訴使用者**：
+- ❌ 「這頁 metadata 顯示沒有人物、你講的『大拇指』不成立」
+- ❌ 「根據 `requires_spokesperson: false`、這頁不會有代言人」
+- ❌ 「`image_prompt` 是空會議室、不會有你描述的元素」
+
+**這是錯的**。使用者看到實際圖、LLM 看不到（MCP 工具限制）——**使用者永遠比 metadata 更權威**。
+
+**正確做法**：
+- ✅ 使用者指出圖上某元素（「大拇指」、「水晶」、「那個人頭」）時、**相信使用者**、不要查 metadata 反駁
+- ✅ 若 LLM 自己拿不到圖、請使用者描述或貼圖（「我這邊看不到實際圖、你告訴我大拇指大概在畫面哪個位置？上 / 中 / 下哪一塊？」）——見 #14 的正確求助語氣
+- ✅ 有辦法拿圖時（ChatGPT DALL-E / Claude 的 image input / vision 分析）、**優先看圖、不看 metadata**
+
+**核心原則**：Metadata 告訴你 LLM 「**想要生什麼**」；實際圖片告訴你 Factory **「真的生了什麼」**。兩者常不一致、永遠以後者為準。
 
 #### Self-check — 發送前強制執行 7 步
 
