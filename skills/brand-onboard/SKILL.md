@@ -226,17 +226,17 @@ This extracts: logo, brand colors (真實、非 fallback), product images, descr
 # ❌ 錯誤寫法：brand 欄位放頂層 → backend silently drop
 mcp_tool_call("landing_ai_mcp", "update_session", {
   "user_token": token, "session_id": session_id,
-  "data_json": json.dumps({
+  "data": {
     "brand_name": "饗 A Joy",           # ❌ 頂層、drop
     "base_description": "...",          # ❌ 頂層、drop
     "value_proposition": "..."          # ❌ 頂層、drop
-  })
+  }
 })
 
 # ✅ 正確寫法：brand 欄位全部 nest 在 wizard_shared_data
 mcp_tool_call("landing_ai_mcp", "update_session", {
   "user_token": token, "session_id": session_id,
-  "data_json": json.dumps({
+  "data": {
     "product_name": "饗 A Joy",        # 頂層（白名單）
     "wizard_shared_data": {
       "brand_name": "饗 A Joy",
@@ -251,7 +251,7 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
       "operating_hours": "...",
       "pricing_info": "..."
     }
-  })
+  }
 })
 ```
 
@@ -807,10 +807,10 @@ After（1 則整合結果訊息）：
    [若 overall_passed=false 就把 summary_message_zh 原文給使用者 + 要不要重傳的決策點]」
 ```
 
-**三個 tool 內部必須都跑**（並行、全部 0 pts、全部帶 session_id）：
-- `validate_images` — 批次品質檢查（30s）、拿 `image_censor_results`
-- `analyze_image` — 逐張 Gemini Vision 結構化描述（1-2 min）、每張圖拿 tag（主題 / 色調 / 場景 / 適用 LP section）
-- `digitize_product_text` — 商品包裝 OCR、拿 `product_text_model`（Architect 文案 ground truth）
+**三個 tool 內部必須都跑**（並行、全部 0 pts）：
+- `validate_images(image_urls_json, industry_category, product_name="", brand_name="", session_id="")` — 批次品質檢查（30s）、拿 `image_censor_results`。**`industry_category` 是 required**（context-aware 驗證需要）、`session_id` 帶了會自動寫進 session。
+- `analyze_image(image_url, filename="")` — **逐張**呼叫（1 張圖 1 次）、Gemini Vision 結構化描述（1-2 min/張）、回傳 tag（主題 / 色調 / 場景 / 適用 LP section）
+- `digitize_product_text(image_urls_json, industry_category, product_name="", brand_name="", session_id="")` — 商品包裝 OCR、拿 `product_text_model`。**`industry_category` 是 required**、**`session_id` 是 required**（沒帶就不會自動 save 進 `wizard_shared_data.product_text_model`、Architect 之後讀不到）
 
 **Hard Gate — 不准繞過**：離開 brand-onboard 進 audience-target 之前、**必須** `get_session` 驗證：
 ```python
@@ -1446,7 +1446,7 @@ Arrays are REPLACED, not appended. Include existing URLs + new ones in the array
 ```
 # Before: product_images = ["url1", "url2", "url3"]
 # Remove url2:
-update_session(data_json: {"wizard_shared_files": {"product_images": ["url1", "url3"]}})
+update_session(data={"wizard_shared_files": {"product_images": ["url1", "url3"]}})
 # After: product_images = ["url1", "url3"]
 ```
 

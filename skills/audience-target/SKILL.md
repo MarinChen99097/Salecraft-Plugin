@@ -398,9 +398,9 @@ registered = mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
 })
 
 # Step 3: 寫進 per-TA session（同 AI 路徑）
-update_session(data_json=json.dumps({
+update_session(data={
     "wizard_ta_groups": [{"id": ta.id, "spokesperson_id": registered["spokesperson_id"], ...}]
-}))
+})
 ```
 
 **為什麼也走 `create_spokesperson` + `spokesperson_id`、不是直接寫 `wizard_ta_group_files[].spokesperson_faces[]`**：
@@ -431,12 +431,12 @@ registered = mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
 **Step B — 寫進 session（把 brand-level sp_id 綁到 per-TA）**
 
 ```python
-update_session(data_json=json.dumps({"wizard_ta_groups": [
+update_session(data={"wizard_ta_groups": [
     {..., "spokesperson_id": registered["spokesperson_id"],
           "spokesperson_front_url": result["images"]["front_url"],
           "spokesperson_side_url": result["images"]["side_url"]}
     for ta in selected_ta_groups
-]}))
+]})
 ```
 
 **Reuse 情境簡化**：若 Step 0 使用者直接挑了資產庫現有代言人、就跳過 Step A（已經在資產庫裡了）、只做 Step B、用既有的 `spokesperson_id` + `photo_urls`。

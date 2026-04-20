@@ -343,7 +343,7 @@ LP 最上方的 Header 有一排導航按鈕（產品特色 / 關於我們 / 聯
 **工具現況**：
 - **沒有** dedicated tool（無 `add_header_button` / `remove_header_button` / `reorder_header_buttons`）
 - 只有 generic `patch_landing_config({"header_nav": [...]})`——必須**整個 `header_nav` 陣列覆寫**、不是針對單一按鈕 patch
-- 有 `get_suggested_buttons(user_token, campaign_id)` 可以讓 AI 建議該放哪些按鈕（若使用者沒想法）
+- ⚠️ **沒有** AI suggestion tool。注意：backend 有個 `get_suggested_buttons` 工具、但它是給 **AI agent profile chat 介面**用的、**不是** LP header navigation buttons、不要用
 
 **標準流程**（每次動 header 都走）：
 ```python
@@ -375,17 +375,10 @@ mcp_tool_call("landing_ai_mcp", "patch_landing_config", {
 })
 ```
 
-**使用者沒想法時、主動建議**：
-```python
-suggested = mcp_tool_call("landing_ai_mcp", "get_suggested_buttons", {
-  "user_token": token, "campaign_id": campaign_id
-})
-# 回傳 [{"label": ..., "url": ...}, ...] 依 LP 內容推薦的 header 按鈕組合
-```
+**使用者沒想法時、由 LLM 自己依 LP 內容建議**：
 
-展示：
 ```
-我幫你看了一下這個 LP、建議 Header 放這幾個按鈕、你挑要哪幾個（也可以改文字或連結）：
+我看了一下這個 LP、建議 Header 放這幾個按鈕、你挑要哪幾個（也可以改文字或連結）：
 
 1. 🧾 產品特色 → #features（滑到特色區）
 2. 💬 Q&A → #faq
@@ -394,6 +387,8 @@ suggested = mcp_tool_call("landing_ai_mcp", "get_suggested_buttons", {
 
 你要哪幾個？或講「這幾個都加」/「只要 1、4」/「再加一個『預約試用』」。
 ```
+
+LLM 用自己的判斷給建議（看 LP 內容、考慮 stripe 類型）、然後走上面 Step 1-3 流程套用。沒有 backend tool 可以叫、靠 LLM 自己分析。
 
 **❌ 禁用手法**：
 - 直接 `patch_landing_config` 傳只含新按鈕的 `header_nav: [new_button]` — 這會**覆蓋**整個 nav 陣列、既有按鈕全消失

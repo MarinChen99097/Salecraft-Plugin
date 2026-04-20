@@ -134,7 +134,9 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
 
    ### 🔴 `update_session` 白名單：只有 4 個頂層 key 會進 session、其他 silently drop
 
-   Backend `update_session` 的 `data_json` **只接受 6 個頂層 key**、**其他所有 key 被 silently dropped**（backend 仍回 200 OK、`updated_at` bumped、但 session 實際沒存）：
+   **Backend signature**：`update_session(user_token, session_id, data: dict)` — 第三個 param 是 **Python dict**、**不是** `data_json` JSON string。MCP framework 直接轉送 dict 到 backend。SKILL 過去範例有些用 `data_json=json.dumps(...)` 是舊 convention、實際應該用 `data={...}` 直接傳 dict。
+
+   Backend 的 `data` **只接受 6 個頂層 key**、**其他所有 key 被 silently dropped**（backend 仍回 200 OK、`updated_at` bumped、但 session 實際沒存）：
 
    **✅ Whitelist（頂層允許的 key、只有這 6 個）**：
    - `session_name` — string（session 顯示名稱）
@@ -149,7 +151,7 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
    **❌ 被 silently drop 的常見誤寫**：
    ```
    # 全部錯 — 這些 key backend 不認識、會靜默丟掉
-   update_session(data_json={
+   update_session(data={
      "brand_name": "饗 A Joy",           # ← 應該是 wizard_shared_data.brand_name
      "base_description": "...",          # ← 應該是 wizard_shared_data.base_description
      "value_proposition": "...",         # ← 應該是 wizard_shared_data.value_proposition
@@ -167,9 +169,9 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
    # ↑ backend 全部默默 drop、只有 product_name 進去（若有寫的話）
    ```
 
-   **✅ 正確寫法**：所有 brand 欄位都 nest 在 `wizard_shared_data`：
-   ```
-   update_session(data_json=json.dumps({
+   **✅ 正確寫法**：所有 brand 欄位都 nest 在 `wizard_shared_data`、`data` 直接傳 dict：
+   ```python
+   update_session(data={
      "product_name": "饗 A Joy",
      "wizard_shared_data": {
        "brand_name": "饗 A Joy",
@@ -180,7 +182,7 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
        "key_features": [...],
        # ... 所有從 analyze_brand_url + scrape 抓到的欄位全部 nest 在這
      }
-   }))
+   })
    ```
 
    ### 🔴 寫完必驗：`update_session` 後**一定 `get_session` 讀回、逐 key 確認**
@@ -194,9 +196,9 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
 
    **✅ 唯一正確的驗證**：每次 `update_session` 後立刻 `get_session`、**對剛寫的每一個 key 逐項 assert 存在**：
    ```python
-   update_session(data_json=json.dumps({
+   update_session(data={
      "wizard_shared_data": {"brand_name": "X", "base_description": "Y", ...}
-   }))
+   })
 
    session = get_session(session_id)
    shared = session["wizard_shared_data"] or {}
@@ -220,8 +222,8 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
    ```
    使用者答了規格 X
      ↓
-   update_session(data_json={"wizard_shared_data": {X: value}})  或
-   update_session(data_json={"wizard_ta_groups": [{id, ..., X_per_ta: value}, ...]})
+   update_session(data={"wizard_shared_data": {X: value}})  或
+   update_session(data={"wizard_ta_groups": [{id, ..., X_per_ta: value}, ...]})
      ↓
    （所有 gate 過完、Cost 複誦、使用者回「開始」之後）
      ↓
