@@ -741,7 +741,28 @@ mcp_tool_call("landing_ai_mcp", "create_spokesperson", {
 
 **The moment you finish Phase 3.5 (spokesperson), you MUST proceed to Phase 3.9 Quality Gate below — do NOT skip to Phase 4、NOT skip to audience-target Step 4 TA。**
 
-**三個 tool 都要跑**（全部 0 pts、全部帶 session_id）：
+**🔴 UX 規則：internal 3-tool、external 1-step**
+
+對齊 GUI「按一次下一步 → backend 並行跑所有品質檢查」的節奏、**不准**把 Phase 3.9 拆成「Step 2.5-A validate → 等使用者 OK → Step 2.5-B analyze → 等使用者 OK → Step 2.5-C OCR」這種 3 按鈕流程。這違反 CLAUDE.md Rule 7 SILENT EXECUTION、也違反使用者從 GUI 帶過來的心智模型。
+
+**正確呈現**：
+```
+Before（1 句話講要做什麼）：
+  「我幫你檢查圖片品質 + 建模 + 抽包裝文字，大概 1-2 分鐘」
+
+Silent execution（不旁白、不報告哪個 tool 跑到哪、不分批要 OK）：
+  並行 call 三個 tool：validate_images / analyze_image / digitize_product_text
+  中間失敗安靜重試、成功不報告
+
+After（1 則整合結果訊息）：
+  「18 張都檢查完了——
+   ✅ 品質：[overall_passed 結論 + 有 issue 的逐項]
+   ✅ 建模：每張都分好 tag、排 LP 時會配段
+   ✅ 包裝文字：抽到 [關鍵字] 會當文案素材
+   [若 overall_passed=false 就把 summary_message_zh 原文給使用者 + 要不要重傳的決策點]」
+```
+
+**三個 tool 內部必須都跑**（並行、全部 0 pts、全部帶 session_id）：
 - `validate_images` — 批次品質檢查（30s）、拿 `image_censor_results`
 - `analyze_image` — 逐張 Gemini Vision 結構化描述（1-2 min）、每張圖拿 tag（主題 / 色調 / 場景 / 適用 LP section）
 - `digitize_product_text` — 商品包裝 OCR、拿 `product_text_model`（Architect 文案 ground truth）
