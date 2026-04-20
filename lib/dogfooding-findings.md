@@ -58,6 +58,11 @@ Flat params, not `overlay_json` wrapper.
 
 **Lesson for future**: don't canonicalize behavior from a single Claude session's experimentation; read backend source before writing plugin rules. The `Service_system/landing_ai_mcp/tools/` directory is the single source of truth for all `landing_ai_mcp` tool signatures.
 
+**Additional finding while reading backend source** (`marketing_backend/routers/landing.py` L3480, L3594):
+- `crop_stripe` does NOT modify the GCS `image_url` — the original stays untouched
+- Crop is stored as metadata (`stripe.crop_config`); applied via CSS clip-path on frontend render and PIL crop in `download_stripe`
+- Implication: an LLM looking at `image_url` after a crop call will always see the uncropped original, regardless of cache. To visually verify a crop actually preserved what user wanted, must use either `download_stripe` (auth-fetch + view binary) or have the user view the rendered LP page on `landingai.info`. `get_stripe_detail.crop_config.cropped_height` is sufficient to verify backend received the params (math validation), but NOT visual correctness.
+
 ---
 
 ### #41 — `update_session` silently drops unknown top-level keys 🔴 critical / **open (backend fix recommended)**

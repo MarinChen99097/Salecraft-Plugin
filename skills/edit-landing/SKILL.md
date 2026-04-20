@@ -523,38 +523,38 @@ crop_stripe(
 3. **px 值在 CropEditor 400×600 座標系**（不是實際圖片像素）：backend 把這個座標空間 scale 到實際圖、傳 `image_width` / `image_height` 給更精準的 scaling
 4. **行為是累加**：每次 call 從 current 狀態（不是原圖）再裁、所以連續 call 會越切越小、`reset_crop` 才能回到原始
 
-#### 主流程 — Vision Feedback Loop（LLM 直接看 URL 上的圖、iterate）
+#### ⚠️ 重要：image_url 不會被 crop_stripe 改變
 
-LLM 自己跑 **看圖 → 試裁 → 再看 → 不對就 reset + 重試** 的 loop、不要把翻譯位置的工作丟給使用者。
+Backend 行為（驗證自 `marketing_backend/routers/landing.py` L3480、L3594）：
+- `crop_stripe` **不修改** GCS 上的原圖
+- crop 只存成 metadata（`stripe.crop_config`）
+- 實際裁切：(a) 前端用 **CSS clip-path** render、(b) `download_stripe` 用 **PIL** 應用
+- 所以 **看 `image_url` 永遠是未裁切的原圖**、不能拿來驗證裁切是否生效
 
-**前提**：LLM 環境支援 vision（看 image URL）。Claude / GPT / Gemini / Claude Code 多數都行。沒有這個能力時走下方 Fallback。
+這也代表 cache 不是問題（URL 內容不變、不存在「需要 cache-bust」）。
 
-**關鍵**：stripe 的 `image_url` 是 **GCS 公開 URL**（`https://storage.googleapis.com/...`）、**不需要 auth header、不需要 download**、LLM 直接把 URL 餵給 vision 就能看。
+#### 主流程 — Vision Feedback Loop（看一次原圖、算精準、math 驗證）
 
-**Step 1 — 拿 stripe 資料 + image URL**
+**Step 1 — 拿 stripe 資料 + image_url**
 
 ```python
 detail = mcp_tool_call("landing_ai_mcp", "get_stripe_detail", {
   "user_token": token, "campaign_id": campaign_id, "stripe_idx": idx
 })
-# detail 含：
-#   image_url       — GCS 公開 URL、直接給 vision 看就好
-#   original_height — e.g. 800
-#   original_width
+# detail 含 image_url（GCS 公開 URL、永遠是原圖）+ original_height + original_width
 ```
 
-**Step 2 — 直接看 image_url、定位使用者要的元素**
+**Step 2 — LLM 用 vision 看 image_url、定位使用者要的視覺元素**
 
-LLM 把 `detail["image_url"]` 餵給 vision（每個環境介面不同：Claude API 用 image content block、ChatGPT 直接貼 URL、Claude Code 用 Read tool）、看圖：
+LLM 把 `detail["image_url"]` 餵給 vision（Claude image content block / ChatGPT URL / Claude Code Read tool）：
 
 ```
 使用者說「保留到大拇指那條線」
   ↓
-LLM 看 image_url 上的圖
+LLM 看圖、判斷：大拇指輪廓距頂端約 720 / 800 px
   ↓
-判斷：大拇指輪廓在距離圖頂端約 720 / 800 px 處
-  ↓
-要砍掉真實 px = 800 - 720 = 80
+要保留的真實 px 範圍 = top 0 → 720
+要砍掉的真實 px = 800 - 720 = 80（從底部）
 ```
 
 **Step 3 — 換算 CropEditor 600 座標 + 呼叫 crop_stripe**
@@ -575,30 +575,55 @@ mcp_tool_call("landing_ai_mcp", "crop_stripe", {
 })
 ```
 
-**Step 4 — 再拿新的 image_url、用 vision 驗結果**
+**Step 4 — 用 metadata 驗證裁切生效**
+
+`get_stripe_detail` 拿回 `crop_config.cropped_height`、跟預期算式比：
 
 ```python
-after = mcp_tool_call("landing_ai_mcp", "get_stripe_detail", {...})
-# 看 after["image_url"]、自問：大拇指完整保留嗎？切太多嗎？切太少嗎？
+after = get_stripe_detail(...)
+expected_cropped_h = real_h - 80   # 720
+actual_cropped_h = after["crop_config"]["cropped_height"]
+# 兩者相差 ±5 px = 成功；相差大 = 算式或座標換算錯了、走 Step 5
 ```
 
-**Step 5 — 不對就 iterate（reset + 重算 + 再裁）**
+**注意**：這只驗證「backend 收到參數、metadata 正確」、**不能驗證「視覺元素確實保留好了」**——那需要看實際裁切後的圖（見下方「視覺驗證選項」）。
 
-不要直接再 call `crop_stripe`（累加破壞、越切越爛）。先 reset、再算、再裁：
+**Step 5 — 不符預期就 reset + 重算**
 
+不要直接再 call crop（累加破壞）：
 ```python
-mcp_tool_call("landing_ai_mcp", "reset_crop", {...})   # 還原原圖
+reset_crop(...)
 # get_stripe_detail 確認回原 height
-# 重新看原圖 image_url、調整 bottom_px、再 crop 一次
-# 再看新 image_url 驗證
+# 重新算 bottom_px、再 crop 一次、再 metadata 驗證
 ```
 
-整個 loop 通常 **2-3 輪**收斂。LLM 自己跑、不打擾使用者。
+#### 視覺驗證選項（要真正看到裁切結果時）
 
-**對使用者溝通**（Silent Execution）：
-- 跑 loop 時別 narrate（不要講「我先看圖 / 我覺得砍 240 / 結果不對 / 我 reset」）
-- 完成後一句話：「這頁裁好了、保留到你說的大拇指那條線、看看 OK 嗎？」
-- 收斂不到（3 輪後還不對）→ 「我裁出來都不太準、你直接看 LP、講大概保留上方多少 %」
+`crop_config.cropped_height` 只能驗證「backend 收到正確 px 值」、不能驗證「我看的位置對不對」。要真的看裁切後的視覺、有兩條路：
+
+**A. `download_stripe` + auth fetch + 看 binary**（需要 Bash sandbox + auth fetch + vision）
+```python
+ref = mcp_tool_call("landing_ai_mcp", "download_stripe", {
+  "user_token": token, "campaign_id": campaign_id, "stripe_idx": idx
+})
+# ref = {download_url, auth_header, content_type}
+# Bash 或 Python httpx 帶 auth header fetch、save 成本地檔、vision 看
+# 這條路會看到真正的 PIL-cropped 結果
+```
+
+**B. 給使用者公開 LP URL 確認**（最簡單、所有環境都能用）
+```
+裁完後一句話給使用者：
+「這頁我幫你裁了——保留到你說的大拇指那條線。
+ 你直接看 LP（https://landingai.info/{locale}/lp/{campaign_id}）的這頁、
+ 不對的話告訴我『多保留一點』/『再砍一點』，我調。」
+```
+
+#### 對使用者溝通（Silent Execution）
+
+- 跑 loop 時別 narrate（不要講「我看圖 / 算出 60 / 我 crop / cropped_height 對了」）
+- 完成後一句話 + LP URL（讓使用者實際看視覺）
+- 收斂不到 → 「我裁出來都不太準、你直接看 LP、講大概保留上方多少 %」
 
 #### Fallback — LLM 沒有 vision 能力時
 
