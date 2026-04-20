@@ -104,14 +104,21 @@ This works on any AI platform that supports MCP connections.
 
 | Skill | What It Does | Cost (pts) |
 |-------|-------------|------------|
-| **brand-onboard** | Brand profile, asset check, gap analysis | FREE consultation; upload costs only |
-| **audience-target** | AI target audience suggestions | 5-15 |
-| **generate-landing** | AI Landing Page (multi-stage generation) | 1,600-2,000 |
-| **edit-landing** | Edit LP text, images, layout | 100/regen |
+| **brand-onboard** | Brand profile, asset check, gap analysis | FREE (uploads + analyses use free account quota) |
+| **audience-target** | AI target audience suggestions + spokesperson selection | FREE (runs on free quota) |
+| **generate-landing** | AI Landing Page (multi-stage generation) | 200/page × TAs (e.g. 8-page 1 TA = 1,600) |
+| **edit-landing** | Edit LP text, images, layout | text/crop/overlay free; regenerate 100/stripe |
 | **homepage-builder** | Build website from LP | FREE |
-| **publish-social** | Generate social copy + post | 100/set |
-| **publish-ads** | Meta/Google ad campaigns | depends on ad creation |
-| **generate-reels** | AI short video generation | 100/sec |
+| **publish-social** | Generate social copy + post | 100/set (publishing itself free) |
+| **publish-ads** | Meta/Google ad campaigns | depends on creative (200 for single ad; carousel 300 + 100×N) |
+| **generate-reels** | AI short video generation | 100/sec (5-60 sec range) |
+
+### Background & Utility
+
+| Skill | What It Does |
+|-------|-------------|
+| **brand-memory** | Auto-record brand files, prompts, and metadata for personalization (runs silently) |
+| **upload-media** | Handle user uploads — routes files to correct backend endpoint, validates format |
 
 ## Pricing
 

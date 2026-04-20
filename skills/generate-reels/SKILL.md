@@ -397,7 +397,7 @@ mcp_tool_call("landing_ai_mcp", "cancel_reel", {
 | Script generation (Phase 1-2) | FREE preview |
 | Script revision | FREE |
 | Full video generation | 100 pts/second |
-| Scene regeneration | ~50 pts |
+| Scene regeneration | check response `credits_deducted` — cost depends on scene length |
 | Publish to social | social copy 100 pts/set |
 
 ---

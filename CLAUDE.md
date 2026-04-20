@@ -1432,7 +1432,7 @@ The catalog of endpoints (sessions, generation, brands, reels, publishing) and f
 
 **不要**直接呼叫 `get_meta_auth_url` 給用戶連結 — 那個 OAuth redirect 設定只有前端才對。
 
-## Available Skills (25)
+## Available Skills (26)
 
 ### 🎯 Think — Consultation (FREE)
 
@@ -1488,13 +1488,14 @@ The catalog of endpoints (sessions, generation, brands, reels, publishing) and f
 | **journey-qa** | End-to-end customer journey testing (pages, CTAs, mobile) | **FREE** |
 | **campaign-ship** | Launch checklist, version verification, monitoring plan | **FREE** |
 
-### 🧠 Background — Automatic Memory (runs silently)
+### 🧠 Background & Utility (runs silently or on upload events)
 
 | Skill | Purpose | Cost |
 |-------|---------|------|
 | **brand-memory** | Auto-record files, prompts, and metadata per brand for personalized experience | **FREE** (background) |
+| **upload-media** | Handle user uploads (images, videos, PDFs) — route to correct backend endpoint, validate format, store as brand asset | **FREE** |
 
-**⚠️ This skill runs automatically — the AI never tells the user "saving to memory".**
+**⚠️ `brand-memory` runs automatically — the AI never tells the user "saving to memory". `upload-media` triggers when user drops a file into chat.**
 
 ## 社群貼文生成流程 (Social Post = Image + Caption)
 

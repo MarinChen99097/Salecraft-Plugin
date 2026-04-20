@@ -2,40 +2,47 @@
 
 ## How Credits Work
 
-- Each user has a weekly credit allocation
-- Credits are consumed on `generate_session` (LP generation)
-- Credits auto-refund if generation is interrupted
+- Credits are paid in **pts** (`1 USD = 30 pts`, minimum top-up `$20 = 600 pts`)
+- Credits are consumed on generation tools (`generate_session` / `regenerate_stripe` / `generate_ad` / `generate_carousel` / `generate_reels` etc.)
 - Check balance: `get_me(user_token)` → `credits_remaining`
 
-## Cost Estimation Formula
+## Landing Page Cost Formula
 
 ```
-total_credits = num_ta_groups × num_aspect_ratios × credits_per_page
+total_pts = 200 × requested_stripe_count × num_ta_groups
 ```
 
-Where:
-- `num_ta_groups`: number of selected target audiences (typically 1-5)
-- `num_aspect_ratios`: 1 (single) or 2 (both 16:9 + 9:16)
-- `credits_per_page`: base cost per landing page (check `get_generation_settings`)
+- `requested_stripe_count`: user-answered integer in 8-21 range (must be explicitly asked, never defaulted)
+- `num_ta_groups`: number of selected target audiences (1-5 typical)
+- `200`: per-page base cost, linear scaling
 
-## Example Calculations
+### Example Calculations
 
-| Scenario | TAs | Ratios | Per Page | Total |
-|----------|-----|--------|----------|-------|
-| Single product, 1 TA | 1 | 1 (16:9) | 1 | 1 credit |
-| Single product, both ratios | 1 | 2 | 1 | 2 credits |
-| Multi-TA campaign | 3 | 1 | 1 | 3 credits |
-| Full campaign, both ratios | 3 | 2 | 1 | 6 credits |
+| Scenario | Pages | TAs | Total pts | ~USD |
+|----------|-------|-----|-----------|------|
+| Minimum LP | 8 | 1 | 1,600 | $53 |
+| Standard LP | 10 | 1 | 2,000 | $67 |
+| 12-page × 2 TA campaign | 12 | 2 | 4,800 | $160 |
+| 15-page single TA | 15 | 1 | 3,000 | $100 |
+| Full LP × 2 TA | 21 | 2 | 8,400 | $280 |
+
+### Pre-deduct + adjustment mechanism
+
+- `generate_session` **pre-deducts** `requested_stripe_count × 200` per TA at start
+- After generation:
+  - `actual_stripe_count >= requested` → no extra charge (free overdelivery)
+  - `actual_stripe_count < requested` → `stripe_adjustment` refunds difference
+- Net cost always = `actual_stripe_count × 200` per TA
 
 ## Pre-Generation Check
 
-Before calling `generate_session`, always:
+Before calling `generate_session`:
 
 1. Call `get_me(user_token)` to get `credits_remaining`
-2. Calculate `total_credits` needed
-3. If `credits_remaining < total_credits`:
-   - Inform user: "You need X credits but only have Y remaining"
-   - Suggest reducing TAs or aspect ratios
+2. Calculate `total_pts` using the formula above
+3. If `credits_remaining < total_pts`:
+   - Inform user with exact math: "Need X pts but only have Y remaining"
+   - Suggest reducing TAs or page count
    - Do NOT proceed with generation
 
 ## Post-Generation Edit Tool Cost Reference

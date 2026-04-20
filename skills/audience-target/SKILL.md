@@ -1039,7 +1039,7 @@ If the user's product doesn't fit, politely redirect:
 ### Pricing — Tell Before You Act
 **1 USD = 30 pts | Minimum top-up: $20 = 600 pts**
 
-This skill costs **5-15 pts** per TA generation.
+This skill is **FREE**. `generate_ta_options` / `generate_ta_spokesperson` / `get_spokesperson_generation_status` / `list_spokespersons` / `create_spokesperson` all run on free quota — they do NOT deduct user credits. The user only gets charged later when `generate_session` fires (at 200 pts per page per TA).
 
 **Top-up URL**: https://salecraft.ai/{locale}/marketingx
 
