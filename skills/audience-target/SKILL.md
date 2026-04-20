@@ -271,9 +271,16 @@ status = mcp_tool_call("landing_ai_mcp", "get_spokesperson_generation_status", {
 
 **必須呼叫 `generate_ta_spokesperson` 拿 front_url + side_url 實際圖、markdown 展示給使用者、等逐組點頭、才能進 Phase 3。**
 
-### 🔴 Step 0（必先跑）— 看看 brand 代言人資產庫有沒有可以 reuse 的
+### 🔴 Step 0（必先跑）— **主動**查 brand 資產庫 + **主動推薦** reuse
 
-**絕對禁止**每次都跑 `generate_ta_spokesperson` 吃配額、brand 可能已經有幾個生過 / 上傳過的代言人可以直接 reuse。進 Phase 2.5 **第一件事**：
+**絕對禁止**等使用者問「有沒有舊的代言人可以用」才查——LLM 必須**自己主動**先查、**主動推薦**既有資產當預設方案、讓使用者要「生新的」時要有理由。
+
+**為什麼主動推薦 reuse**（要對使用者講清楚）：
+1. **brand 一致性**：同一個代言人跨 LP / Reels / 廣告、受眾記得住「這個人 = 這個品牌」、比每次換人強
+2. **配額**：既有資產不吃 AI 生成配額、留著做其他更重要的新 TA
+3. **時間**：reuse 立刻可用、新生要 30-60 秒 + 可能要重生調整
+
+**進 Phase 2.5 的第一個動作**（不旁白、靜默跑）：
 
 ```python
 existing = mcp_tool_call("landing_ai_mcp", "list_spokespersons", {
@@ -282,24 +289,34 @@ existing = mcp_tool_call("landing_ai_mcp", "list_spokespersons", {
 # 回傳 [{spokesperson_id, name, description, photo_urls, is_ai_generated, created_at}, ...]
 ```
 
-**若資產庫非空**：**先展示給使用者挑**，不要自動跳去 generate：
+**若資產庫非空**：**帶推薦立場展示**、不是中立列選項。例：
 
 ```
-你 {brand_name} 的代言人資產庫裡已經有 {N} 個代言人、可以直接用不占配額：
+你 {brand_name} 的資產庫裡有 {N} 個代言人可以用——**我建議先從這邊挑**（省配額、brand 一致性強、立刻能用）：
 
-1. {name_1}（{description 前 40 字}）
+1. ⭐ {name_1}（{description 前 40 字}）{若 created_at 新加「最近剛做過」}
    ![]({photo_urls[0]})
 2. {name_2}（{description}）
    ![]({photo_urls[0]})
 …
 
-你想：
-- 「TA1 用 #1、TA2 用 #2」→ 直接寫進 session、跳過生成
-- 「都不用資產庫的、重新生」→ 走下方生成流程（吃配額）
-- 「TA1 用 #1、TA2 重新生」→ 部分 reuse + 部分 generate 可以 mix
+我的推薦：
+- TA 1「{ta_1_name}」→ 用 #{best_fit_id} {reason、例：「這位西裝商務氣質跟巔峰企業家 TA 最搭」}
+- TA 2「{ta_2_name}」→ 用 #{best_fit_id} {reason}
+
+你可以：
+- 回「照你建議」→ 直接套用我推的配對、跳過生成
+- 回「TA1 用 #X、TA2 用 #Y」→ 自己挑配對
+- 回「TA1 用 #X、TA2 重新生」→ 部分 reuse + 部分新生
+- 回「都要新生」→ 走生成流程（**但請告訴我為什麼**——既有不夠像嗎？想換風格？）
 ```
 
-**若資產庫為空或使用者全拒**：才走下方生成流程。
+**要點**：
+- 用 ⭐ / 「我的推薦」明示 LLM 的 stance、不是中立列表
+- 若 LLM 能判斷資產庫哪位最適合哪個 TA（看 description + TA 受眾）、**主動配對**、不要叫使用者自己看
+- 使用者選「都要新生」要**反問原因**（「既有不夠像嗎？」）、避免 FOMO 心理白燒配額
+
+**若資產庫為空**：靜默略過這段、直接走下方生成流程、但要跟使用者講「這是你 {brand_name} 的第一批代言人、生完我會存進資產庫、之後做新 LP 可以 reuse」。
 
 ### 流程（per-TA 獨立跑、不合併）
 
