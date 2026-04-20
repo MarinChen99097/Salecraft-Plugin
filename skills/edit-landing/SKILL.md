@@ -3,7 +3,7 @@ name: edit-landing
 description: |
   Post-generation landing page editing. Translates natural language edit requests
   into specific MCP tool calls for stripe-level modifications: text, styling,
-  images, overlays, crops, regeneration, reordering. Supports undo/redo.
+  images, overlays, crops, regeneration, reordering. Stripe history browsing (jump to any prior version).
   Trigger: Phase 4 of /salecraft-create, /salecraft-edit, or "edit my landing page", "change the headline".
 allowed-tools:
   - Bash
@@ -220,7 +220,7 @@ mcp_tool_call("landing_ai_mcp", "update_stripe_text_styling", {
 |-----------|--------------|-------|
 | "換主色" / "change primary color" | `patch_landing_config` | `config_json`: `{"primary_color": "#HEX"}` |
 | "改 footer 文案 / 連結" | `patch_landing_config` | `config_json`: `{"footer": {...}}` |
-| "改 header 導航列" | `patch_landing_config` | `config_json`: `{"header_nav": [...]}` |
+| "改 header 導航列" / 新增 / 刪除 / 重排 header 按鈕 | `patch_landing_config` | `config_json`: `{"header_nav": [...]}`（見下方 Header 按鈕管理段） |
 
 這些都是 **page shell** 編輯——改的是頁面外框、不碰 stripe 內 AI 生成圖片。**不扣點**。
 
@@ -259,20 +259,107 @@ mcp_tool_call("landing_ai_mcp", "upload_logo", {
 
 If unclear, **ask**: 「你是想換頁面最上面那個 logo，還是 LP 圖片內部的品牌標示也要換？後者要重 generate 受影響的 stripe，每張 100 pts。」
 
-### Undo / Redo
+### Header 按鈕管理（新增 / 刪除 / 位移 / 改連結）
 
-| User says | Tool |
-|-----------|------|
-| "Undo that change" | `undo_stripe` |
-| "Redo" | `redo_stripe` |
+LP 最上方的 Header 有一排導航按鈕（產品特色 / 關於我們 / 聯絡 / 購買 / 登入…）、使用者會想新增、刪除、調順序、改連結。
 
-```
-mcp_tool_call("landing_ai_mcp", "undo_stripe", {
-  "user_token": token,
-  "campaign_id": campaign_id,
-  "stripe_idx": 0
+**工具現況**：
+- **沒有** dedicated tool（無 `add_header_button` / `remove_header_button` / `reorder_header_buttons`）
+- 只有 generic `patch_landing_config({"header_nav": [...]})`——必須**整個 `header_nav` 陣列覆寫**、不是針對單一按鈕 patch
+- 有 `get_suggested_buttons(user_token, campaign_id)` 可以讓 AI 建議該放哪些按鈕（若使用者沒想法）
+
+**標準流程**（每次動 header 都走）：
+```python
+# Step 1：先讀當前 header_nav（避免覆寫錯）
+current = mcp_tool_call("landing_ai_mcp", "get_landing_page", {
+  "user_token": token, "campaign_id": campaign_id
+})
+nav = current["config"].get("header_nav", [])
+# nav = [{"label": "產品特色", "url": "#features"}, {"label": "關於", "url": "#about"}, ...]
+
+# Step 2：依使用者意圖改 nav
+# 新增：
+nav.append({"label": "購買", "url": "https://buy.example.com"})
+# 刪除（例如刪掉「關於」）：
+nav = [b for b in nav if b["label"] != "關於"]
+# 位移（例如把「購買」移到第一個）：
+buy = next(b for b in nav if b["label"] == "購買")
+nav.remove(buy)
+nav.insert(0, buy)
+# 改連結：
+for b in nav:
+    if b["label"] == "聯絡":
+        b["url"] = "mailto:new@example.com"
+
+# Step 3：patch 整個 nav 回 backend
+mcp_tool_call("landing_ai_mcp", "patch_landing_config", {
+  "user_token": token, "campaign_id": campaign_id,
+  "config_json": json.dumps({"header_nav": nav})
 })
 ```
+
+**使用者沒想法時、主動建議**：
+```python
+suggested = mcp_tool_call("landing_ai_mcp", "get_suggested_buttons", {
+  "user_token": token, "campaign_id": campaign_id
+})
+# 回傳 [{"label": ..., "url": ...}, ...] 依 LP 內容推薦的 header 按鈕組合
+```
+
+展示：
+```
+我幫你看了一下這個 LP、建議 Header 放這幾個按鈕、你挑要哪幾個（也可以改文字或連結）：
+
+1. 🧾 產品特色 → #features（滑到特色區）
+2. 💬 Q&A → #faq
+3. 📞 聯絡我們 → mailto:contact@...
+4. 🛒 立即購買 → [你的購買頁]
+
+你要哪幾個？或講「這幾個都加」/「只要 1、4」/「再加一個『預約試用』」。
+```
+
+**❌ 禁用手法**：
+- 直接 `patch_landing_config` 傳只含新按鈕的 `header_nav: [new_button]` — 這會**覆蓋**整個 nav 陣列、既有按鈕全消失
+- 憑記憶組 `header_nav`、不先 `get_landing_page` 讀當前值
+
+### 歷史版本瀏覽（不是 undo/redo、是 version list）
+
+**Plugin 的 mental model 是版本列表、不是 undo/redo command stack**。每個 stripe 每次 `regenerate_stripe` 都會**保留舊版當歷史**、整條時間線都在。「撤銷」= **跳到歷史裡某個版本**、不是 pop 一層動作。
+
+**對使用者講的時候**：
+- ❌ 不要用「undo / redo / 撤銷 / 重做」這種語言（誤導使用者以為是 command stack）
+- ✅ 用「退回之前的版本」/「挑之前生過的某一版」/「切換版本」
+
+**唯一正確流程**：先列歷史、使用者挑、切換：
+
+```python
+# Step 1：列出該 stripe 的所有歷史版本
+history = mcp_tool_call("landing_ai_mcp", "get_stripe_history", {
+  "user_token": token, "campaign_id": campaign_id, "stripe_idx": 0
+})
+# 回傳 [{version_id, created_at, image_url, prompt_used, is_current, ...}, ...]
+
+# Step 2：展示給使用者挑（縮圖 + 時間 + 標記目前版）
+
+# Step 3：使用者挑完、切到那個版本
+# （tool 實作依 backend、可能是 undo_stripe 多次 call、或 restore-to-version、
+#  不重要、對 LLM 自己是 internal；對使用者永遠是「我幫你切到 v2」）
+```
+
+**呈現範本**：
+```
+這頁你 regenerate 過 {N} 次、以下是歷史版本——挑你想要的：
+
+v1（最初版、{created_at}）         v2（{created_at}）              v3 ⭐ 目前這版
+![]({v1.image_url})                ![]({v2.image_url})              ![]({v3.image_url})
+
+回「用 v1」我就幫你切回去。或回「生新的一版」我再跑一次 regenerate（100 pts）。
+```
+
+**不要做**：
+- ❌ 對使用者說「我 undo 一次」然後 call `undo_stripe`——使用者不知道退到哪版、也不知道有沒有 undo 過頭
+- ❌ 只 call `undo_stripe` / `redo_stripe` 不列歷史——使用者看不到時間線、盲切
+- ❌ 假設使用者記得他改過幾次——可能只記得「某個版本比較好」、不記得是哪一次
 
 ### SEO / Metadata / FAQ
 
@@ -662,7 +749,7 @@ regenerate_stripe(stripe_idx=7, user_feedback="移除 debug 文字")
 
 - Always confirm which stripe before editing: "I'll edit stripe 2 (the features section). Correct?"
 - After each edit, briefly describe what changed
-- Offer undo immediately after any edit: "If that's not right, I can undo it"
+- After any regeneration, remind user history is saved: 「這版不好的話隨時切回去——我可以列這頁生過的所有版本給你挑」
 - **Collect ALL edits for a stripe before regenerating** — ask "Any other changes for this stripe?"
 - For major changes, suggest regeneration over manual editing
 - **Remind users about screenshot editing** — "You can also take a screenshot, circle what to change, and paste it here"
