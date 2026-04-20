@@ -611,7 +611,11 @@ if missing:
 
 **唯一算數的驗證**：`get_session` → **對你剛寫的每個 key 存在性 assert**。少一個就是 drop 了、立刻重寫。
 
-**2026-04 實戰 incident**：LLM 把 `brand_name` / `base_description` / `value_proposition` / `brand_story` 等 13 個 brand 欄位寫在頂層（不 nest `wizard_shared_data`）、每批都說「✅ 寫入」、使用者花 20 分鐘逐批確認——**session 全空、生 LP 時 Strategist 走預設、使用者確認的改寫文案 0 影響**。若有做 key-level assert、第一批就會當場發現 drop、不會燒到 4,200 pts 才發現。
+**Brand 欄位的 nesting 規則**（最容易踩、見 CLAUDE.md 6.5 白名單）：
+- `brand_name` / `base_description` / `value_proposition` / `brand_story` / `tagline` / `primary_color` / `key_features` / `cuisine_type` / `signature_dishes` / `operating_hours` / `pricing_info` / `target_audience` / `trust_certifications` 等
+- **必須 nest 在 `wizard_shared_data`**、寫成頂層 key 會被 backend silently drop
+- Drop 之後 backend 仍回 200 + `updated_at` bumped、所以**沒做 key-level assert 完全發現不了**
+- 漏寫的後果：生 LP 時 Strategist 拿不到這些欄位、走預設品牌敘事、使用者確認過的內容 0 影響
 
 這個讀回驗證步驟不可省。使用者「已登記」的感覺必須是 backend 真的有寫。
 

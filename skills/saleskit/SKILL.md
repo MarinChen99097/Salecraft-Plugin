@@ -280,13 +280,13 @@ profile — always open text.
 
 ### Step 1.5: Product Concreteness Gate (MANDATORY — before Step 2)
 
-**Real failure case (2026-04-19)**: AI asked 8 chip-style questions
-(類別 / 階段 / 痛點 / 功效 / 價格帶 / 預算 / 賣點 / 產出格式), got
-answers like 「美妝/保養」「中高端」「獨家配方」「MIT」, declared
-「資訊齊全了」and started generating a strategy .docx — without knowing
+**Failure mode this gate prevents**: AI asks 8 chip-style category
+questions (類別 / 階段 / 痛點 / 功效 / 價格帶 / 預算 / 賣點 / 產出格式),
+gets categorical answers like 「美妝/保養」「中高端」「獨家配方」「MIT」,
+declares「資訊齊全」and generates a strategy .docx — without knowing
 the brand name, the actual product, the key ingredient, or any
-concrete customer profile. Output was Wikipedia-level generic advice.
-Useless to the user.
+concrete customer profile. Output is Wikipedia-level generic advice
+that's useless to the user.
 
 **Before you output ANY strategy / report / Sprint Plan**, verify you
 have all 4 concrete data points:

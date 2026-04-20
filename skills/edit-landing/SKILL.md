@@ -24,6 +24,58 @@ You are a landing page editor. You translate the user's natural language edit re
 - `user_token` and `campaign_id` from Phase 3 (generate-landing)
 - Read `CLAUDE.md` for full tool signatures
 
+## 🔴 標準工具呼叫流程（所有 edit 工具都適用）
+
+LP 編輯工具有很多（text / crop / overlay / soft_edge / background / CTA / header / SEO / structural…）、schema 跟行為不完全一致、有些文件有 drift。**進入任何編輯前、照下面 3 步走**：
+
+### ① Pre-flight：先讀當前狀態
+
+```python
+# 對要改的 stripe 先拿 snapshot、才有復原參考點
+before = mcp_tool_call("landing_ai_mcp", "get_stripe_detail", {
+  "user_token": token, "campaign_id": campaign_id, "stripe_idx": idx
+})
+# 記下關鍵欄位（original_height, soft_edge_config, overlay_config, crop state, texts...）
+```
+
+### ② Call：**先試文件版 schema**、避免亂猜
+
+- 文件（這份 SKILL.md）有明確 schema 的→照那個 schema call
+- 文件沒寫或寫不清楚→**寧可用最直覺的 normalized 值**（`{"x":0,"y":0,"width":1,"height":1}` 代表「全保留」、`{"percent":0}` 代表「關閉」），不要亂拼參數名
+- 看到 response 裡有額外欄位（`strength` / `top_px` / status flags）→**那是 output status、不是 input schema**、重新 call 時繼續用原本的 input 格式、不要倒灌 response 欄位
+
+### ③ Post-verify：立刻讀回、比對預期
+
+```python
+after = mcp_tool_call("landing_ai_mcp", "get_stripe_detail", {...})
+# 比對 before vs after：
+#   - 預期改的欄位真的改了嗎？
+#   - 沒預期改的欄位意外變動了嗎？
+#   - 數值在合理範圍嗎？（例：要保留 60% 的高度、結果剩 10% → 爛掉）
+# 若結果不如預期：**停手**、不要「試下一組參數看看」
+#   → call 失敗是 LLM 對 schema 理解錯、iterate 只會繼續破壞
+#   → 告訴使用者「這個改法沒成功、我先停著、要不要換別的方式試」
+```
+
+### 不符預期時的決策樹
+
+```
+結果不如預期
+  ↓
+  有對應的 reset_* / undo 工具嗎？
+    ↓ 有
+    call reset → verify → 若成功恢復、重新評估 call 參數
+    ↓ 沒有 or reset 失敗
+    offer regenerate_stripe（100 pts）或「接受現況」給使用者選
+```
+
+### 對使用者溝通（見 JARGON #13 / #14 / #16）
+
+- ❌ 不要 narrate debug 過程（「我試 percent 看看」「bottom_px 的語意是...」）
+- ❌ 不要提 response 欄位名（`cropped_height` / `soft_edge_config.strength`）
+- ✅ 失敗就講「這個改法沒成功」+ 提供後續選項、不解釋 why
+- ✅ 成功就講結果（「加好了、這頁跟下一頁會自然融合」）、不講 call 了幾個工具
+
 ## LP Content Awareness (Automatic — No User Action Needed)
 
 **You must always know the full content of ALL LPs in the current session.** This is NOT a step the user triggers — you do it silently.
@@ -450,41 +502,31 @@ D) Done — proceed to homepage building (/salecraft-homepage)
 
 ## Crop & Visual Adjustments
 
-### ⚠️ `crop_stripe` — schema 目前未經驗證、請謹慎
+### ⚠️ `crop_stripe` — 謹慎使用
 
-**已知狀態**（2026-04）：
-- 早期 plugin 文件寫 schema 是 `crop_json: {"x", "y", "width", "height"}`（0.0-1.0 正規化）
-- 2026-04 一次 dogfooding 中、一個 Claude session 聲稱實際 schema 是 `{top_px, bottom_px, left_px, right_px}` 且 call 兩次後行為不符預期（高度 800 → 400 → 80、反直覺）
-- 那次報告**未被獨立驗證**、可能是 (a) 工具 schema 改了但文件沒更、或 (b) 那個 Claude 誤讀 response 欄位當 input 參數、或 (c) 某種 edge case 互動（soft_edge + crop 同頁）
-- **尚未確認**：crop 是否會被 `reset_crop` 完整還原、多次 crop 的累加行為
+**Schema**：
+- 文件版：`crop_json: {"x", "y", "width", "height"}`（0.0-1.0 正規化、保留矩形的左上座標 + 寬高）
+- 「不裁」= `{"x": 0, "y": 0, "width": 1, "height": 1}`
+- 部分 backend build 的實際 schema 與文件不一致（見 `lib/dogfooding-findings.md` #42）—— 不確定時**先試文件版**
 
-### 目前建議的呼叫流程（保守、防破壞）
+**呼叫前必做**：
+- `get_stripe_detail(campaign_id, stripe_idx)` 拿 snapshot、記下 `original_height` / `original_width`
+- 把使用者的視覺描述（「保留上方那塊」）轉成**保留比例**（0.6 / 0.85）、再算成 normalized 座標
 
-```python
-# Step 1: 先 get_stripe_detail、記下當前 height/width（復原參考）
-before = get_stripe_detail(campaign_id, stripe_idx)
+**呼叫後必做**：
+- 立刻再 `get_stripe_detail` 驗證
+- 比對：預期保留範圍 vs 實際 cropped 結果
+- 結果跟預期相差大（例如要 60% 卻剩 10%）→ **停手**、不要立刻改參數再試
 
-# Step 2: 呼叫 crop_stripe、照**最保守**的解讀傳參
-#   先試 normalized 0.0-1.0 格式（文件版本）、視 response 判斷是否生效
+**絕對禁止**：
+- ❌ 沒先 `get_stripe_detail` 就 call（沒復原參考點）
+- ❌ 第一次結果不對、立刻改參數再 call（accumulating 破壞風險）
+- ❌ 把使用者模糊描述（「切到大拇指那邊」）直接當參數——先請使用者給比例（「保留 60%」）或方向（「上半 / 中間 / 下半」）
 
-# Step 3: 呼叫後**立刻** get_stripe_detail 驗證
-after = get_stripe_detail(campaign_id, stripe_idx)
-#   若結果與預期相差巨大（例如要保留 60% 但剩 10%）→ **停手**、不再 call
-#   不要「試下一組參數看看」—— 那會繼續破壞
-
-# Step 4: 若踩壞、試 reset_crop
-#   若 reset_crop 無法完全還原、誠實告訴使用者、提供 regenerate_stripe 選項（100 pts / 頁）
-```
-
-### 絕對禁止
-
-- ❌ 不先 `get_stripe_detail` 就 call `crop_stripe`（沒有復原參考點）
-- ❌ 第一次 call 結果不對、就**立刻改參數再 call**——stop、先搞清楚 schema
-- ❌ 用使用者模糊的「切到大拇指那邊」當參數——先請使用者給**保留比例**（「保留上方 60%」/「保留上方那塊佔 85%」）或「上半 / 中間 / 下半」、不要自己把視覺描述翻譯成座標
-
-### 這個 tool 的 schema 需要實測釐清（backend team action）
-
-`dogfooding-findings.md` #42 記錄的未解 issue。LLM 如果在實戰中搞清楚了實際 schema、請回報更新這段文件。
+**踩壞後的回收順序**（每步都先 `get_stripe_detail` 驗）：
+1. `reset_crop(campaign_id, stripe_idx)` — 嘗試還原（免費）
+2. 試 `crop_stripe` 傳 `{"x":0,"y":0,"width":1,"height":1}` — 文件版「全保留」
+3. `regenerate_stripe`（100 pts / 頁）— 重生這頁、會是新 AI 圖、構圖不一定一樣、明確告訴使用者
 
 ### Reset crop to original
 ```
@@ -499,31 +541,40 @@ mcp_tool_call("landing_ai_mcp", "reset_crop", {
 
 Creates smooth gradient transitions between consecutive stripes, giving the LP a more polished, seamless look instead of hard cuts between sections.
 
+**Schema**：
+
 ```
 mcp_tool_call("landing_ai_mcp", "set_stripe_soft_edge", {
   "user_token": token,
   "campaign_id": campaign_id,
   "stripe_idx": 2,
   "enabled": true,
-  "soft_edge_json": "{\"top\": 0.05, \"bottom\": 0.05}"
+  "soft_edge_json": "{\"percent\": 100}"   # 0 = 硬切、100 = 最強柔邊融合
 })
 ```
 
-**Parameters:**
-- `enabled`: `true` to apply, `false` to remove
-- `soft_edge_json`: Controls the gradient fade size
-  - `top`: Fade percentage at the top edge (0.0-0.3 recommended)
-  - `bottom`: Fade percentage at the bottom edge (0.0-0.3 recommended)
-  - Higher values = longer, more gradual fade
+**Parameters**：
+- `enabled`：`true` = 套用、`false` = 移除
+- `soft_edge_json`：
+  - `percent`（推薦）：0-100 整數、0 = 硬切、100 = 最強柔邊。Backend 會自動換算成 `strength`（0.0-1.0）+ `bottom_px`（像素數）
+  - `top` / `bottom`（舊版格式）：0.0-0.3 正規化比例。若 `percent` 沒吃才退回試
+
+**Response vs input**：回傳的 `{top_px, bottom_px, strength, percent}` 都是 status、不是 input schema。重新 call 時繼續傳 `percent`、**不要把 response 的 `strength` / `bottom_px` 倒灌成 input**。
 
 **When to suggest soft edges:**
-- When stripe backgrounds have very different colors (jarring transitions)
-- When the LP has a "collage" feel and needs visual continuity
-- When the user says "make it flow better" or "smoother transitions"
+- 兩頁背景色差很大（轉場斷裂感）
+- LP 整體有「拼貼感」、需要視覺連貫
+- 使用者說「讓它順一點」、「更滑順的轉場」
+
+**使用者溝通**（見 JARGON #13）：
+- ❌ 「我把 bottom_px 從 30 改到 150」「strength 變成 1.0」
+- ✅ 「這頁的柔邊調到最強、跟下一頁會自然融合」
 
 ### Add dark/light overlay for text readability
 
 Adds a semi-transparent color layer over the stripe background, making text more readable when placed over busy or bright backgrounds.
+
+**Schema（plugin 文件版、未獨立驗證 percent 路徑是否也存在）**：
 
 ```
 mcp_tool_call("landing_ai_mcp", "set_stripe_overlay", {
@@ -541,10 +592,16 @@ mcp_tool_call("landing_ai_mcp", "set_stripe_overlay", {
   - `color`: Hex color (`#000000` for dark overlay, `#FFFFFF` for light)
   - `opacity`: 0.0 (invisible) to 1.0 (fully opaque); 0.3-0.5 is typical
 
+**Response 欄位 vs input params**：若回傳含 `percent` / `opacity_px` / `status` 等額外欄位、那是 **response status、不是 input schema**。重新 call 時繼續用 `color` + `opacity`、不要把 response 的 status 倒灌回去當 input。類似 soft_edge 的 `percent` 捷徑也可能存在於 overlay、但**未經驗證**、先用文件版格式。
+
 **When to suggest overlays:**
 - White text on light/busy backgrounds → dark overlay
 - Dark text on dark backgrounds → light overlay
 - User says "I can't read the text" or "text is hard to see"
+
+**使用者溝通**：
+- ❌ 「opacity: 0.4 / color: #000000 / enabled: true」
+- ✅ 「這頁加一層微微的深色濾鏡、字會變比較清楚、看起來像加了墨鏡一樣那種」
 
 ## SEO & Search Optimization — one-click AI
 
