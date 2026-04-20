@@ -164,6 +164,14 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
    理由是「避免多扣 400 pts」或「保守估計」或「對使用者比較安全」→ 未經授權扣錢 → 退費
    原因：requested_stripe_count 必須使用者親答（8-21 範圍）、不是 LLM 的成本優化空間
 
+   ❌ Phase 2.5 開頭沒 call `list_spokespersons`、每次都直接跑 `generate_ta_spokesperson` 吃配額
+   → brand 資產庫可能已有幾個生過 / 上傳過的代言人（用 Reels / 上個 LP 時登記的）、明明可以 reuse 不占配額、結果使用者白白用掉一次免費額度
+   原因：代言人是 brand 層級**跨產出 reusable 資產**（LP / Reels / 廣告共用）、不是 per-LP 一次性物件。Phase 2.5 第一件事必須 `list_spokespersons(brand_id)` 展示既有、讓使用者挑既有 / 部分 reuse / 全新生
+
+   ❌ `generate_ta_spokesperson` + 使用者點頭之後、LLM 直接 `update_session` 寫 spokesperson_id 就結束、**沒 call `create_spokesperson` 登記進 brand 資產庫**
+   → 這個代言人只在這次 session 裡用一次、下次開新 LP / Reels / 廣告就不見、使用者還要重新走流程 + 再吃一次配額
+   原因：`spokesperson_id` from `generate_ta_spokesperson` 是 **generation id**（臨時）、**不等於** brand 資產庫裡的 spokesperson 記錄。必須用 `create_spokesperson(brand_id, photo_urls_json, is_ai_generated=true)` 才真正登記到資產庫、才能跨產出 reuse
+
    ❌ LLM 告訴使用者「生 AI 代言人要扣 500 pts / 個」、並據此給「方案 A 先扣 500 看看、方案 B 放棄代言人省 1,000 pts」這類選項
    → 使用者被誤導、要嘛以為被重複扣錢、要嘛為了「省點數」放棄代言人 → LP hero 首屏沒代言人 → 轉換率下降
    原因：`generate_ta_spokesperson` **不扣使用者點數**、走**帳號級免費配額**（用 `get_spokesperson_generation_status` 查 `{used, limit, remaining}`）。進 Phase 2.5 第一件事是**查配額、人話告訴使用者剩幾次**、不是搬 pricing 表上的 500 pts 數字。代言人在 LP 實際出現的成本包在 `stripe_cost` 裡、不另外扣
