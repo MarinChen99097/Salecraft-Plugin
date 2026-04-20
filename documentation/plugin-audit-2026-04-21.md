@@ -169,3 +169,167 @@ Total fixes: **~6 distinct edits**, all low-risk and localized. No file structur
 1. User reviews this report
 2. If Wave 1 findings accepted, apply 6 fixes as a single commit (all localized, low-risk)
 3. After Wave 1 fixes land and validate, decide whether to run Wave 2 (Audit 3 + 5)
+
+---
+
+# Wave 2 — Fake Features & Backend Coverage
+
+## Audit 3 — 虛假功能（feature claim vs 實作）
+
+**Status: 🔴 HAS ISSUES** — 1 major fabrication found
+
+### Methodology
+
+Walked through major feature claims in README Features section, CLAUDE.md, and relevant SKILL docs. Cross-checked each against actual backend MCP tools in `Service_system/landing_ai_mcp/tools/` and `Service_system/zereo_social_mcp/tools/`.
+
+### Findings
+
+| Feature claim | Source | Backend tool | Status |
+|---|---|---|---|
+| 15+ languages (en, zh-TW, zh-CN, ja, ko, vi, fr, th, es, pt, ar, de, id, ms, hi) | README L145 | `templates/i18n/` has 15 JSON locale files | ✅ Verified |
+| AI Landing Pages (30-min turnaround) | README L147 | `generate_session` + Strategist/Architect/Factory pipeline | ✅ Verified |
+| Social publishing — IG, FB, TikTok one-click | README L148 | `publish_post` supports `ig_post/ig_story/ig_reel/fb_post/fb_story/tt_video` | ✅ Verified |
+| **Ad campaigns — Meta + Google Ads creation** | **README L149** | `create_ad_campaign` is **Meta-only** — no Google Ads creation tool exists | 🔴 **FABRICATED** |
+| TikTok sandbox mode posting | publish-social L62 | `tt_video` post type supported, sandbox caveat documented | ✅ Verified |
+| Homepage builder | homepage-builder SKILL | Composed from `export_html` + `download_stripe` (both real) | ✅ Verified |
+| Reel promotion (IG/FB boost) | publish-ads L286 | `promote_reel` exists in `zereo_social_mcp/tools/ads.py` | ✅ Verified |
+| QR Code generation | multiple skills | `generate_qr`, `generate_qr_card`, `composite_qr` all exist in zereo_social_mcp | ✅ Verified |
+| Google Drive asset import | CLAUDE.md + README | 7 `gdrive_*` tools exist in landing_ai_mcp/content.py | ✅ Backend exists (see Audit 5 re: surface) |
+| Spokesperson AI generation | audience-target SKILL | `generate_ta_spokesperson` + `get_spokesperson_generation_status` | ✅ Verified |
+
+### 🔴 Critical fabrication — Google Ads creation
+
+**Claimed at**:
+- `README.md:149` — "Ad campaigns — Meta + Google Ads creation"
+- `skills/publish-ads/SKILL.md:61` — "🔍 Google Ads — ACME Search (can create campaigns)"
+- `skills/publish-ads/SKILL.md:281` — "Create Google Ads campaign too"
+- `lib/ad-platform-specs.md:34-59` — Full Google Ads campaign types + asset specs section
+- `CLAUDE.md:1708` — "Ad Campaigns (11 tools) — Meta/Google ads"
+
+**Backend reality**:
+- `zereo_social_mcp/tools/ads.py`'s `create_ad_campaign` docstring: **"Create a new Meta (Facebook/Instagram) ad campaign"**
+- grep for `google_ads|googleads|adwords` in backend tool definitions: **0 matches**
+- No Google Ads MCP tool exists
+
+**Impact**: User reads README, asks LLM to "create Google Ads campaign", LLM has no backend path. Result: either (a) silently pretends, (b) tries `create_ad_campaign` and creates a Meta campaign by mistake, or (c) apologizes but damage to user trust is done.
+
+**Note on aspect_ratio references**: Mentions like "16:9 適合 Google Ads" (in CLAUDE.md L372, generate-landing L379/467, commands/salecraft-create L100) are **not fabrications** — they advise aspect ratios users might need IF they later export the image to Google Ads manually. These don't claim plugin creates Google Ads campaigns. Keep as-is.
+
+### Fix summary (Audit 3)
+
+| Priority | File | Fix |
+|---|---|---|
+| 🔴 P0 | `README.md:149` | "Meta + Google Ads creation" → "Meta (Facebook/Instagram) campaigns + ad creative export for other platforms" |
+| 🔴 P0 | `skills/publish-ads/SKILL.md:61` | Remove "Google Ads" from ad-capable accounts list, OR mark as "creative export only, no campaign creation" |
+| 🔴 P0 | `skills/publish-ads/SKILL.md:281` | Remove "A) Create Google Ads campaign too" (no such capability) |
+| 🔴 P0 | `lib/ad-platform-specs.md:34-59` | Mark Google Ads section as "creative specs reference (for manual export only — plugin does not create Google Ads campaigns)" OR delete section |
+| 🔴 P0 | `CLAUDE.md:1708` | "Meta/Google ads" → "Meta ads" |
+
+---
+
+## Audit 5 — Backend 覆蓋率（211 未覆蓋工具）
+
+**Status: ⚠️ INTENTIONAL GAPS + 2 SURFACING OPPORTUNITIES**
+
+### Backend tool count per category
+
+| Category | Tools | Notes |
+|---|---|---|
+| landing_pages | 56 | LP editing + stripe ops |
+| content | 50 | Mixed: brand/campaign/gdrive/pdf/qr/memory |
+| sessions | 34 | Session lifecycle + generation |
+| brands | 32 | Brand/spokesperson/analysis |
+| reels | 26 | Reels generation + templates |
+| conversations | 20 | Chat/messaging/phase data |
+| auth | 15 | Auth + account mgmt |
+| todos | 14 | Todo system |
+| prediction | 13 | AI prediction tools |
+| workspace, tracking, campaigns_extended | 10 each | Admin/analytics |
+| Other smaller | 12 | ratings/pricing/analytics/demo/legacy/spokespersons_account |
+| **Total** | **311** | |
+
+Plugin references: 74 unique landing_ai_mcp tools + zereo_social_mcp tools. **Gap: ~237 tools not surfaced**.
+
+### Gap classification
+
+Most of the 237 are intentional:
+- **CRUD primitives** (delete_*, list_*, get_* for internal state): plugin abstracts these behind higher-level skills
+- **Admin/debug tools** (`backfill_gcs_urls`, `mcp_servers_list`): not user-facing
+- **Legacy tools** (`legacy_generation.py` 6 tools): explicitly deprecated
+- **Demo/tracking**: non-user-facing
+- **Prediction**: analytics backend, not flow-path
+- **Spokespersons_account** (6 tools): advanced spokesperson management, plugin covers the essentials via brand-level create_spokesperson
+
+### 🟠 Real gaps — user-facing features plugin doesn't surface
+
+#### Gap 1: Reels template system (4 tools not surfaced)
+
+Backend has:
+- `list_templates` — browse pre-made reel templates
+- `apply_template` — apply a template to a session
+- `save_as_template` — save current reel as reusable template
+- `ai_suggest_reel` — AI suggests reel concept
+
+Plugin `skills/generate-reels/SKILL.md` **never mentions templates**. User has to start every reel from scratch even though backend supports templates.
+
+**Recommendation**: Add Phase 0 "Pick a template?" to generate-reels SKILL, listing `list_templates` → `apply_template` flow.
+
+**Severity**: 🟠 Medium — feature exists but is dark to LLM → users miss efficiency boost
+
+#### Gap 2: Scene-level reel editing (3 tools not surfaced)
+
+Backend has:
+- `list_scenes` — list all scenes in a reel
+- `get_scene` — get scene detail
+- `update_scene` — edit a specific scene
+
+Plugin mentions `regenerate_scene` but not `update_scene` (text/config changes vs full regen). User who wants to tweak one line of a scene has to regenerate the whole thing.
+
+**Recommendation**: Add scene-editing subsection to generate-reels SKILL with update_scene as the "edit without regen" path.
+
+**Severity**: 🟠 Medium
+
+#### Gap 3: `ai_suggest_reel` never surfaced (covered by Gap 1 but worth calling out)
+
+When user says "I don't know what reel to make", there's a direct AI-suggest flow that plugin ignores entirely.
+
+**Severity**: 🟡 Low — LLM can substitute via chat
+
+#### Not-really-gaps (already covered or intentionally hidden)
+
+- **Google Drive** (7 tools): CLAUDE.md L1330-1332 documents Google Drive binding and `gdrive_import_shared_link`. Coverage is thin (only shared-link import mentioned, not full Drive API flow) but the user-visible flow (bind account on marketingx page → LLM imports via shared link) is documented. Marginally under-documented but not a gap.
+- **`import_pdf`**: brand-onboard mentions PDF upload but doesn't reference this specific MCP tool. Implementation uses it implicitly.
+- **`compress_memory` / `delete_memory`**: brand-memory SKILL handles these silently, no user surfacing needed.
+- **`summarize_conversation`**: could be a feature but not a claimed one — no drift, just unused capability.
+
+### Fix summary (Audit 5)
+
+| Priority | Gap | Proposed action |
+|---|---|---|
+| 🟠 P1 | Reels templates (`list_templates` / `apply_template` / `save_as_template`) | Add Phase 0 in generate-reels SKILL: "Start from a template?" |
+| 🟠 P1 | Scene-level edits (`list_scenes` / `get_scene` / `update_scene`) | Add scene-edit subsection in generate-reels (edit-without-regen path) |
+| 🟡 P2 | `ai_suggest_reel` | Cross-reference from saleskit ("if user doesn't know what reel to make") |
+
+---
+
+## Wave 2 Summary
+
+| Audit | Status | Critical issues |
+|---|---|---|
+| 3. Fake features | 🔴 HAS ISSUES | Google Ads creation fabricated (5 file:line refs) |
+| 5. Backend coverage | ⚠️ PARTIAL GAPS | 2 P1 opportunities in Reels (templates + scene edits), 1 P2 (ai_suggest_reel) |
+
+**P0 fixes (Audit 3)**: 5 edits across README/publish-ads/lib/CLAUDE.md to remove Google Ads creation claims
+**P1 additions (Audit 5)**: 2 new sections in generate-reels SKILL (optional — improves but doesn't fix broken)
+
+---
+
+## Combined Wave 1 + Wave 2 Fix Roadmap
+
+**Done in Wave 1 commit**: P0 credits model + P1 audience-target/generate-reels pts + skill count
+
+**Remaining (this commit)**:
+- Audit 3 P0: Remove Google Ads creation claims (5 edits)
+- Audit 5 P1: Add Reels template + scene-edit sections (2 new subsections)
+- Audit 5 P2: ai_suggest_reel cross-reference (1 edit)
+

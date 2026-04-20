@@ -57,10 +57,11 @@ mcp_tool_call("zereo_social_mcp", "get_account_capability", {
 Present:
 ```
 Ad-capable accounts:
-1. 📘 Meta Ads — ACME Ad Account (can create campaigns)
-2. 🔍 Google Ads — ACME Search (can create campaigns)
+1. 📘 Meta Ads — ACME Ad Account (can create Facebook/Instagram campaigns)
 
-Select platform(s) for ad campaign:
+Select Meta ad account for campaign:
+
+(Google Ads campaign creation is NOT supported by this plugin. If user wants Google Ads, generate the creative here via `generate_ad` / `generate_carousel`, then user uploads manually via Google Ads Manager.)
 ```
 
 ## Phase 2: Choose Campaign Objective
@@ -278,8 +279,8 @@ Creative: Variant A — "Discover Premium Skincare"
 Landing URL: [url]
 
 Next steps:
-A) Create Google Ads campaign too
-B) Monitor campaign performance
+A) Monitor campaign performance
+B) Export creative for manual Google Ads upload (if user wants Google Ads — plugin cannot create Google Ads campaigns, user uploads via Google Ads Manager)
 C) Done
 ```
 

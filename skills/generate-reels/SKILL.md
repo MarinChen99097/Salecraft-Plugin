@@ -112,6 +112,58 @@ Gather these from the user conversationally (if not already known):
 
 If `brand_id` is available from previous onboarding, mention it — the pipeline will auto-load brand assets for visual consistency.
 
+## Phase 0.3: Template Starting Point (Optional but Recommended)
+
+Before writing a script from scratch, **proactively offer the user a template gallery**. Users who reuse a proven structure get better reels faster; skipping this step and always regenerating from blank wastes their time.
+
+### Step 1 — List available templates
+```
+mcp_tool_call("landing_ai_mcp", "list_templates", {
+  "user_token": token
+})
+→ Returns: [{ "template_id": "...", "template_name": "Product Showcase 10s",
+               "duration_seconds": 10, "niche": "cosmetics", "preview_url": "..." }, ...]
+```
+
+### Step 2 — Present to user (if templates exist)
+```
+我這邊有幾個現成的影片腳本範本、挑一個比從零開始做會快很多：
+
+A) 產品快速展示（10 秒，美妝適用）— 開場 hook + 3 個賣點 + CTA
+B) 幕後故事（15 秒，餐飲 / 手作適用）— 創辦人出鏡 + 製程
+C) 使用前後對比（10 秒，保養 / 健身適用）— 痛點 + 產品 + 成果
+D) 從頭客製寫 — 我幫你從頭設計
+
+你想用哪個？
+```
+
+### Step 3 — If user picks a template
+```
+mcp_tool_call("landing_ai_mcp", "apply_template", {
+  "user_token": token,
+  "session_id": session_id,  # must exist, create one first if not
+  "template_id": "<chosen_template_id>"
+})
+→ Returns: starting script data, user can still revise
+```
+
+### Step 4 — Don't know what to make?
+
+If user is stuck ("我不知道要做什麼影片"), call `ai_suggest_reel` — the backend uses brand + audience context to propose a reel concept:
+```
+mcp_tool_call("landing_ai_mcp", "ai_suggest_reel", {
+  "user_token": token,
+  "brand_id": brand_id
+})
+→ Returns: { suggested_concept, suggested_duration, suggested_style, ... }
+```
+
+Then proceed to Phase 0.5 / Phase 1.
+
+**If no template matches** (or user prefers blank) → skip to Phase 0.5.
+
+---
+
 ## Phase 0.5: Asset Collection (Optional)
 
 Before starting generation, ask the user if they have assets to upload:
@@ -347,7 +399,40 @@ mcp_tool_call("landing_ai_mcp", "get_reel_session", {
 
 ## Phase 7: Post-Generation Actions (Optional)
 
-### Regenerate a Single Scene
+### Scene-Level Editing — Prefer `update_scene` Over Full Regen When Possible
+
+User wants to tweak one line of voiceover or change an overlay on scene 2? **Don't** regenerate the whole scene (which costs credits). Use `update_scene` to edit config in place (free — text/overlay changes don't trigger re-render).
+
+```
+# First, see what scenes exist
+mcp_tool_call("landing_ai_mcp", "list_scenes", {
+  "user_token": token,
+  "session_id": session_id
+})
+→ Returns: [{ "scene_id": "...", "index": 0, "duration": 3, "dialogue": "...", ... }, ...]
+
+# Get one scene's detail
+mcp_tool_call("landing_ai_mcp", "get_scene", {
+  "user_token": token,
+  "session_id": session_id,
+  "scene_id": scene_id
+})
+→ Returns full scene config
+
+# Edit dialogue / overlay / captions without regenerating the video
+mcp_tool_call("landing_ai_mcp", "update_scene", {
+  "user_token": token,
+  "session_id": session_id,
+  "scene_id": scene_id,
+  "data_json": "{\"dialogue\": \"新的旁白\", \"overlay_text\": \"新的字幕\"}"
+})
+```
+
+**Decision rule**:
+- Text / caption / overlay / dialogue only → `update_scene` (free, instant)
+- Visual needs re-rendering (different shot, different pacing, different mood) → `regenerate_scene` (check response `credits_deducted`)
+
+### Regenerate a Single Scene (when visuals need to change)
 ```
 mcp_tool_call("landing_ai_mcp", "regenerate_scene", {
   "user_token": token,

@@ -346,9 +346,11 @@ Based on answers, recommend the appropriate **SaleCraft Toolbox**:
 | **Carousel 輪播** | 多張風格一致的圖（2-10 張） | 300 + 100×N pts | IG 輪播、故事系列 |
 | **Reels 短影音** | AI 生成 15-60 秒行銷影片 | 100 pts/秒 | 社群曝光、品牌故事 |
 | **Social Copy** | AI 生成文案 | 100 pts/set | 日常社群經營 |
-| **廣告投放** | Meta/Google 廣告一鍵建立 | 依廣告素材而定 | 付費流量、精準投放 |
+| **廣告投放** | Meta 廣告（FB/IG）一鍵建立；Google Ads 需手動上傳素材 | 依廣告素材而定 | 付費流量、精準投放 |
 | **QR Code** | 產品包裝/名片導流 | 5 pts | 線下導線上 |
 | **Homepage** | 將 Landing Page 組成完整網站 | 免費（已有 LP 後） | 品牌官網 |
+
+> **💡 使用者講「我想做影片但不知道做什麼」時**：不要逼他立刻想概念。先用 `ai_suggest_reel(brand_id)` 讓系統根據品牌 + 受眾自動提案（免費、在進 generate-reels skill 的 Phase 0.3 Template Gallery 裡也有）。或瀏覽現成腳本範本（`list_templates`）讓使用者挑一個「有畫面」的起點。從零寫腳本是最後才做的選項。
 
 #### 建議幾張圖？（AI 建議，用戶決定）
 

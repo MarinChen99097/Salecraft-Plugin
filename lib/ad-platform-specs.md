@@ -31,9 +31,11 @@
 ### CTA Types
 `LEARN_MORE`, `SHOP_NOW`, `SIGN_UP`, `BOOK_NOW`, `CONTACT_US`, `DOWNLOAD`, `GET_OFFER`, `GET_QUOTE`, `SUBSCRIBE`, `WATCH_MORE`
 
-## Google Ads
+## Google Ads — Creative Specs (Reference ONLY, manual upload)
 
-### Campaign Types
+> **⚠️ Plugin limitation**: SaleCraft does **NOT** create Google Ads campaigns via MCP. `create_ad_campaign` in `zereo_social_mcp` only supports Meta (Facebook/Instagram). If the user wants Google Ads, the plugin can generate ad **creatives** via `generate_ad` / `generate_carousel`, but the user must upload them manually via Google Ads Manager. The specs below are provided purely as a dimensional reference for generating the right-size creative.
+
+### Campaign Types (for user awareness, plugin does not create these)
 | Type | When to Use |
 |------|-------------|
 | Search | Intent-based keywords, high-conversion |
@@ -41,7 +43,7 @@
 | Performance Max | AI-optimized across all placements |
 | Video | YouTube pre-roll, in-stream |
 
-### Responsive Display Ads
+### Responsive Display Ads — creative dimensions (for manual upload)
 | Asset | Count | Max Length |
 |-------|-------|-----------|
 | Headlines | 1-5 | 30 chars each |
@@ -50,7 +52,7 @@
 | Images | 1-15 | 1200×628 (landscape), 1200×1200 (square) |
 | Logo | 1-5 | 1200×1200 |
 
-### Responsive Search Ads
+### Responsive Search Ads — copy limits (for manual upload)
 | Asset | Count | Max Length |
 |-------|-------|-----------|
 | Headlines | 3-15 | 30 chars each |
@@ -67,9 +69,10 @@
 2. **Review creative**: `get_ad_result(user_token, task_id)` — poll until ready
    - Returns: creative assets (images), copy variants, CTA recommendation
 
-3. **Create campaign**: `create_ad_campaign(user_token, data_json)` via `zereo_social_mcp`
-   - Required: account_id, objective, budget, creative, landing_url
+3. **Create campaign** (Meta only): `create_ad_campaign(user_token, data_json)` via `zereo_social_mcp`
+   - Required: account_id (**Meta account**), objective, budget, creative, landing_url
    - Optional: targeting, schedule, bid_strategy
+   - **For Google Ads**: export the creative from step 2 and upload manually via Google Ads Manager. Plugin does not create Google Ads campaigns.
 
 4. **Monitor**: `get_ad_campaign(user_token, campaign_id)` — check performance metrics
 

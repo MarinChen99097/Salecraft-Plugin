@@ -1705,7 +1705,7 @@ mcp_tool_call("landing_ai_mcp", "authenticate_with_token", {"ai_token": "sc_live
 ### zereo_social_mcp
 - **Social Accounts** (10 tools) — Meta/TikTok connection
 - **Publishing** (8 tools) — Multi-platform posting
-- **Ad Campaigns** (11 tools) — Meta/Google ads
+- **Ad Campaigns** (11 tools) — Meta (Facebook/Instagram) ad campaigns only (no Google Ads campaign creation — use `generate_ad` / `generate_carousel` creatives then manually export for Google Ads)
 - **QR Code** (3 tools) — Styled QR generation
 
 ## 圖片處理（上傳 + 讀取 + AI 分析）

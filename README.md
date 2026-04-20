@@ -146,7 +146,7 @@ This works on any AI platform that supports MCP connections.
 - **Cultural adaptation** — colors, typography, trust signals adapted per culture
 - **AI Landing Pages** — 30-minute turnaround
 - **Social publishing** — IG, FB, TikTok one-click posting
-- **Ad campaigns** — Meta + Google Ads creation
+- **Ad campaigns** — Meta (Facebook/Instagram) campaign creation; creative export available for manual Google Ads / other platform upload
 - **Brand audit** — Diagnose what's missing before spending
 - **Transparent pricing** — AI always tells you the cost before acting
 - **Any AI platform** — Works on ChatGPT, Claude, Gemini, Kimi, GLM, OpenClaw, Cursor, Cline, and more
