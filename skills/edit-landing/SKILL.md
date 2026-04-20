@@ -504,59 +504,90 @@ D) Done — proceed to homepage building (/salecraft-homepage)
 
 ### Crop a stripe — 明確流程
 
-**Schema**：`crop_json: {"x", "y", "width", "height"}`（0.0-1.0 正規化、保留矩形的左上座標 + 寬高）。「不裁」= `{"x": 0, "y": 0, "width": 1, "height": 1}`。
+**Schema**（驗證自 `Service_system/landing_ai_mcp/tools/landing_pages.py`）：
+
+```python
+crop_stripe(
+  user_token, campaign_id, stripe_idx,
+  top_px: int = 0,        # 從頂部砍幾 px（CropEditor 座標系、見下）
+  bottom_px: int = 0,     # 從底部砍幾 px（CropEditor 座標系）
+  image_width: int = 0,   # optional、傳實際圖寬給 backend 做精確 scaling
+  image_height: int = 0   # optional、傳實際圖高
+)
+```
+
+**4 個關鍵真相**：
+
+1. **獨立參數**、**不是** `crop_json` JSON wrapper
+2. **只能上下裁切**（`top_px` / `bottom_px`）、**沒有** left/right、沒有左右裁切能力
+3. **px 值在 CropEditor 400×600 座標系**（不是實際圖片像素）：backend 把這個座標空間 scale 到實際圖、傳 `image_width` / `image_height` 給更精準的 scaling
+4. **行為是累加**：每次 call 從 current 狀態（不是原圖）再裁、所以連續 call 會越切越小、`reset_crop` 才能回到原始
 
 #### 5 步流程
 
 **Step 1 — 釐清使用者要保留什麼**
 
-使用者講「切到大拇指那邊」/「只剩人頭」這種模糊描述時、**不要自己猜座標**。先反問：
+LLM **看不到實際圖片**——使用者講「切到大拇指那邊」/「只剩人頭」這種視覺參照時、**LLM 沒辦法自己定位**。必須反問使用者把它**翻成百分比**：
 - 「保留**上方多少 %**？（例：保留上半 = 50%、保留上 2/3 = 66%）」
 - 或：「**上 / 中 / 下** 哪一塊保留？」
-- 或：「給我畫面上的**參考點**（例：『標題那行往上都留』）、我幫你算」
+- 若使用者只能用視覺描述（「我要保留到那個拇指那條線」）→ **請他打開 LP 的視覺編輯器**：`https://salecraft.ai/{locale}/editor?id={campaign_id}`、那邊有滑桿可以視覺操作、不用換算
 
 **Step 2 — 拿 snapshot**
 
 ```
 get_stripe_detail(campaign_id, stripe_idx)
-→ 記下 original_height、original_width（復原參考）
+→ 記下 original_height、original_width
+   （傳給 image_width/image_height、也當復原參考）
 ```
 
-**Step 3 — 算 crop_json 4 個值**
+**Step 3 — 把「保留比例」換算成 CropEditor 600 座標**
 
-把使用者的「保留範圍」轉成 normalized 座標（不需要 px、整段都是 0.0-1.0）：
+CropEditor 高度是 600。使用者要保留 X% → 砍掉 `(1 - X) × 600` px：
 
-| 使用者要保留 | crop_json |
-|---|---|
-| 上方 60% | `{"x": 0, "y": 0, "width": 1, "height": 0.60}` |
-| 下方 40% | `{"x": 0, "y": 0.60, "width": 1, "height": 0.40}` |
-| 中間（上下各砍 20%）| `{"x": 0, "y": 0.20, "width": 1, "height": 0.60}` |
-| 左半邊 | `{"x": 0, "y": 0, "width": 0.50, "height": 1}` |
-| 右下角 1/4 | `{"x": 0.50, "y": 0.50, "width": 0.50, "height": 0.50}` |
-| 不裁（reset 用）| `{"x": 0, "y": 0, "width": 1, "height": 1}` |
-
-口訣：**`x, y` = 保留矩形的左上角座標**、**`width, height` = 保留矩形的大小**。全部 0.0-1.0。
+| 使用者要保留 | top_px | bottom_px |
+|---|---|---|
+| 上方 60% | `0` | `int(600 × 0.40) = 240` |
+| 上方 80% | `0` | `int(600 × 0.20) = 120` |
+| 上方 50%（上半）| `0` | `int(600 × 0.50) = 300` |
+| 下方 40% | `int(600 × 0.60) = 360` | `0` |
+| 中間（上下各砍 20%）| `int(600 × 0.20) = 120` | `int(600 × 0.20) = 120` |
+| 不裁 | `0` | `0` |
 
 **Step 4 — 呼叫 + 立刻驗證**
 
-```
-crop_stripe(campaign_id, stripe_idx, crop_json=...)
-→ 立刻 get_stripe_detail(campaign_id, stripe_idx)
-→ 比對結果跟預期是否相符（容差 ±5%）
+```python
+crop_stripe(
+  user_token, campaign_id, stripe_idx,
+  top_px=0,
+  bottom_px=240,
+  image_width=detail["original_width"],
+  image_height=detail["original_height"]
+)
+# 立刻
+after = get_stripe_detail(campaign_id, stripe_idx)
+# 比對 after["cropped_height"] / after["original_height"] 接近預期保留比例（容差 ±5%）
 ```
 
 **Step 5 — 結果不符時停手、走回收**
 
-不要「換個參數再試」（每次失敗 call 都可能再壓縮一次）。直接走回收：
-1. `reset_crop(campaign_id, stripe_idx)` — 嘗試還原（免費、無副作用）
-2. `reset_crop` 後再 `get_stripe_detail` 看是否回原 height
+**不要換參數再 call**——累加破壞、每次都更壞。直接走回收：
+1. `reset_crop(campaign_id, stripe_idx)` — 還原（免費）
+2. `get_stripe_detail` 驗證 height 是否回到原始
 3. 仍救不回 → 告訴使用者「這頁裁切沒成功、要不要 (a) 先接受現狀、(b) 重生這頁（100 pts、會是新 AI 圖、構圖不一定一樣）」
 
 #### 對使用者溝通
 
-- ❌ 「我傳 `{x:0, y:0, width:1, height:0.6}` 給 crop_stripe」
+- ❌ 「我傳 `top_px=0, bottom_px=240` 給 crop_stripe」
 - ✅ 「這頁我幫你**保留上方 60%**、底下 40% 砍掉」
 - 完成後：「裁好了、你看看這頁、不對的話可以還原或我重裁」
+
+#### LLM 看不到圖怎麼辦？
+
+這是 plugin 的本質限制：MCP 環境的 LLM 通常拿不到 stripe 圖片。三個解法：
+
+1. **轉成百分比語言**：「保留上方 60%」是**位置中立的描述**、LLM 不用看圖就能執行
+2. **請使用者用視覺編輯器**：`https://salecraft.ai/{locale}/editor?id={campaign_id}` 有滑桿介面、使用者拖到滿意按 save 就好、LLM 完全不用碰 crop 工具
+3. **請使用者自己量參考點**：「往上拉滑桿、看那條線到大拇指上面、告訴我這時剩多少 %」
 
 ### Reset crop to original
 ```
@@ -571,25 +602,24 @@ mcp_tool_call("landing_ai_mcp", "reset_crop", {
 
 Creates smooth gradient transitions between consecutive stripes, giving the LP a more polished, seamless look instead of hard cuts between sections.
 
-**Schema**：
+**Schema**（驗證自 backend 源碼）：
 
-```
-mcp_tool_call("landing_ai_mcp", "set_stripe_soft_edge", {
-  "user_token": token,
-  "campaign_id": campaign_id,
-  "stripe_idx": 2,
-  "enabled": true,
-  "soft_edge_json": "{\"percent\": 100}"   # 0 = 硬切、100 = 最強柔邊融合
-})
+```python
+set_stripe_soft_edge(
+  user_token, campaign_id, stripe_idx,
+  enabled: bool,        # true = 套用、false = 移除
+  percent: float = 0.0  # 0.0 = 硬切、1.0 = 最強柔邊融合（注意是 0.0-1.0 float、不是 0-100 整數）
+)
 ```
 
-**Parameters**：
-- `enabled`：`true` = 套用、`false` = 移除
-- `soft_edge_json`：
-  - `percent`（推薦）：0-100 整數、0 = 硬切、100 = 最強柔邊。Backend 會自動換算成 `strength`（0.0-1.0）+ `bottom_px`（像素數）
-  - `top` / `bottom`（舊版格式）：0.0-0.3 正規化比例。若 `percent` 沒吃才退回試
+獨立 flat 參數、**不是** `soft_edge_json` JSON wrapper。
 
-**Response vs input**：回傳的 `{top_px, bottom_px, strength, percent}` 都是 status、不是 input schema。重新 call 時繼續傳 `percent`、**不要把 response 的 `strength` / `bottom_px` 倒灌成 input**。
+**對應使用者語言**：
+- 「柔邊最強」/「100%」/「最融合」→ `percent=1.0`
+- 「微微柔一點」→ `percent=0.3` 左右
+- 「關掉柔邊」/「0%」→ `enabled=false`（或 `percent=0.0`）
+
+**Response 欄位**：可能回傳 `top_px` / `bottom_px` / `strength` 等 backend 內部換算後的值——**那是 status display、不是下次 call 的 input**。重新 call 時繼續傳 `percent`。
 
 **When to suggest soft edges:**
 - 兩頁背景色差很大（轉場斷裂感）
@@ -604,25 +634,23 @@ mcp_tool_call("landing_ai_mcp", "set_stripe_soft_edge", {
 
 Adds a semi-transparent color layer over the stripe background, making text more readable when placed over busy or bright backgrounds.
 
-**Schema（plugin 文件版、未獨立驗證 percent 路徑是否也存在）**：
+**Schema**（驗證自 backend 源碼）：
 
+```python
+set_stripe_overlay(
+  user_token, campaign_id, stripe_idx,
+  enabled: bool,            # true = 套用、false = 移除
+  color: str = "",          # CSS 顏色字串（"#000000" 深色、"#FFFFFF" 淺色）
+  opacity: float = 0.5      # 0.0 完全透明、1.0 完全不透明、0.3-0.5 典型
+)
 ```
-mcp_tool_call("landing_ai_mcp", "set_stripe_overlay", {
-  "user_token": token,
-  "campaign_id": campaign_id,
-  "stripe_idx": 1,
-  "enabled": true,
-  "overlay_json": "{\"color\": \"#000000\", \"opacity\": 0.4}"
-})
-```
 
-**Parameters:**
-- `enabled`: `true` to apply, `false` to remove
-- `overlay_json`:
-  - `color`: Hex color (`#000000` for dark overlay, `#FFFFFF` for light)
-  - `opacity`: 0.0 (invisible) to 1.0 (fully opaque); 0.3-0.5 is typical
+獨立 flat 參數、**不是** `overlay_json` JSON wrapper。
 
-**Response 欄位 vs input params**：若回傳含 `percent` / `opacity_px` / `status` 等額外欄位、那是 **response status、不是 input schema**。重新 call 時繼續用 `color` + `opacity`、不要把 response 的 status 倒灌回去當 input。類似 soft_edge 的 `percent` 捷徑也可能存在於 overlay、但**未經驗證**、先用文件版格式。
+**對應使用者語言**：
+- 「白字壓不住、加暗一點」→ `color="#000000", opacity=0.4`
+- 「深色背景、要加亮」→ `color="#FFFFFF", opacity=0.3`
+- 「拿掉 overlay」→ `enabled=false`
 
 **When to suggest overlays:**
 - White text on light/busy backgrounds → dark overlay

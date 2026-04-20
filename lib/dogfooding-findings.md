@@ -15,35 +15,48 @@ SaleCraft plugin against the production backend.
 
 ## Findings
 
-### #42 — `crop_stripe` schema uncertain, possible destructive behavior 🟠 high / **open / unverified, needs backend clarification**
+### #42 — `crop_stripe` schema documentation drift ✅ resolved (verified against backend source)
 
-**Observed claim** (2026-04, single LLM session, not independently verified):
-A Claude instance reported that calling `crop_stripe` with what it guessed to be `{top_px, bottom_px, left_px, right_px}` parameters produced results that didn't match any straightforward schema interpretation:
+**Resolution**: Read backend source `Service_system/landing_ai_mcp/tools/landing_pages.py:335` directly. Plugin SKILL.md docs were significantly out of sync with actual tool signature.
 
-- Call 1: `bottom_px: 320` on a stripe with `original_height: 800` → response `cropped_height: 400` (roughly consistent with "crop 400px from bottom" if the param is 1/2-capped, OR "crop proportional to something", but not "crop 320 from bottom of 800")
-- Call 2: `bottom_px: 240` (less than previous) → response `cropped_height: 80` (drastically smaller despite smaller crop request)
-- Plugin's own SKILL.md documents `crop_json: {"x", "y", "width", "height"}` as normalized 0.0-1.0 coordinates — different from what the LLM tried
+**Actual signature**:
+```python
+async def crop_stripe(user_token, campaign_id, stripe_idx,
+                      top_px: int = 0,
+                      bottom_px: int = 0,
+                      image_width: int = 0,
+                      image_height: int = 0)
+"""Apply a crop to a stripe image (top/bottom only, in CropEditor pixel space).
+The backend uses a 400x600 CropEditor container. Crop values are in that
+coordinate space and automatically scaled to actual image dimensions.
+Provide image_width/image_height for accurate conversion."""
+```
 
-**Three unresolved possibilities**:
-1. Tool schema drifted from plugin docs; actual schema is the pixel-based form the LLM guessed, AND the tool is cumulative/destructive (each call operates on post-crop state)
-2. Tool schema is still the normalized 0-1 form in plugin docs; LLM's pixel-based params were silently ignored, returning undefined behavior
-3. `soft_edge_config` set to bottom_px=150 on the same stripe interacted unexpectedly with the crop call (compound transforms)
+**Truths now confirmed**:
+1. **Flat params, not `crop_json` JSON wrapper** — old SKILL docs were wrong
+2. **Top/bottom only** — no `left_px` / `right_px`; horizontal cropping not supported
+3. **CropEditor 400×600 coordinate space** — px values are in this fixed space, scaled to actual image; pass `image_width` / `image_height` for accurate scaling
+4. **Cumulative is correct** — the original observer's hypothesis was right; each call operates on post-crop state. `reset_crop` returns to the original. The non-monotonic call-1=400, call-2=80 result is consistent with the second `bottom_px: 240` being interpreted in CropEditor 600 space (40%) and applied to the already-cropped stripe.
 
-**Why this matters**: `crop_stripe` is marked "free" and user-facing. A destructive cumulative behavior without clear warning can corrupt a stripe in 1-2 bad calls, forcing the user to pay for `regenerate_stripe` (100 pts) as the only recovery path.
+**While verifying crop_stripe**, also confirmed two related schema drifts:
 
-**Backend team action requested**:
-1. Confirm the current input schema for `crop_stripe.crop_json` — is it `{x, y, width, height}` normalized, `{top_px, bottom_px, left_px, right_px}` absolute, or something else?
-2. Confirm whether crop operations are cumulative (operate on post-crop state) or absolute (always relative to the original image)
-3. Confirm whether `reset_crop` reliably returns to the original image regardless of prior crop count
-4. If cumulative: consider returning a `max_*_px` hint in `get_stripe_detail` so LLMs can pre-compute safe bounds
+**`set_stripe_soft_edge`** actual signature:
+```python
+set_stripe_soft_edge(user_token, campaign_id, stripe_idx,
+                     enabled: bool, percent: float = 0.0)
+```
+Flat params with `percent` as float 0.0-1.0 (not 0-100 int as previously documented). No `soft_edge_json` wrapper.
 
-**Plugin-side temporary guidance** (conservative, `skills/edit-landing/SKILL.md`):
-- Always `get_stripe_detail` before crop (snapshot pre-state)
-- Always `get_stripe_detail` after crop (detect failure)
-- If first call produces unexpected result → stop immediately, do not iterate; tell user honestly
-- Offer `reset_crop` then `regenerate_stripe` as recovery; do not promise `reset_crop` will work if crop is cumulative
+**`set_stripe_overlay`** actual signature:
+```python
+set_stripe_overlay(user_token, campaign_id, stripe_idx,
+                   enabled: bool, color: str = "", opacity: float = 0.5)
+```
+Flat params, not `overlay_json` wrapper.
 
-This finding is **unverified**. Do not canonicalize "crop_stripe is destructive cumulative" as a plugin rule until the behavior is reproduced and confirmed.
+**Plugin fixes applied**: `skills/edit-landing/SKILL.md` Crop / Soft-edge / Overlay sections rewritten with verified signatures, CropEditor coordinate space documented, cumulative behavior noted, recovery path via `reset_crop` confirmed correct.
+
+**Lesson for future**: don't canonicalize behavior from a single Claude session's experimentation; read backend source before writing plugin rules. The `Service_system/landing_ai_mcp/tools/` directory is the single source of truth for all `landing_ai_mcp` tool signatures.
 
 ---
 
