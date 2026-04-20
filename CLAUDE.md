@@ -284,6 +284,18 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
    → `generate_session` 不吃 language 參數、backend 從 session 讀、讀不到就用 `wizard_shared_data.default_language`（通常 zh-TW）→ TA 2 生繁中版 → 退費
    原因：**規格（language / visual_style / primary_color / stripe_count...）必須在 `generate_session` 之前先 `update_session` 寫進 session**、不是當 call 參數傳。`generate_session` 只收 3 個參數：`session_id / ta_group_ids_json / requested_stripe_count`、其他全部從 session state 讀
 
+   ❌ LLM 用「工具名稱看起來像」的方式**瞎推定價**：看到 `set_stripe_soft_edge` / `crop_stripe` 有「stripe」字、就假設跟 `regenerate_stripe`（100 pts / stripe）同價、告訴使用者「要扣 400 pts + 200 pts = 600 pts」
+   → 使用者被假報價影響決策（可能放棄想做的調整省錢、或預算規劃錯）。實際上這些工具是 **config-only edits、免費**（見 `lib/credit-calculator.md`）
+   原因：定價**不准從工具名瞎推**。正確做法：
+     1. 先查 `lib/credit-calculator.md` 的 FREE / PAID / VERIFY 清單
+     2. 清單沒列的、**不要假裝知道**、告訴使用者「這個動作的實際扣點我要先查、查完才告訴你要不要跑」
+     3. 有 preflight 工具（如 `seo_preflight`）就先跑、拿實際數字
+     4. 沒 preflight、call 完看 response 有沒有 `credits_deducted` / `deducted_amount`
+
+   ❌ 使用者講帶%的 ambiguous 數值（「柔邊 100%」、「透明度 50%」）、LLM 自己單向解讀直接 call
+   → 「柔邊 100%」有兩種完全相反的解法：ⓐ 柔邊效果**最強**（邊緣最模糊融合）ⓑ 柔邊**完全關掉**（邊緣最銳利）、使用者講哪個都有人用
+   原因：參數語義模糊時**必須反問**釐清。展示給使用者時用**數字方向 + 比喻**：「柔邊參數是 0.0（完全銳利硬切）到 0.3（最強融合）、你要哪一端？」而不是接受「100%」就跑
+
    ❌ LLM 在 post-gen menu 或其他對話裡列出「翻譯成其他語言 / i18n-adapt / 一鍵多語」這類選項、暗示 plugin 有便宜翻譯路徑
    → 使用者以為繁中版可以 200 pts 翻成英文、接著問「那幫我翻」→ LLM 發現沒這 tool、只能重生全份 → 使用者已規劃好預算 → 實扣 $2-3x 超預期
    原因：**plugin 沒有「翻譯既有 LP」的工具**（`audience-target/SKILL.md` L609 明寫 "no cheap translation path exists"）、`i18n-adapt` 這個 skill **不存在**。要其他語言 = **重新跑一次完整生成**（新 session、扣新的 pts）。post-gen menu 和其他地方提到「另一個語言」時、**必須明標「= 重生一份、不是翻譯」**、不要講成有廉價翻譯路徑

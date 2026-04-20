@@ -185,23 +185,23 @@ mcp_tool_call("landing_ai_mcp", "update_stripe_text_styling", {
 
 ### Visual Edits
 
-| User says | Tool |
-|-----------|------|
-| "Change the background image" | `update_stripe_background` |
-| "Replace the product photo" | `update_image_layers` |
-| "Add a dark overlay" | `set_stripe_overlay` (requires `enabled` param!) |
-| "Add a gradient fade" | `set_stripe_soft_edge` (requires `enabled` param!) |
-| "Crop this stripe" | `crop_stripe` |
-| "Reset the crop" | `reset_crop` |
+| User says | Tool | Cost |
+|-----------|------|------|
+| "Change the background image" | `update_stripe_background` | **Free**（config-level） |
+| "Replace the product photo" | `update_image_layers` | **Free**（config-level） |
+| "Add a dark overlay" / 加 overlay / 文字讀不清 | `set_stripe_overlay` (requires `enabled` param!) | **Free**（視覺效果、不重生圖）|
+| "Add a gradient fade" / 加柔邊 / 讓頁跟頁融合 | `set_stripe_soft_edge` (requires `enabled` param!) | **Free**（視覺效果、不重生圖）|
+| "Crop this stripe" / 裁切 | `crop_stripe` | **Free**（只改可視範圍、不重生圖）|
+| "Reset the crop" | `reset_crop` | **Free** |
 
 ### Structural Edits
 
-| User says | Tool |
-|-----------|------|
-| "Move stripe 3 to the top" | `reorder_stripes` (order_json must be object format) |
-| "Hide the testimonial stripe" | `hide_stripe` |
-| "Bring back the hidden stripe" | `restore_stripe` |
-| "Completely redo stripe 2" | `regenerate_stripe` |
+| User says | Tool | Cost |
+|-----------|------|------|
+| "Move stripe 3 to the top" | `reorder_stripes` (order_json must be object format) | **Free**（只改順序）|
+| "Hide the testimonial stripe" | `hide_stripe` | **Free** |
+| "Bring back the hidden stripe" | `restore_stripe` | **Free** |
+| "Completely redo stripe 2" / 整頁重生 | `regenerate_stripe` | **100 pts / 頁**（實際重跑 Factory Agent） |
 
 ### Page-Level Edits (Logo, CTA button, Branding, SEO — NOT inside stripes)
 
@@ -258,6 +258,31 @@ mcp_tool_call("landing_ai_mcp", "upload_logo", {
 | **Inside a stripe image** (Factory-baked hero art, background branding) | `regenerate_stripe` per affected stripe, 100 pts each. Only do this if the user explicitly says "LP 圖片裡面的 logo 也要換" or similar. |
 
 If unclear, **ask**: 「你是想換頁面最上面那個 logo，還是 LP 圖片內部的品牌標示也要換？後者要重 generate 受影響的 stripe，每張 100 pts。」
+
+### 🔴 介紹視覺效果功能 — 永遠附比喻、永遠反問 ambiguous 參數
+
+使用者可能不知道「柔邊 / overlay / crop」是什麼、或講一個 ambiguous 數值（例如「柔邊 100%」）。**每次提到這些功能、LLM 都要主動**：
+
+**① 用比喻介紹功能本質**（不是只講工具名）：
+
+| 功能 | 比喻 |
+|---|---|
+| 柔邊 `set_stripe_soft_edge` | 「頁跟頁的**交界**不硬切、像水彩畫邊緣**暈染**、整頁往下滑更順」 |
+| Overlay `set_stripe_overlay` | 「在圖片上放**半透明的有色玻璃**、讓亮背景變暗 / 暗背景變亮、白字 / 黑字才讀得清楚」 |
+| Crop `crop_stripe` | 「相機**變焦放大**、只改你看到的範圍、不重新拍圖」 |
+| 重生 `regenerate_stripe` | 「整頁**重拍**、用新 prompt 跑 AI 一次、舊版會留在歷史、100 pts / 頁」 |
+
+**② ambiguous 參數必反問**（常見陷阱）：
+
+- **「柔邊 100%」**：有人當「最強融合」、有人當「完全關閉」。**反問**：「是想要柔邊**最強**（邊緣最模糊）、還是**完全關掉**（邊緣最銳利）？參數實際 range 是 0.0（銳利硬切）到 0.3（最強融合）、你是哪邊？」
+- **「從下往上切一段」**：**反問**：「是**保留上半、裁掉下半**、還是**保留下半、裁掉上半**？」這兩個意思完全相反
+- **「overlay 打暗」**：**反問**：「是要整張變暗（白字讀得清）、還是要變亮（黑字讀得清）？透明度大概是微微的一層（0.3）還是壓得深一點（0.5）？」
+- **「把代言人放左邊 / 右邊」**：**反問**：「佔多少版面比例？大概 1/3 / 半版 / 剩一點點邊？」
+
+**③ 絕對禁止**：
+- ❌ 憑使用者模糊的「100%」/「最大」/「關一下」就直接 call、不反問
+- ❌ 只說「我幫你加柔邊」不解釋柔邊是什麼（使用者若沒用過 GUI 根本不知道）
+- ❌ 「這個設定的預設值是 0.5」這種沒意義的資訊、要講「0.5 會怎樣、換成 0.3 會差在哪」
 
 ### Header 按鈕管理（新增 / 刪除 / 位移 / 改連結）
 
