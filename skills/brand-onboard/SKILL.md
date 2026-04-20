@@ -90,7 +90,7 @@ logout(user_token) -> end session
 | `generate_ta_spokesperson` | **免費**（吃配額）| 使用者選 AI 生代言人時 |
 | **`generate_session`** | **扣點！** `stripe_cost × 頁數 × TA 組數` | Step 6 Cost 複誦 + 啟動詞之後 |
 
-**LLM 常犯的錯**：以為 create_session 也扣點、所以故意等到最後才建 session「一次性寫入省錢」。**這是錯的**。create + update 全免費、session 要**儘早建**、讓後續 wizard 每步都有地方寫資料。舊版 plugin 誤導 LLM 批次累積答案再一次性寫入、造成對話 context 斷了資料就掉 — 這個 anti-pattern 已廢棄。
+**LLM 常犯的錯**：以為 create_session 也扣點、所以故意等到最後才建 session「一次性寫入省錢」。**這是錯的**。create + update 全免費、session 要**儘早建**、讓後續 wizard 每步都有地方寫資料。批次累積答案再一次性寫入會讓對話 context 一斷資料就掉、**每輪答完就 `update_session` 寫回**。
 
 ### 🔴 Step -1 (BEFORE anything in Phase 2): session 必須已建立
 
