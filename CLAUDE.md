@@ -164,6 +164,10 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
    理由是「避免多扣 400 pts」或「保守估計」或「對使用者比較安全」→ 未經授權扣錢 → 退費
    原因：requested_stripe_count 必須使用者親答（8-21 範圍）、不是 LLM 的成本優化空間
 
+   ❌ 使用者從 `spokesperson_prompts` 挑了候選 A / B 之後、LLM 直接把那段文字描述當成已確認、拿去 Cost 複誦扣點、沒 call `generate_ta_spokesperson` 生實際 preview 圖
+   → 「50-60 歲午夜藍西裝領導者」這段文字能生出 10 種截然不同的實際視覺（臉型 / 族裔 / 氣質 / 打光差異巨大）、使用者盲簽 → LP 出來代言人「不是他要的」 → 退費
+   原因：文字描述 ≠ 可批准的代言人。**必須** call `generate_ta_spokesperson` 拿 `front_url` + `side_url`、markdown 展示、per-TA 逐組等使用者點頭（OK / 重生 / 調整 / 換 B / 都不用）、才進 Cost 複誦。工具本身免費（吃配額、不扣使用者點數）、沒藉口跳過
+
    ❌ `generate_ta_options` 每組 TA 回傳的 response 包含 `spokesperson_prompts`（通常 2 個候選）、LLM 整理成表格給使用者時**把 spokesperson 欄位砍掉**、只留 ta_name / 年齡 / 場合 / 色系 / 適合度
    → 使用者不知道有代言人可以 per-TA 挑、後面 Cost 複誦沒列代言人、LP 出來代言人是 LLM 擅自配的 → 使用者「這個人不是我 / 不是我要的受眾」 → 退費
    原因：代言人是 LP hero 首屏最關鍵的視覺（「我是不是他」的第一秒反應）、是 per-TA 欄位、不是次要資訊。TA 呈現格式**必須包含 `👤 代言人候選` 子區塊**、每組 TA 獨立列 spokesperson_prompts

@@ -226,6 +226,82 @@ User can:
 
 ---
 
+## Phase 2.5: Per-TA Spokesperson Image Preview (MANDATORY if any TA has spokesperson)
+
+### 🔴 文字描述 ≠ 可批准的代言人
+
+使用者從 `spokesperson_prompts` 挑了候選 A 或 B 之後、LLM **絕對不准**直接把那段文字描述當成已確認、拿去 Cost 複誦扣點。原因：
+
+> 「一位 50-60 歲午夜藍西裝、沉穩自信的成熟領導者」這段文字能產生 10 種截然不同的實際視覺——臉型、族裔、氣質、背景、打光、表情差異巨大。使用者沒看過實際照片就點頭 = 盲簽合約、生完 LP 才發現「這個人不是我要的」→ 退費。
+
+**必須呼叫 `generate_ta_spokesperson` 拿 front_url + side_url 實際圖、markdown 展示給使用者、等逐組點頭、才能進 Phase 3。**
+
+### 流程（per-TA 獨立跑、不合併）
+
+對每個使用者選中且挑了代言人候選的 TA group：
+
+```python
+# 每個 TA 各自跑一輪（TA 1 完再 TA 2、不平行 preview 避免使用者 overload）
+for ta in selected_ta_groups:
+    if ta.spokesperson_choice in ("A", "B"):
+        chosen_prompt = ta.spokesperson_prompts[0 if ta.spokesperson_choice == "A" else 1]
+
+        # 先查剩餘配額
+        status = mcp_tool_call("landing_ai_mcp", "get_spokesperson_generation_status", {
+          "user_token": token
+        })
+        if status["remaining"] <= 0:
+            # 告訴使用者「這期 AI 代言人配額用完、選上傳照片 or 不用人物」
+            break
+
+        # generate（~30-60 秒、會等）
+        result = mcp_tool_call("landing_ai_mcp", "generate_ta_spokesperson", {
+          "user_token": token,
+          "prompt": chosen_prompt,
+          "ta_name": ta.ta_name
+        })
+        # result.images = { front_url, side_url }
+        # result.spokesperson_id = "sp_xxx"
+```
+
+### 🔴 展示 + 等使用者點頭（per-TA 一輪）
+
+```
+TA 1「巔峰企業家」的代言人候選 A（卓越領導者）我生出來了、你看看：
+
+**正面**
+![front]({result.images.front_url})
+
+**側面**
+![side]({result.images.side_url})
+
+這個可以嗎？
+- 回「OK」→ 我把這位定案、接著生 TA 2 的
+- 回「重生」→ 同 prompt 再跑一次（剩 {status.remaining - 1} 次配額）
+- 回「調整 XXX」→ 你講要改什麼（眼鏡 / 膚色 / 氣質 / 場景 …），我修 prompt 重跑
+- 回「換成 B」→ 改用候選 B「高階經理人」重新生
+- 回「都不用」→ 這組 TA 不要代言人、改用場景 / 產品圖當主視覺
+```
+
+使用者 OK 後寫入 session：
+```python
+update_session(data_json=json.dumps({"wizard_ta_groups": [
+    {..., "spokesperson_id": result["spokesperson_id"],
+          "spokesperson_front_url": result["images"]["front_url"],
+          "spokesperson_side_url": result["images"]["side_url"]}
+    for ta in selected_ta_groups
+]}))
+```
+
+### 絕對禁止
+
+- ❌ 拿 `spokesperson_prompts` 的文字描述進 Cost 複誦、當成使用者已經看過代言人 → 使用者其實沒看過實際圖
+- ❌ 把 2+ 組 TA 的 preview 平行展示（「TA1 正面 / 側面、TA2 正面 / 側面」一次 4 張圖）→ 使用者 overload 會亂點、分辨不出對應哪組
+- ❌ `generate_ta_spokesperson` 生完就直接 `create_spokesperson` 登記 → 使用者沒看過實際圖 = 盲簽
+- ❌ 只展示 front_url 不展示 side_url → 側面是代言人在 LP hero 擺位的關鍵、兩張都要看
+
+---
+
 ## Phase 3: Multi-TA / Multi-LP Strategy (IMPORTANT — proactively explain)
 
 ### Explain Multi-TA Generation
