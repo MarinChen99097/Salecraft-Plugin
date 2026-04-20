@@ -132,6 +132,78 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
 
    **目前規則是 SKILL-only 軟規範、沒有 backend enforcement**。LLM 必須**自律**照 6.5 跑、backend `generate_session` 仍會接受任何合法 request——自律沒跑等於未經授權扣錢。
 
+   ### 🔴 `update_session` 白名單：只有 4 個頂層 key 會進 session、其他 silently drop
+
+   Backend `update_session` 的 `data_json` **只接受 4 個頂層 key**、**其他所有 key 被 silently dropped**（backend 仍回 200 OK、`updated_at` bumped、但 session 實際沒存）：
+
+   **✅ Whitelist（頂層允許的 key）**：
+   - `product_name` — string
+   - `wizard_shared_data` — object（所有 brand 基本欄位 / spec / flags 都 nest 在這裡）
+   - `wizard_shared_files` — object（logo_image / product_images / evidence_images 等共用檔案）
+   - `wizard_ta_groups` — array（per-TA entries、spokesperson_prompt / language / primary_color / visual_style / fabt_* 等）
+   - `wizard_ta_group_files` — array（per-TA 檔案、legacy）
+
+   **❌ 被 silently drop 的常見誤寫**（實測踩過、全部以為有進實際沒有）：
+   ```
+   # 全部錯 — 這些 key backend 不認識、會靜默丟掉
+   update_session(data_json={
+     "brand_name": "饗 A Joy",           # ← 應該是 wizard_shared_data.brand_name
+     "base_description": "...",          # ← 應該是 wizard_shared_data.base_description
+     "value_proposition": "...",         # ← 應該是 wizard_shared_data.value_proposition
+     "brand_story": "...",               # ← 應該是 wizard_shared_data.brand_story
+     "tagline": "...",                   # ← 應該是 wizard_shared_data.tagline
+     "primary_color": "#C9A063",         # ← 應該是 wizard_shared_data.primary_color
+     "key_features": [...],              # ← 應該是 wizard_shared_data.key_features
+     "cuisine_type": "...",              # ← 應該是 wizard_shared_data.cuisine_type
+     "signature_dishes": [...],          # ← 應該是 wizard_shared_data.signature_dishes
+     "operating_hours": "...",           # ← 應該是 wizard_shared_data.operating_hours
+     "pricing_info": "...",              # ← 應該是 wizard_shared_data.pricing_info
+     "target_audience": "...",           # ← 應該是 wizard_shared_data.target_audience
+     "trust_certifications": [...]       # ← 應該是 wizard_shared_data.trust_certifications
+   })
+   # ↑ backend 全部默默 drop、只有 product_name 進去（若有寫的話）
+   ```
+
+   **✅ 正確寫法**：所有 brand 欄位都 nest 在 `wizard_shared_data`：
+   ```
+   update_session(data_json=json.dumps({
+     "product_name": "饗 A Joy",
+     "wizard_shared_data": {
+       "brand_name": "饗 A Joy",
+       "base_description": "...",
+       "value_proposition": "...",
+       "brand_story": "...",
+       "primary_color": "#C9A063",
+       "key_features": [...],
+       # ... 所有從 analyze_brand_url + scrape 抓到的欄位全部 nest 在這
+     }
+   }))
+   ```
+
+   ### 🔴 寫完必驗：`update_session` 後**一定 `get_session` 讀回、逐 key 確認**
+
+   Backend 對不認識的 key 不 raise error、不 422、也不 warning——只回 200 OK + `updated_at` bumped。**LLM 必須自己驗證**：
+
+   **❌ 錯誤的「驗證」方式**（以為成功、實際沒寫進去）：
+   - 只看 `update_session` 沒 raise exception → **不算驗證**
+   - 只看回傳有 `updated_at` 更新 → **不算驗證**（unknown key 被 drop 時 updated_at 也會動）
+   - 只看 `success: true` → **不算驗證**
+
+   **✅ 唯一正確的驗證**：每次 `update_session` 後立刻 `get_session`、**對剛寫的每一個 key 逐項 assert 存在**：
+   ```python
+   update_session(data_json=json.dumps({
+     "wizard_shared_data": {"brand_name": "X", "base_description": "Y", ...}
+   }))
+
+   session = get_session(session_id)
+   shared = session["wizard_shared_data"] or {}
+   for key in ["brand_name", "base_description", ...]:    # 剛寫的每一個 key
+       assert shared.get(key), f"❌ {key} silently dropped by backend"
+   # 若 assert fail → key 被 drop、不是「成功但 cache 沒更新」、**立刻重寫 + 檢查 key 命名**
+   ```
+
+   **違反後果**（2026-04 真實 incident）：LLM 把 `brand_name` / `base_description` / `value_proposition` / `brand_story` / `tagline` / `primary_color` / `key_features` / `cuisine_type` / `signature_dishes` / `operating_hours` / `pricing_info` / `target_audience` / `trust_certifications` 全部寫在頂層（不 nest 進 `wizard_shared_data`）、每次 update 後只看「沒 error + updated_at 變了」就當成功、告訴使用者「✅ 寫入成功」。實際上 13 個欄位全被 silently dropped、session 只有 TA + 圖片。生 LP 時 Strategist 拿不到這些欄位、走預設品牌敘事。使用者花時間逐批確認的內容**對 LP 生成結果 0 影響**。
+
    ### 🔴 規格必須先 `update_session`、**不是** `generate_session` 的參數
 
    `generate_session` **只讀 session state**（`wizard_shared_data` + `wizard_ta_groups[]`），**不接受 language / visual_style / primary_color / stripe_count 等 spec 當 call parameter**。所有規格**必須在 `generate_session` 之前先 `update_session` 寫進 session**、不是「啟動時即時塞」。
@@ -200,6 +272,10 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
    ❌ 使用者還沒回頁數、LLM 就秀 Cost 複誦 + 總 pts（「合計 3,200 pts」）、問「確認啟動嗎？」
    → 使用者看到 pts 數字、誤以為這就是最終費用、回「開始」→ LLM 拿「8」當 default 傳進 generate_session 扣錢
    原因：**Cost 複誦必須 AFTER Step 6 頁數使用者親答、NOT BEFORE**。頁數是唯一決定 pts 總額的欄位、使用者沒答你算不出總額、就是沒資格複誦。Step 5 結束 → Step 6 問頁數 → 使用者答 → 立刻算 total_pts → 然後才 Cost 複誦
+
+   ❌ LLM 把 brand 欄位（`brand_name` / `base_description` / `value_proposition` / `brand_story` / `primary_color` / `key_features` / `tagline` / `cuisine_type` / `signature_dishes` / `trust_certifications` / `target_audience` / `operating_hours` / `pricing_info` 等）寫在 `data_json` **頂層**、沒 nest 進 `wizard_shared_data`
+   → Backend `update_session` 只認 4 個頂層 key（`product_name` / `wizard_shared_data` / `wizard_shared_files` / `wizard_ta_groups`）、其他 **silently dropped**、仍回 200 OK + `updated_at` bumped → LLM 以為成功、對使用者說「✅ 寫入」、實際 session 空的 → 生 LP 時 Strategist 走預設、使用者逐批確認的內容 0 影響 → 退費
+   原因：backend 沒 `extra="forbid"` 硬擋 unknown key、也不回 warning。**每次 `update_session` 之後必須立刻 `get_session` 逐 key assert**（只看 `updated_at` 變了 = 假驗證）。Brand 欄位必須 nest 在 `wizard_shared_data`、Per-TA 欄位必須在 `wizard_ta_groups[i]`、檔案必須在 `wizard_shared_files` 或 `wizard_ta_group_files[i]`
 
    ❌ 使用者講「TA 2 要英文版」、LLM 沒 `update_session` 寫 `wizard_ta_groups[ta_2].language="en"`、以為 `generate_session(language="en")` 能傳參數
    → `generate_session` 不吃 language 參數、backend 從 session 讀、讀不到就用 `wizard_shared_data.default_language`（通常 zh-TW）→ TA 2 生繁中版 → 退費

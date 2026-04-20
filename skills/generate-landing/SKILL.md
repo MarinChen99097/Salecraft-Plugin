@@ -584,17 +584,34 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 # 立刻進 Cost 複誦、等啟動詞
 ```
 
-#### 批寫入完成後驗證
+#### 批寫入完成後驗證（🔴 MANDATORY、違反 = 使用者投訴）
 
-每批 update 完、**一定要 `get_session` 讀一次**，檢查剛才寫的欄位真的有進 session：
+每批 update 完、**一定要 `get_session` 讀一次、逐 key assert 剛才寫的欄位真的在**：
 
-```
+```python
+# 剛才 update_session 寫的 key 列出來（這個 list 要精準對應 update payload）
+keys_i_just_wrote = ["aspect_ratio", "language", "primary_color", "cta_url", "cta_text", ...]
+
 session_state = mcp_tool_call("landing_ai_mcp", "get_session", {
   "user_token": token, "session_id": session_id
 })
-# 確認 wizard_shared_data 裡有 aspect_ratio / language / primary_color / ... 該有的欄位
-# 若缺任何一項 → 那批 update 實際沒 persist、要重新寫
+shared = session_state["wizard_shared_data"] or {}
+
+missing = [k for k in keys_i_just_wrote if k not in shared or shared[k] is None]
+if missing:
+    # ❌ 那批 update 實際 silent-dropped — 很可能寫錯了 nesting（頂層 vs wizard_shared_data）
+    # 立刻檢查 nesting + 重寫 + 再驗
+    raise WriteVerificationFailed(f"silently dropped: {missing}")
 ```
+
+**⚠️ 三種「假驗證」絕對不算**（LLM 常誤以為這些 = 成功、實際 backend silently dropped unknown key）：
+- ❌ 只看 `update_session` 沒 raise exception — **不算**（backend 200 OK、但 key drop）
+- ❌ 只看回傳 `updated_at` 變了 — **不算**（unknown key 被 drop 時 updated_at 也會動）
+- ❌ 只看回傳 `success: true` — **不算**
+
+**唯一算數的驗證**：`get_session` → **對你剛寫的每個 key 存在性 assert**。少一個就是 drop 了、立刻重寫。
+
+**2026-04 實戰 incident**：LLM 把 `brand_name` / `base_description` / `value_proposition` / `brand_story` 等 13 個 brand 欄位寫在頂層（不 nest `wizard_shared_data`）、每批都說「✅ 寫入」、使用者花 20 分鐘逐批確認——**session 全空、生 LP 時 Strategist 走預設、使用者確認的改寫文案 0 影響**。若有做 key-level assert、第一批就會當場發現 drop、不會燒到 4,200 pts 才發現。
 
 這個讀回驗證步驟不可省。使用者「已登記」的感覺必須是 backend 真的有寫。
 

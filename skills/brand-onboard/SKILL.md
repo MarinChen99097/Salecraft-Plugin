@@ -220,6 +220,51 @@ This extracts: logo, brand colors (真實、非 fallback), product images, descr
 
 `analyze_brand_url` + `scrape_landing_page` 會回 **25+ 個欄位**、全部會 update_session 寫進去、全部都算「對使用者的決定」。**分 4 批攤開、每批 3-5 欄位、每批獨立 ask-back**。使用者回 OK 才下一批、不要一口氣列完等 global OK。
 
+### 🔴 每批使用者 OK 後、update_session 要這樣寫（**一律 nest 進 `wizard_shared_data`**）
+
+```python
+# ❌ 錯誤寫法：brand 欄位放頂層 → backend silently drop
+mcp_tool_call("landing_ai_mcp", "update_session", {
+  "user_token": token, "session_id": session_id,
+  "data_json": json.dumps({
+    "brand_name": "饗 A Joy",           # ❌ 頂層、drop
+    "base_description": "...",          # ❌ 頂層、drop
+    "value_proposition": "..."          # ❌ 頂層、drop
+  })
+})
+
+# ✅ 正確寫法：brand 欄位全部 nest 在 wizard_shared_data
+mcp_tool_call("landing_ai_mcp", "update_session", {
+  "user_token": token, "session_id": session_id,
+  "data_json": json.dumps({
+    "product_name": "饗 A Joy",        # 頂層（白名單）
+    "wizard_shared_data": {
+      "brand_name": "饗 A Joy",
+      "base_description": "...",
+      "value_proposition": "...",
+      "brand_story": "...",
+      "primary_color": "#C9A063",
+      "key_features": [...],
+      "trust_certifications": [...],
+      "target_audience": "...",
+      "signature_dishes": [...],       # 行業特有欄位也在 wizard_shared_data 裡
+      "operating_hours": "...",
+      "pricing_info": "..."
+    }
+  })
+})
+```
+
+**寫完每批立刻 `get_session` 讀回、逐 key assert**：
+```python
+session = get_session(session_id)
+shared = session.get("wizard_shared_data") or {}
+for key in ["brand_name", "base_description", "value_proposition", ...]:
+    assert shared.get(key), f"❌ {key} 被 silently dropped、重寫檢查 nesting"
+```
+
+**絕對不准**：只看 `update_session` 沒報錯、只看 `updated_at` 變了就當寫入成功——**backend 對 unknown top-level key 會 silently drop + 仍回 200 OK**、假驗證會讓使用者 20 分鐘逐批確認的心血全白費。
+
 #### 批 1 — 品牌基本（5 欄位）
 ```
 我從 {url} 抓到你的品牌基本資料、先確認這 5 項對不對：
