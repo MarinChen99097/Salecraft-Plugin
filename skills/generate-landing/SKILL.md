@@ -338,6 +338,8 @@ Backend 把 Phase 2 spec 分成兩類儲存：
 | `theme` | `wizard_ta_groups[i].theme` | **每 TA 各自設** |
 | `primary_color`（色系）| `wizard_ta_groups[i].primary_color` | **每 TA 各自設**，可以 A 墨綠 / B 玫瑰金 |
 | `language` | `wizard_ta_groups[i].language` | **每 TA 各自設**，可以 A=zh-TW / B=en |
+| `spokesperson_prompt`（代言人）| `wizard_ta_groups[i].spokesperson_prompt` | **每 TA 各自挑**（`generate_ta_options` 每組回傳 `spokesperson_prompts[]` 2 個候選、使用者 per-TA 挑一個、或挑「都不用」寫 `null`）。LP hero 首屏視覺關鍵、不准忽略 |
+| `spokesperson_faces`（代言人上傳照片）| `wizard_ta_group_files[i].spokesperson_faces[]` | **每 TA 各自設**。若使用者選自己上傳照片、走 `create_spokesperson` 拿 URL 寫進這裡 |
 | `aspect_ratio`（長寬比）| `wizard_shared_data.aspect_ratio` | shared（所有 TA 同一份）|
 | `cta_url` / `cta_text` | `wizard_shared_data.cta_text/url` | shared |
 | `include_qa_section` | `wizard_shared_data.include_qa_section` | shared |
@@ -624,7 +626,13 @@ tas    = session_state["wizard_ta_groups"]
 - CTA：[shared.cta_text] → [shared.cta_url]{同上}
 - Q&A：[✓/✗]{同上}
 - 客戶見證：[✓/✗]{同上}
+- 代言人（per-TA、逐組列、禁止省略）：
+    - ta_1 [ta_name]：[spokesperson_prompt 描述 或「不用人物」]{若推斷加標記}
+    - ta_2 [ta_name]：[spokesperson_prompt 描述 或「不用人物」]{若推斷加標記}
+    - …（每組都列、不准合併成一句 shared）
 - 預計扣點：[stripe_cost × stripe_count × num_tas] pts（約 $[USD]）
+    {若代言人另外扣點（看 backend pricing 確認）：
+       + spokesperson: [500 × num_tas_with_spokesperson] pts}
 
 你目前餘額 [X] pts。**有標「（我幫你配）」的欄位特別看一下、要改現在講**；都對就回「開始」我就跑；回「取消」就先不動。
 ```

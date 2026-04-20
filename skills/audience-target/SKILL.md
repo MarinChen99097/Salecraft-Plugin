@@ -118,6 +118,14 @@ Returns 3-5 AI-suggested TA groups, each with:
 **You MUST present EVERY TA group returned by `generate_ta_options` to the user.**
 Do NOT pre-select or filter. Do NOT only show your recommendation. The user decides.
 
+### 🔴 MANDATORY FIELD PRESENTATION — 不准過濾 `spokesperson_prompts`
+
+`generate_ta_options` 每組 TA 回傳的 response **包含 `spokesperson_prompts` 陣列（通常 2 個候選）**、這**必須**逐組展示給使用者、每組 TA 獨立挑。LLM 常犯：整理成表格時只擷取 ta_name / 年齡 / 場合 / 色系 / 適合度、把 spokesperson 當次要資訊砍掉 → 使用者不知道有代言人可以挑 → 生完 LP 才發現代言人是 LLM 配的。
+
+**代言人是 LP hero 首屏最關鍵的視覺** — 直接決定受眾「我是不是他」的第一秒反應。不可省。
+
+每組 TA 的展示格式**必須包含 spokesperson 區塊**（見下方範本 `👤 代言人候選` 子項）。
+
 ### 🔴 Anti-fabrication rule (2026-04 — real incident)
 
 **DO NOT write TA names / descriptions inline from your own imagination.** A common failure: listing「商務宴客、精緻餐飲愛好者、竹科外商」in a flat sentence as if it were 3 TAs — that is fabrication, not TA selection. It looks like a list but the user has no way to pick, compare, or see demographics.
@@ -139,6 +147,9 @@ AI 為 [Product Name] 生成了 [N] 組目標受眾：
    Who: [1-line description, demographics]
    Angle: "[fabt_translation]"
    Style: [visual_style] / [language]
+   👤 代言人候選（挑 1 個或說「都不用」）：
+      A. [spokesperson_prompts[0] 描述 — 例如「35-45 歲儒雅男性、西裝、都會背景」]
+      B. [spokesperson_prompts[1] 描述 — 例如「28-35 歲都會女性、casual chic、咖啡廳」]
 
    🧠 Strategic value: This audience focuses on [pain point / aspiration / status].
    Best if: Your product solves an urgent, measurable problem for this group.
@@ -152,6 +163,9 @@ AI 為 [Product Name] 生成了 [N] 組目標受眾：
    Who: [1-line description, demographics]
    Angle: "[fabt_translation]"
    Style: [visual_style] / [language]
+   👤 代言人候選（挑 1 個或說「都不用」）：
+      A. [spokesperson_prompts[0] 描述 — 例如「35-45 歲儒雅男性、西裝、都會背景」]
+      B. [spokesperson_prompts[1] 描述 — 例如「28-35 歲都會女性、casual chic、咖啡廳」]
 
    🧠 Strategic value: This audience is driven by aspiration and lifestyle identity.
    Best if: Your product represents a lifestyle upgrade, premium positioning,
@@ -164,6 +178,9 @@ AI 為 [Product Name] 生成了 [N] 組目標受眾：
    Who: [1-line description, demographics]
    Angle: "[fabt_translation]"
    Style: [visual_style] / [language]
+   👤 代言人候選（挑 1 個或說「都不用」）：
+      A. [spokesperson_prompts[0] 描述 — 例如「35-45 歲儒雅男性、西裝、都會背景」]
+      B. [spokesperson_prompts[1] 描述 — 例如「28-35 歲都會女性、casual chic、咖啡廳」]
 
    🧠 Strategic value: This is a secondary audience that can expand your reach.
    Best if: You are running multi-channel campaigns and want to capture
@@ -176,6 +193,9 @@ AI 為 [Product Name] 生成了 [N] 組目標受眾：
    Who: [1-line description, demographics]
    Angle: "[fabt_translation]"
    Style: [visual_style] / [language]
+   👤 代言人候選（挑 1 個或說「都不用」）：
+      A. [spokesperson_prompts[0] 描述 — 例如「35-45 歲儒雅男性、西裝、都會背景」]
+      B. [spokesperson_prompts[1] 描述 — 例如「28-35 歲都會女性、casual chic、咖啡廳」]
 
    🧠 Strategic value: B2B decision-makers who evaluate ROI before purchasing.
    Best if: Your product has a longer sales cycle, requires demo/consultation,

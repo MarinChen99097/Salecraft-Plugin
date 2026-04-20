@@ -164,6 +164,10 @@ Step 8  generate_session(session_id, ta_group_ids_json, requested_stripe_count)
    理由是「避免多扣 400 pts」或「保守估計」或「對使用者比較安全」→ 未經授權扣錢 → 退費
    原因：requested_stripe_count 必須使用者親答（8-21 範圍）、不是 LLM 的成本優化空間
 
+   ❌ `generate_ta_options` 每組 TA 回傳的 response 包含 `spokesperson_prompts`（通常 2 個候選）、LLM 整理成表格給使用者時**把 spokesperson 欄位砍掉**、只留 ta_name / 年齡 / 場合 / 色系 / 適合度
+   → 使用者不知道有代言人可以 per-TA 挑、後面 Cost 複誦沒列代言人、LP 出來代言人是 LLM 擅自配的 → 使用者「這個人不是我 / 不是我要的受眾」 → 退費
+   原因：代言人是 LP hero 首屏最關鍵的視覺（「我是不是他」的第一秒反應）、是 per-TA 欄位、不是次要資訊。TA 呈現格式**必須包含 `👤 代言人候選` 子區塊**、每組 TA 獨立列 spokesperson_prompts
+
    ❌ Step 2 圖片寫進 session 後、LLM 沒跑 Step 3 Quality Gate（`validate_images` + `analyze_image` + `digitize_product_text`）就直接進 Step 4 生 TA
    → Architect 拿到「18 張沒被理解過的圖」去排版、瞎猜「這張可能是料理吧」硬塞、不會把「101 雞蛋糕」放在招牌菜段落、也不會把內裝照放在空間介紹段落 → LP 出來爛 → 退費
    原因：Quality Gate 三個 tool 都免費（0 pts）、只花 2-3 分鐘、但少跑這一步等於把爛圖推給付費 pipeline。即使使用者沒講「檢查圖」、圖寫完就**必須主動跑**、不是「等使用者要求才跑」的 opt-in tool
