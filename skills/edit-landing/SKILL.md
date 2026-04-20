@@ -450,32 +450,41 @@ D) Done — proceed to homepage building (/salecraft-homepage)
 
 ## Crop & Visual Adjustments
 
-### Crop a stripe (zoom into a specific area)
+### ⚠️ `crop_stripe` — schema 目前未經驗證、請謹慎
 
-Use cropping to focus on a particular region of a stripe image — useful when the AI generated a good composition but included too much background or the subject is too small.
+**已知狀態**（2026-04）：
+- 早期 plugin 文件寫 schema 是 `crop_json: {"x", "y", "width", "height"}`（0.0-1.0 正規化）
+- 2026-04 一次 dogfooding 中、一個 Claude session 聲稱實際 schema 是 `{top_px, bottom_px, left_px, right_px}` 且 call 兩次後行為不符預期（高度 800 → 400 → 80、反直覺）
+- 那次報告**未被獨立驗證**、可能是 (a) 工具 schema 改了但文件沒更、或 (b) 那個 Claude 誤讀 response 欄位當 input 參數、或 (c) 某種 edge case 互動（soft_edge + crop 同頁）
+- **尚未確認**：crop 是否會被 `reset_crop` 完整還原、多次 crop 的累加行為
 
+### 目前建議的呼叫流程（保守、防破壞）
+
+```python
+# Step 1: 先 get_stripe_detail、記下當前 height/width（復原參考）
+before = get_stripe_detail(campaign_id, stripe_idx)
+
+# Step 2: 呼叫 crop_stripe、照**最保守**的解讀傳參
+#   先試 normalized 0.0-1.0 格式（文件版本）、視 response 判斷是否生效
+
+# Step 3: 呼叫後**立刻** get_stripe_detail 驗證
+after = get_stripe_detail(campaign_id, stripe_idx)
+#   若結果與預期相差巨大（例如要保留 60% 但剩 10%）→ **停手**、不再 call
+#   不要「試下一組參數看看」—— 那會繼續破壞
+
+# Step 4: 若踩壞、試 reset_crop
+#   若 reset_crop 無法完全還原、誠實告訴使用者、提供 regenerate_stripe 選項（100 pts / 頁）
 ```
-mcp_tool_call("landing_ai_mcp", "crop_stripe", {
-  "user_token": token,
-  "campaign_id": campaign_id,
-  "stripe_idx": 3,
-  "crop_json": "{\"x\": 0.1, \"y\": 0.1, \"width\": 0.8, \"height\": 0.8}"
-})
-```
 
-**Coordinate system:**
-- Values are **normalized 0.0-1.0** (percentage of full image dimensions)
-- `x`, `y` = top-left corner of the crop rectangle
-- `width`, `height` = size of the crop rectangle
-- Example: `{"x": 0.0, "y": 0.0, "width": 1.0, "height": 1.0}` = no crop (full image)
-- Example: `{"x": 0.1, "y": 0.2, "width": 0.8, "height": 0.6}` = crop 10% from left, 20% from top, keep 80% width and 60% height
+### 絕對禁止
 
-**Common crop scenarios:**
-| User says | Crop approach |
-|-----------|--------------|
-| "Zoom into the product" | Set x/y to center on product, reduce width/height |
-| "Remove the empty space at the bottom" | Keep x=0, y=0, full width, reduce height |
-| "Focus on the headline area" | Set y to top area, reduce height to headline region |
+- ❌ 不先 `get_stripe_detail` 就 call `crop_stripe`（沒有復原參考點）
+- ❌ 第一次 call 結果不對、就**立刻改參數再 call**——stop、先搞清楚 schema
+- ❌ 用使用者模糊的「切到大拇指那邊」當參數——先請使用者給**保留比例**（「保留上方 60%」/「保留上方那塊佔 85%」）或「上半 / 中間 / 下半」、不要自己把視覺描述翻譯成座標
+
+### 這個 tool 的 schema 需要實測釐清（backend team action）
+
+`dogfooding-findings.md` #42 記錄的未解 issue。LLM 如果在實戰中搞清楚了實際 schema、請回報更新這段文件。
 
 ### Reset crop to original
 ```
