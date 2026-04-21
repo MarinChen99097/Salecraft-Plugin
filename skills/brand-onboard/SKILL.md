@@ -92,6 +92,22 @@ logout(user_token) -> end session
 
 **LLM 常犯的錯**：以為 create_session 也扣點、所以故意等到最後才建 session「一次性寫入省錢」。**這是錯的**。create + update 全免費、session 要**儘早建**、讓後續 wizard 每步都有地方寫資料。批次累積答案再一次性寫入會讓對話 context 一斷資料就掉、**每輪答完就 `update_session` 寫回**。
 
+### 🚫 跨產品線工具禁用清單（wizard 流程禁用、會導致 phase 跳關）
+
+以下五個工具存在於 MCP catalog、**名字看起來像 wizard 入口、實際屬於其他產品線**。LLM 看到工具名會誤以為「後端有自動化、我照叫就對了」——**這是 2026-04-22 真實踩到的失敗模式**：AI 建完 session 後直接叫 `auto_generate_questions`、拿到「5 題 + 3 組 TA」一次吐出來展示，**完全跳過 Phase 2 素材收集 / Phase 3 Deep Discovery / Phase 3.5 代言人 / Phase 3.9 Quality Gate / Phase 4 Re-Confirmation 共五個階段**。使用者產品圖都沒上傳，就看到 TA 候選跳出來——違反 line 206、line 319、line 835 三條硬規則。
+
+| 工具 | 真實產品線 / 後端位置 | 為什麼 wizard 流程不能叫 |
+|------|---------------------|------------------------|
+| **`auto_generate_questions`** | Full Auto Mode 專用（`marketing_backend/main.py:5903`）、前端路由 `/auto-wizard` | 這是 Full Auto Mode 的 **one-shot endpoint**、一次返回 questions + auto-selected TAs。Vibe Design / wizard 流程是 **multi-step 分階段確認**，叫這個 = 跨模式誤用 = 跳過 Phase 1 確認關 + Phase 3.9 Quality Gate + Phase 4 Re-Confirmation |
+| **`get_phase1_data`** | router-agent conversation 流程（`Service_system/landing_ai_mcp/tools/conversations.py:161`）、路徑 `GET /conversations/{conv_id}/assets/phase1` | 走的是 **conversation_assets 表**、不是 `marketing_sessions.wizard_shared_data`。wizard 流程從頭到尾不碰 conversation_assets |
+| **`suggest_wizard_fields`** | 同上，`marketing_backend/routers/conversation_assets.py:487` | 從 conversation assets 建議欄位、read-only 給 router-agent 的 chat UI 用。wizard 流程的欄位建議來自 `analyze_brand_url` 的回傳、不是這個 |
+| **`get_card_state`** | Vibe Design GUI 卡片狀態持久化（`marketing_backend/routers/sessions.py:4326`）、前端 hook `use-wizard-card-state.ts` | 讀 `wizard_shared_data._card_state`、是給 GUI 換頁 / 刷新後重建 UI 狀態用。AI 根本不需要讀（你有 `update_session` 寫過的欄位、自己的 conversation context 就記得） |
+| **`update_card_state`** | 同上，`marketing_backend/routers/sessions.py:4344` | 改這個 = 模擬使用者在 GUI 上點卡片 = 替使用者選頁數 / 字型 / 色系 = 違反 CLAUDE.md FIRST-RESPONSE RULE 項目 3「禁止 LLM 替使用者挑『安全』『保守』或『省點數』的值」 |
+
+**wizard 流程合法的工具只有這些**（全部在上方「成本心智模型」表內）：`create_session`、`update_session(wizard_shared_data={...})`、`analyze_brand_url` / `scrape_landing_page`、`validate_images`、`digitize_product_text`、`analyze_image`、`list_spokespersons`、`generate_ta_spokesperson`（Phase 3.5）、`generate_ta_options`（**Phase 3.9 通過後才叫**、line 89）、`generate_session`（Step 6 啟動詞後才叫）。
+
+**判斷方法**：看到 MCP 工具目錄裡有你不認得的名字、**先去這個 SKILL.md 搜尋**。找不到 = 不是 wizard 流程的工具、**絕對不叫**。需要哪個功能就用上方表列的合法工具手動走完 Phase 2-4、不要用「後端有自動化」當藉口跳關。
+
 ### 🔴 Step -1 (BEFORE anything in Phase 2): session 必須已建立
 
 **這是 LLM 最常跳的一關**：拿到 access_token 後直接 call `analyze_brand_url` 或讓使用者上傳圖片、**但 `session_id` 還不存在**。後果：scrape 結果掉在 brand buffer、沒進 session；使用者上傳的圖歸 brand 不歸 session；Step 2 後面要 `update_session` 時 session_id 拿不到、只好再建一個、前面的 context 全斷掉。
