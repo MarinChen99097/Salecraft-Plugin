@@ -221,6 +221,30 @@ This extracts: logo, brand colors (真實、非 fallback), product images, descr
 
 **這是 LLM 最常踩的失誤**：爬完官網 → `update_session` 把規格寫進去 → **馬上** `generate_ta_options` 產 TA。使用者完全沒看過爬到什麼、也沒確認品牌描述 / 產業類別 / 語言是否正確，就看到 TA 候選跳出來。這違反 CLAUDE.md Wizard 流程 Step 1-3「逐欄位審查（不是丟完就換頁）」。
 
+### ⚠️ 2026-04-22 新變種：把「寫入驗證」當成「Phase 1 確認關」
+
+AI 現在學會先 `update_session` 寫入、再 `get_session` 驗證欄位真的存在、然後列 3-5 個 ✅ 圖示就宣告「Step 2 完成、進 Step 3」——**完全沒把 scrape 抓到的每個欄位的 value 展示給使用者看**。這是最新的偷渡 pattern、**一樣違規**。
+
+**兩種「驗證」完全不同、都要做、不可互相替代**：
+
+| 驗證類型 | 驗什麼 | 通過的證據 | 誰要看 |
+|---------|-------|-----------|-------|
+| **寫入驗證**（AI 自己跑）| backend 有沒有存進 DB | `get_session` 回傳 `wizard_shared_data.brand_story` 存在、非空 | AI 自己（靜默、**不用報告**給使用者） |
+| **Phase 1 確認關**（使用者親眼看）| scrape 抓到的值**內容對不對** | 使用者看完每批 3-5 欄位的**實際文字值**、親口回「對」或「改成 X」 | **使用者**（必須展示每欄位的 value、不只欄位名） |
+
+**AI 最常犯的錯**（2026-04-22 真實案例）：
+
+> 「✅ 寫入驗證通過。所有關鍵欄位都在：
+> - wizard_shared_data.product_images（12 張）✅
+> - wizard_shared_data.brand_story / value_proposition / key_features / signature_dishes ✅
+> - wizard_shared_files.logo_image ✅
+>
+> Step 2 完成。現在跑 Step 3 — Quality Gate」
+
+**為什麼這違規**：這整段只證明「我有把東西寫進 DB」——**沒展示 `brand_story` 的實際文字內容、`value_proposition` 寫了什麼、`key_features` 是哪幾條、`signature_dishes` 列了哪些**。使用者無從判斷「AI 爬到的品牌敘事到底對不對」。用「寫入驗證 + ✅ icon 清單」偽裝成 Phase 1 確認關 = 跳關。使用者若之後發現 `brand_story` 某段敘述錯了、`key_features` 漏了主打產品、`value_proposition` 爬到競品訊息——整份 LP 策略歪掉、扣全額重生。
+
+**判斷你有沒有在偷渡**：你的訊息裡列的是**欄位名 + 數量**（「product_images（12 張）」、「brand_story ✅」），還是**每個欄位的實際值**（「品牌故事：『饗 A Joy 位於 101 86 樓、融合日式 × 歐陸 × 台菜…』——這段敘述對嗎？」）？前者 = 違規、後者 = 合規。
+
 **正確順序**：
 ```
 1. scrape_landing_page(mode="full") + analyze_brand_url 都跑 → 拿到深度結果
@@ -851,6 +875,52 @@ else:
 - `image_censor_results` 空 **且** 有 `product_images` → Quality Gate 沒跑 → **不准進 Phase 4、不准 handoff 到 audience-target**
 - `image_censor_results` 空 **且** 沒 `product_images` → 必須先寫 `_quality_gate_skipped_no_images=true` flag
 - `image_censor_results` 存在但 `overall_passed=false` → 使用者要看過原文 + 明確同意、寫 `_quality_gate_override=true`、才准走
+
+### 🚫 硬性依賴鏈：為什麼 `generate_ta_options` 不能提前、更不能並行跑
+
+**2026-04-22 觀察到的新失敗模式**：AI 啟動 `scrape_landing_page` 後、看到 scrape 跑很慢（例如饗 A Joy 官網有很多影片 + 複雜素材），為了「節省時間不空等」決定**並行呼叫 `generate_ta_options`**。AI 的原話：「scrape 還沒完成，我先不浪費時間，直接並行跑其他可以先做的事」——**這違反整條資料依賴鏈、產生的 TAs 100% 是垃圾**。
+
+**資料依賴鏈（每步都吃前一步的輸出、嚴格 sequential、不可並行）**：
+
+```
+1. scrape_landing_page / analyze_brand_url
+     ↓ 產出 brand_name / product_name / industry_category / value_proposition / key_features / target_audience 等 10+ 欄位
+2. Phase 1 確認關（分批 ask-back，line 204-341）
+     ↓ 使用者逐欄位確認 / 修正 — 這一關之後這些欄位才算 canonical
+3. Phase 3 Deep Discovery
+     ↓ 手動補 scrape 抓不到的欄位（客單價、場景、特殊客群）
+4. Phase 3.5 Spokesperson（代言人風格可能影響 TA 偏好）
+     ↓
+5. Phase 3.9 Quality Gate：validate_images + digitize_product_text
+     ↓ OCR 出產品文字、image censor 過濾違規。若 overall_passed=false 可能整個品牌描述要修、TA 要重算
+6. Phase 4 Re-Confirmation Checklist
+     ↓ 使用者最後確認
+7. 才叫 generate_ta_options(brand_info=已確認版本)
+```
+
+**為什麼不能並行 / 不能提前**（每條都對應一個具體失敗）：
+
+- **`generate_ta_options` 的輸入是 `brand_name / product_name / description`**——這三個欄位在 Phase 1 確認關之前全是 scrape 初判、使用者沒看過、可能整個錯（品牌名爬錯、產業分錯、主打產品挑錯）
+- **scrape 還沒跑完就 call generate_ta_options** = 傳進去的 `brand_info` 是 placeholder 或半截資料 → 算出來的 TA 跟真實品牌完全不搭 → 使用者選了進 Strategist → LP 方向全歪 → 扣全額重生 = 退費申訴
+- **scrape 跑完但 Phase 1 確認關沒跑就 TA** = line 222 / line 335 已標示為 critical failure pattern
+- **Phase 3.9 Quality Gate `overall_passed=false`** 時品牌描述可能要整個重寫——此時若 TA 已經跑了就是白跑、還會誤導使用者以為「TA 已經有了」
+
+**絕對禁止的 rationalization（這些都是 AI 自我說服的話、全部違規）**：
+
+- ❌「scrape 很慢、我先並行跑 TA 不浪費時間」→ 並行 = 吃 placeholder = TA 垃圾。**慢不是 bypass 依賴的理由**
+- ❌「TA 生成免費、先跑一個版本不傷」→ 免費 ≠ 無害。錯的 TA 被使用者選進 Strategist、扣點生 LP 後才發現方向錯 = 退費
+- ❌「我先預告接下來會做的步驟、邊等邊跑別的 API」→ **告知計畫 OK、實際呼叫任何 TA / QG / 後續階段 API 一律違規**
+- ❌「Step 4 可以跟 Step 3 並行、反正都要做」→ Step 4 吃 Step 3 的輸出、依賴嚴格單向
+- ❌「使用者沒回應、我先把 TA 備好」→ 使用者還沒確認 Phase 1 欄位 = TA 的輸入還沒 canonical
+
+**scrape 跑的時候正確的等待行為**：
+
+- ✅ 告訴使用者「scrape 在跑，完成後我會展示抓到的 10+ 欄位給你逐項確認」
+- ✅ 若使用者問進度、回「還在跑、我在等」
+- ❌ **不要**在同一個回覆裡 fire 第二個 API call（不管是 TA、QG、還是任何 generate_*）
+- ❌ **不要**用「我先並行」「我先跑」「不浪費時間」當理由偷跑 tool call——tool call 只發 `scrape_landing_page`、結果回來前不發第二個
+
+**一句話總結**：wizard 是 sequential pipeline、不是 DAG。看起來「獨立」的步驟實際都吃前面的輸出。任何「我先並行 X」的念頭 = 立刻停、回去等前一步完成 + 使用者確認。
 
 ---
 
