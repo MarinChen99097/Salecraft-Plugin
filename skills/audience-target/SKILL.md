@@ -640,17 +640,22 @@ Recommendation: [N] because [reason]
 
 Which language for the LP content?
 
-Available (15 single locales):
-  zh-TW, en, zh-CN, ja, ko, vi, fr, th, es, pt, ar, de, id, ms, hi
+Available (9 locales — backend LP generation pipeline actually supports):
+  zh-TW, zh-CN, en, ja, es, pt, vi, id, th
 
 Notes:
 - zh-TW (繁體中文): Default for Taiwan market
-- en (English): Best for international / tech audiences
 - zh-CN (简体中文): Mainland China audiences
+- en (English): Best for international / tech audiences
 - ja (日本語): Text tends to be 20-40% longer, ですます体
-- ko (한국어): 해요체, high visual polish expected
-- ar (العربية): RTL layout will be applied automatically
-- de / id / ms / hi: supported via wizard UI; use when TA is regional
+- es (Español): ~30% longer than English; accent marks mandatory (á/é/í/ó/ú/ñ/ü)
+- pt (Português): Default PT-BR unless brand specifies PT-PT; accents mandatory
+- vi (Tiếng Việt): Tone marks mandatory (à/á/ả/ã/ạ/ă/â/đ/ê/ô/ơ/ư); ~20% longer
+- id (Bahasa Indonesia): standard BI, avoid regional slang; use "Anda" formal
+- th (ภาษาไทย): no spaces between words, tone/vowel marks critical
+
+Not yet supported (wizard UI has translations but backend has no generation path):
+  ko, fr, ar, de, ms, hi — DO NOT write these into session.language; all will silent-fallback to zh-TW and produce incorrect output.
 
 Each language is a fully independent LP generation — no cheap "translation" path exists. If the user wants two languages, they pay for two full LP generations.
 ```

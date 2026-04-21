@@ -430,6 +430,38 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 })
 ```
 
+#### 🔴 Step 5a 推斷紀律（2026-04-22 新 SOP）— 沒 signal 就不准 infer、必須問
+
+**「我幫你配」不是免費通行證**。Step 5a 推斷表（上方 line 377-385）列的每個推斷 signal 都是**條件式**——**條件沒滿足、該欄位就不准 infer、必須在 Step 5b 問**。
+
+**2026-04-22 真實失敗**（饗 A Joy 餐廳 LP 的 Cost 複誦）：
+
+> 📐 長寬比：**16:9 橫版**（我幫你配）
+> 🎯 CTA：「**訂位相遇**」→ `https://www.feastogether.com.tw/booking/Ajoy`（我幫你配）
+> ❓ Q&A 區塊：**加**（我幫你配）
+> ⭐ 客戶見證：**不加**（我幫你配）
+
+**這 4 項全部違規**：
+
+1. **`aspect_ratio=16:9`**：整段對話裡使用者**沒提過** IG / 桌機 / Google Ads / 官網 hero 任何 channel signal。Step 5a 表格的規則是「沒提 → 預設兩邊或問」，不是「AI 自己腦補一個」
+2. **`cta_url=feastogether.com.tw`**：這個網址是 AI 自己從 scrape 結果挖出來的訂位頁、**使用者從來沒確認過這就是他要的 CTA 目的地**。Step 5a 的規則是「brand-onboard 抓的 CTA / 官網 URL」要先讓使用者確認、不是 AI 自動拉
+3. **`cta_text=訂位相遇`**：**這個欄位根本不在 Step 5a 推斷表裡**（表裡只有 cta_url）、沒有任何推斷依據——AI 憑感覺寫一個創意文案當 CTA 按鈕文字、使用者從沒見過
+4. **`include_qa_section=true` / `include_testimonials=false`**：表格規則是「高單價 + 產業類別 → Q&A true」，餐飲 86 樓 fine dining 符合推斷條件、**這項技術上合規**。但把這項跟前三項違規項混在同一個「（我幫你配）」列表裡、使用者看到 5 項都標「（我幫你配）」會以為全部都有推斷依據 → **合法項目被違規項目的 noise 淹沒、使用者沒機會個別審視**
+
+**強制規則**：
+
+- ✅ **合法 infer**：推斷值必須引用**具體 signal source**（scrape 回傳欄位 / 使用者講過的句子 / 產業類別 default）。Cost 複誦必須**每項附理由**（見 Step 5c 範例 line 444-449「因為你提過 IG 限時動態」這種格式）
+- ❌ **非法 infer**：signal 不存在就推斷 = 違規。aspect_ratio 沒 channel signal、cta_url 沒使用者確認、cta_text 不在推斷表、language 沒 TA/對話 signal、primary_color 沒 scrape 到、font_style 沒 industry default——**這些情況一律推到 Step 5b 問、禁止「我幫你配」**
+- ❌ **混列合規與違規**：所有「（我幫你配）」項目如果只有一項沒 signal、整批退回 Step 5b 問使用者。不可以「4 項裡有 3 項合規、就一起帶過」
+- ❌ **自創欄位不在表裡**：`cta_text`、`tagline`、`tone` 等不在 Step 5a 推斷表的欄位、**一律問使用者**、禁止 AI 編文案值
+- ✅ **Cost 複誦必附 signal source**：每個「（我幫你配）」項目後面必須用括號或 dash 列來源，格式：「**9:16 直版**（你提過 IG 限時）」、「**墨綠 #2fa067**（官網抓到的品牌主色）」——沒 source 或 source 虛構 = 違規
+
+**判斷你有沒有在腦補**：
+
+- 你寫的每個「（我幫你配）」項目、如果被使用者問「為什麼是這個值？」——你能指到**具體 signal**（session 某個欄位 / 對話某句話 / 產業預設）？指不到 = 腦補、回 Step 5b 問
+- 那個 signal 真的存在嗎？還是你在腦補一個「應該」的 signal？（餐廳 = 要 16:9 橫版、這是假 signal、沒有這種產業預設）
+- cta_text / tagline 類創意文案欄位如果不在 Step 5a 表裡、你在寫什麼？**立刻停、問使用者**
+
 #### Step 5b — 只問剩下真的推不出來的
 
 Infer pass 跑完、`needs` 通常從 7-8 題縮到 0-3 題。**剩下的才問使用者**、仍然 2-4 題一組。
