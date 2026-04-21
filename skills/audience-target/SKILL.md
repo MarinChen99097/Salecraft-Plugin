@@ -640,17 +640,50 @@ Recommendation: [N] because [reason]
 
 Which language for the LP content?
 
-Available: zh-TW, en, ja, ko, vi, fr, th, es, pt, ar
+Available (15 single locales):
+  zh-TW, en, zh-CN, ja, ko, vi, fr, th, es, pt, ar, de, id, ms, hi
 
 Notes:
 - zh-TW (繁體中文): Default for Taiwan market
 - en (English): Best for international / tech audiences
+- zh-CN (简体中文): Mainland China audiences
 - ja (日本語): Text tends to be 20-40% longer, ですます体
 - ko (한국어): 해요체, high visual polish expected
 - ar (العربية): RTL layout will be applied automatically
+- de / id / ms / hi: supported via wizard UI; use when TA is regional
 
 Each language is a fully independent LP generation — no cheap "translation" path exists. If the user wants two languages, they pay for two full LP generations.
 ```
+
+### 🔴 MANDATORY: reject `suggested_language: "Bilingual"` from `generate_ta_options`
+
+**2026-04-22 真實 bug**：`generate_ta_options` 回傳 `suggested_language: "Bilingual"`——AI 差點直接寫進 session 當 spec。
+
+**根因**：`marketing_backend/agents/ta_generator.py:283` 和 `:399` 的 Gemini prompt 逐字寫：
+> `suggested_language: 繁體中文/English/Bilingual`
+
+所以 backend LLM 會乖乖照 prompt 吐出 `"Bilingual"`——**但下游沒有任何一層認識這個值**：
+- Wizard UI 的 language 下拉選單 = 上方 15 個單一 locale、沒有 "Bilingual" 選項
+- `generate_session` 吃到 `"Bilingual"` → silent fallback 到 `wizard_shared_data.default_language`（通常 `zh-TW`）→ 生出繁中版、使用者以為是雙語
+- 或 Strategist agent 自己嘗試解讀 → 生出中英混雜的亂文案
+
+**強制規則**：
+
+1. **收到 `suggested_language: "Bilingual"` / `"雙語"` / `"中英"` / 任何非 15-locale 值**（ISO 639 標準碼以外）→ **絕對不 `update_session` 寫這個值**
+2. 回給使用者的選擇必須是 **15 個單一 locale 之一**、**不是**「Bilingual / 雙語 / 中英」
+3. 使用者若堅持「要雙語」→ 告訴他這等於 **2 份獨立 LP 生成（2× 扣點）**，每份各鎖一個 locale。引用 4E 的 "no cheap translation path exists"
+4. 寫進 session 的欄位必須是 **該份 LP 的單一 locale code**（`language: "zh-TW"` 或 `language: "en"`），不是複合值
+
+**正確處理話術**：
+
+> 「backend TA 建議回了 `Bilingual`——但這不是有效 locale（系統只吃 15 個單一語言：zh-TW / en / zh-CN / ja / ko / ...）。你要這組 TA 跑哪個語言？想雙語 = 跑兩份獨立 LP（多一份 = 多 1 份扣點），不是一份雙語 LP。」
+
+**絕對禁止**：
+
+- ❌ 把 `suggested_language: "Bilingual"` 當 enum 直接 `update_session(wizard_ta_groups[i].language="Bilingual")`
+- ❌ 把 `"Bilingual"` 翻譯成 `"zh-TW+en"` / `"bi"` / `"dual"` 等自創值塞進 session——**任何非 15-locale 值都會 silent drop**
+- ❌ 靜默替使用者挑一個 locale（「我幫你選 zh-TW」）——違反 FIRST-RESPONSE RULE「LLM 不替使用者選規格」
+- ❌ 暗示存在雙語 LP 這個產品（「我可以幫你生一份雙語」）——**產品不存在**
 
 ### 4F. Copywriting & Tone
 
