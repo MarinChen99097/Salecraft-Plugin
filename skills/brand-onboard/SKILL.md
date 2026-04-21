@@ -497,6 +497,56 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 
 Then use the **Complete Field Map by Industry** section (below) to determine which fields to ask for.
 
+### 🔴 MANDATORY 欄位狀態攤開（2026-04-22 新 SOP）
+
+`industry_category` 一設定、**立刻**把該產業的**完整欄位清單**（通用 + 該產業特有、見下方 Complete Field Map）攤給使用者看、每個欄位標記 ☑ 已填（**附實際 value**）或 ☐ 空白。**不准 AI 自己挑 6-12 項展示、不准從其他產業搬欄位湊、不准發明不在 Complete Field Map 裡的欄位名。**
+
+**2026-04-22 真實失敗範例**：restaurant 產業偵測完、AI 列「已經寫進 session 的 12 項」後附「可以補 10 項」清單，包含 `pricing_info`、`trust_certifications`、`trust_awards`、`property_location`、`event_type`、`capacity_info`、`founder_background`、`research_claims`——**這些一半屬於 real_estate 產業的欄位（`property_location`、`property_size`）、另一半（`pricing_info`、`capacity_info`、`event_type`、`founder_background`、`research_claims`）根本不在任何產業的 Complete Field Map 裡**。AI 靠直覺編欄位名、使用者若照著補、資料會寫進 `wizard_shared_data` 的任意 JSONB key——但 Strategist / Architect agent 不讀、Wizard UI 不 render、全部變無效資料。
+
+**正確展示範本**（industry_category=restaurant 設定後）：
+
+```
+✅ 產業已設定：restaurant（餐飲）
+
+【通用欄位 — 所有產業必備】
+☑ brand_name: 饗 A Joy
+☑ base_description: 位於台北 101 的 86 樓、融合日式 × 歐陸 × 台菜…（實際值）
+☑ value_proposition: 究極和食 × 歐陸美饌 × 台灣情味
+☑ key_features: [澎湖直送生蠔、A5 和牛握壽司、松露蟹黃小籠包…]
+☑ product_appeal: 高空景觀 × 頂級食材 × 跨界聯名
+☐ cta_text: 空白
+☐ cta_url: 空白
+☑ product_images: 12 張
+
+【restaurant 產業特有欄位】
+☑ restaurant_exterior_images: 2 張
+☑ restaurant_interior_images: 5 張
+☑ dish_images: 8 張
+☐ menu_images: 空白
+
+完成度: 9 / 12 官方欄位。空白的 3 項（cta_text、cta_url、menu_images）要補嗎？
+```
+
+**絕對禁止**：
+
+- ❌ 只列 AI 自己挑的 N 項 ☑、不列 ☐ 空白欄位 → 使用者不知道哪些還沒填
+- ❌ 發明 Complete Field Map 沒有的欄位名（`pricing_info`、`capacity_info`、`event_type`、`trust_certifications`、`founder_background`、`research_claims` 都**不在** restaurant 的官方欄位清單——見 line 1476-1477）
+- ❌ 從其他產業搬欄位（`property_location` / `property_size` 是 real_estate 產業、`device_specifications` 是 software）
+- ❌ 把「建議補的 AI 想像欄位」跟「官方產業欄位」混列、使用者分不清哪些是 wizard 正式支援
+- ❌ 只列欄位名 + 數量（「brand_story ☑、key_features ☑」）、不顯示實際 value（這是 line 244-274「寫入驗證 vs Phase 1 確認關」的特化版：列名字 = 寫入驗證、列 value = 真的給使用者看內容）
+
+**為什麼要攤完整清單**：
+
+1. **UI 一致性**：Wizard GUI 的 Phase 1 頁面 render 所有產業欄位（含空白）。AI 在對話裡必須還原這個行為、讓對話版和 GUI 版一致
+2. **防止 silent dropped fields**：AI 寫進 `wizard_shared_data` 的欄位若不在官方 Field Map 裡、Strategist 不讀、Architect 不用、使用者花時間補的變無效資料
+3. **使用者知情權**：列完整清單 = 使用者確認「這個產業該問的都問了」。只列子集 = 使用者假設這就是全部、事後發現漏問關鍵欄位
+
+**判斷你有沒有偷渡**：
+
+- 你列的欄位名全部都能在 line 1445-1500 的 Complete Field Map 找到嗎？找不到 = 你發明了、重寫
+- 你列的欄位包括**所有空白**的嗎？只列已填 ☑ = 違規、必須列 ☐ 空白
+- 你有顯示每個 ☑ 欄位的**實際 value**嗎？只列欄位名 + 數量 = 違規
+
 ---
 
 ### For PERSONAL BRANDS (students, freelancers, developers):
