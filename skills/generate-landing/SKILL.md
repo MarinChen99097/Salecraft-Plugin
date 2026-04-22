@@ -451,18 +451,21 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 
 **規則**：
 
-- **單 TA**：對話明確提過目標語言 → 可推、Cost 複誦必附 signal。未提 → 明確問「要做哪個語言？」（8 canonical name 清單見 audience-target 4E）
-- **多 TA（≥2）**：**一律逐組明確問**、禁止 silent 配同語言
-- 禁止把多組 `language` 填同一值當「（我幫你配）」
+- **Step 4 TA 選完 → Step 5 的第一題 MUST 是「目標語言」**、且**必須把 8 個合法選項完整列出**、不可只給「繁中 / 英文」二選一。單 TA 問一次、多 TA 一律**逐組問**。
+- **單 TA**：對話明確提過目標語言 → 可推、Cost 複誦必附 signal。未提 → 依上條規則列 8 選項問
+- **多 TA（≥2）**：禁止 silent 配同語言、禁止只給一組選項讓其他組跟、禁止把多組 `language` 填同一值當「（我幫你配）」
 - 禁止以「brand 官網語言」當 signal 推 language（官網語言 ≠ 目標市場語言）
 
-**多 TA 正確問法範本**：
+**Step 5 第一題語言必問範本**（Step 4 TA 選完後 fire）：
 
-> 「你兩組 TA 可以各自跑不同語言：
-> - TA1 [ta_name]：要繁中還是英文？
-> - TA2 [ta_name]：這組看起來有國際客群的調性、要跑英文版嗎？」
+> 「TA 選好了、接下來選每組的目標語言。系統支援這 8 種：
+> ① 繁體中文 (台灣)  ② English  ③ 日本語  ④ Español (西班牙文)
+> ⑤ Português (葡萄牙文)  ⑥ Tiếng Việt (越南語)  ⑦ Bahasa Indonesia (印尼文)  ⑧ ภาษาไทย (泰語)
+>
+> - TA1 [ta_name]：要哪個？
+> - TA2 [ta_name]：要哪個？（多組 TA 一律逐組問）」
 
-使用者回「英文」→ 寫進 session 的值是 **canonical name `"English"`**、不是 `"en"`。繁中 → `"Traditional Chinese (Taiwan)"`。對照表見 audience-target 4E。
+使用者回「英文」→ 寫進 session 的 `wizard_ta_groups[i].language` 是 **canonical name `"English"`**（不是 `"en"` / `"en-US"`）。繁中 → `"Traditional Chinese (Taiwan)"`。canonical 對照表見 audience-target 4E。
 
 #### Step 5b — 只問剩下真的推不出來的
 
