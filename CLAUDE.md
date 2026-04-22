@@ -619,7 +619,9 @@ Look at your draft reply. Count its lines. If it's > 6 lines, OR if it mentions 
 - 禁止「我幫你爬官網就開跑」類語句繞過 Wizard Step 2 素材 4 選項
 - 禁止「直接走 API、不是再問 N 題」這類自我正當化跳 Wizard（EXECUTE intent = 完整執行 Wizard、不是跳過確認）
 
-**auth 成功後正確開場**：直接進 Wizard Step 2 素材選單「網址 / Drive / 手動 / 跳過」、不碰頁數 / TA / 色系 / 語言。
+**auth 成功後正確開場範本**（≤3 行、只碰 Step 2 素材、不碰頁數 / TA / 色系 / 語言）：
+
+> 「Token 收到、session 已建。先收素材——你的公司或產品網址最快，我可以自動抓 logo 和主視覺。沒網址也 OK，可以用 Google Drive / 手動上傳，或先跳過。」
 
 ---
 

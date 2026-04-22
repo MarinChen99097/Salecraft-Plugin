@@ -456,6 +456,12 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 - 禁止把多組 `language` 填同一值當「（我幫你配）」
 - 禁止以「brand 官網語言」當 signal 推 language（官網語言 ≠ 目標市場語言）
 
+**多 TA 正確問法範本**：
+
+> 「你兩組 TA 可以各自跑不同語言：
+> - TA1 [ta_name]：要繁中還是英文？
+> - TA2 [ta_name]：這組看起來有國際客群的調性、要跑英文版嗎？」
+
 #### Step 5b — 只問剩下真的推不出來的
 
 Infer pass 跑完、`needs` 通常從 7-8 題縮到 0-3 題。**剩下的才問使用者**、仍然 2-4 題一組。

@@ -496,6 +496,30 @@ Then use the **Complete Field Map by Industry** section (below) to determine whi
 
 **自檢**：列的每個欄位名都能在 line 1445-1500 找到嗎？包括所有 ☐ 空白嗎？每個 ☑ 都附實際 value 嗎？任一答「否」= 違規重寫。
 
+**正確展示範本**（industry_category=restaurant 設定後）：
+
+```
+✅ 產業已設定：restaurant（餐飲）
+
+【通用欄位 — 所有產業必備】
+☑ brand_name: 饗 A Joy
+☑ base_description: 位於台北 101 的 86 樓、融合日式 × 歐陸 × 台菜…
+☑ value_proposition: 究極和食 × 歐陸美饌 × 台灣情味
+☑ key_features: [澎湖直送生蠔、A5 和牛握壽司、松露蟹黃小籠包…]
+☑ product_appeal: 高空景觀 × 頂級食材 × 跨界聯名
+☐ cta_text: 空白
+☐ cta_url: 空白
+☑ product_images: 12 張
+
+【restaurant 產業特有欄位】
+☑ restaurant_exterior_images: 2 張
+☑ restaurant_interior_images: 5 張
+☑ dish_images: 8 張
+☐ menu_images: 空白
+
+完成度: 9 / 12。空白的 3 項要補嗎？
+```
+
 ### 🔴 欄位 label 必須用人話、禁止 raw field name
 
 展示欄位給使用者時（fill status、確認關、核對畫面）一律翻成中文人話 label、絕不顯示 snake_case code name。使用者看不懂 `trust_satisfaction_rate` 是「Google 評分」、`dress_code` 是「服裝規定」就會回「OK 都對」敷衍、違反 Phase 1 確認關的 spirit。
@@ -529,8 +553,23 @@ Then use the **Complete Field Map by Industry** section (below) to determine whi
 
 **禁止**：raw field name 給使用者、中英混雜（「brand_name: 饗 A Joy」）、括號補 code name（「品牌名 (brand_name): 饗 A Joy」）、只報欄位數量（「24 個欄位全部寫進去了」）不展示 label + value。
 
-**code name 可出現處**：tool call JSON payload、debug log / error message。其他地方一律中文 label。
-- ❌ 任何給使用者看的 prose / 清單 / 確認畫面
+**code name 可出現處**：tool call JSON payload、debug log / error message。其他地方一律中文 label（包含任何給使用者看的 prose / 清單 / 確認畫面）。
+
+**正確展示範本**：
+
+```
+【核心】
+☑ 品牌名：饗 A Joy
+☑ 產品：頂級融合餐飲
+☑ 標語：究極和食 × 歐陸美饌 × 台灣情味
+☑ 品牌故事：位於台北 101 的 86 樓、融合日式 × 歐陸 × 台菜...
+
+【信任】
+☑ 認證 / 檢驗：米其林推薦、500 盤入選
+☑ 獎項 / 媒體報導：TVBS 專訪、Forbes 評選...
+☑ 滿意度 / Google 評分：4.3 星（1,200+ 則評論）
+☑ 服務保證：訂金可 7 日前全額退
+```
 
 ---
 
