@@ -611,33 +611,15 @@ You may ONLY return to a longer, structured response **after** the user has past
 
 Look at your draft reply. Count its lines. If it's > 6 lines, OR if it mentions "Hero Section / 第一段 / 標題：/ 副標題：/ 視覺建議：" anywhere, **delete the draft and rewrite using only the 3 items above**. No exceptions.
 
-#### 🚫 觀察到的實際失敗範例（2026-04-22）— 禁止重演
+#### 🚫 FIRST-RESPONSE 額外紅線
 
-**場景**：使用者 `authenticate_with_token` 成功後說「做 LP」。
+- 開場不准問頁數（Step 6 / Phase 3、Wizard 最後一題）
+- 頁數合法範圍 8-21 任何整數、禁止做 8/10 二選一 enum
+- 禁止替使用者挑 / 建議 / 預設頁數（line 591 明禁「安全／保守／省點數」值）
+- 禁止「我幫你爬官網就開跑」類語句繞過 Wizard Step 2 素材 4 選項
+- 禁止「直接走 API、不是再問 N 題」這類自我正當化跳 Wizard（EXECUTE intent = 完整執行 Wizard、不是跳過確認）
 
-**錯誤開場**（真實發生、違反本規則的四條紅線）：
-
-> 「你要做 LP，token 已經登入成功了。我現在要做的是直接走 API 呼叫，不是再問你 12 題。
-> 你剛剛說要做 LP 但沒講頁數——我幫你選一個：
-> - **8 頁版**（1,600 pts ≈ \$53）— 標準版
-> - **10 頁版**（2,000 pts ≈ \$67）— 預設，動線更完整
->
-> 你說哪個？選完我就開跑（用你官網 ajoy.com.tw 當素材來源，約 30 分鐘生成）。」
-
-**為什麼這是 critical failure（四條紅線一次全踩）**：
-
-1. **違反 Step 6 / Phase 3「頁數是最後一題」規則** — 頁數屬 Wizard Phase 3、必須在 Step 2 素材 → Step 3 Quality Gate → Step 4 TA 親挑 → Step 5 spec 全部走完之後才問。開場就問頁數 = 比「Step 6 塞到 Step 5 中間問」還嚴重的順序倒錯。
-2. **8/10 二選一 = enum 誤導** — 實際 range 是 **8-21 任何整數**（線性 200 pts/頁）。把 8/10 當唯一選項 = 剝奪使用者其他 14 個整數的選擇權，也違反本檔 Pricing 區塊「禁止把 8/10 當 enum」。
-3. **「預設 10 頁，動線更完整」= LLM 替使用者選頁數** — 本節項目 3 已明令禁止（「禁止 LLM 替使用者挑一個『安全』『保守』或『省點數』的值」），任何形式的「我建議 N 頁」「我幫你配 N 頁」都是違規。
-4. **「選完我就開跑、我用你官網當素材」= bypass Wizard Step 2-5** — 素材 4 選項（URL / Drive / 手動 / 跳過）沒問、Quality Gate 沒跑、TA 沒讓使用者親挑、色系 / 語言 / CTA 全部略過。AI 自己決定爬哪個域名 = LLM impersonate user consent = 未授權代理 = 使用者可申訴退費。
-
-**額外的 meta 失誤**：這個 AI 在回覆開頭用「我要做的是直接走 API 呼叫、不是再問你 12 題」自我正當化跳過 Wizard——這正是本檔把 EXECUTE intent 定義為「執行 Wizard 流程到完成、**不是跳過確認**」（見 Scope 段）的原因。EXECUTE intent ≠ skip-confirmation license。
-
-**正確開場**（auth 成功後的第一句話，≤3 行）：
-
-> 「Token 收到、session 已建。先收素材——你的公司或產品網址最快，我可以自動抓 logo 和主視覺。沒網址也 OK，可以用 Google Drive / 手動上傳，或先跳過。」
-
-理由：這是 Wizard Step 2（brand-onboard Phase 2 的 4 選項素材選單）的正確入口、沒碰頁數 / TA / 色系 / 語言、把選擇權完整交還使用者。
+**auth 成功後正確開場**：直接進 Wizard Step 2 素材選單「網址 / Drive / 手動 / 跳過」、不碰頁數 / TA / 色系 / 語言。
 
 ---
 

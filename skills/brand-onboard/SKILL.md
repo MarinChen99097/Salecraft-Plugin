@@ -94,7 +94,7 @@ logout(user_token) -> end session
 
 ### 🚫 跨產品線工具禁用清單（wizard 流程禁用、會導致 phase 跳關）
 
-以下五個工具存在於 MCP catalog、**名字看起來像 wizard 入口、實際屬於其他產品線**。LLM 看到工具名會誤以為「後端有自動化、我照叫就對了」——**這是 2026-04-22 真實踩到的失敗模式**：AI 建完 session 後直接叫 `auto_generate_questions`、拿到「5 題 + 3 組 TA」一次吐出來展示，**完全跳過 Phase 2 素材收集 / Phase 3 Deep Discovery / Phase 3.5 代言人 / Phase 3.9 Quality Gate / Phase 4 Re-Confirmation 共五個階段**。使用者產品圖都沒上傳，就看到 TA 候選跳出來——違反 line 206、line 319、line 835 三條硬規則。
+以下五個工具存在於 MCP catalog、**名字看起來像 wizard 入口、實際屬於其他產品線**。LLM 看到工具名會誤以為「後端有自動化、我照叫就對了」——**絕對禁止**、會跳過 Phase 2-4 多個階段。
 
 | 工具 | 真實產品線 / 後端位置 | 為什麼 wizard 流程不能叫 |
 |------|---------------------|------------------------|
@@ -221,29 +221,14 @@ This extracts: logo, brand colors (真實、非 fallback), product images, descr
 
 **這是 LLM 最常踩的失誤**：爬完官網 → `update_session` 把規格寫進去 → **馬上** `generate_ta_options` 產 TA。使用者完全沒看過爬到什麼、也沒確認品牌描述 / 產業類別 / 語言是否正確，就看到 TA 候選跳出來。這違反 CLAUDE.md Wizard 流程 Step 1-3「逐欄位審查（不是丟完就換頁）」。
 
-### ⚠️ 2026-04-22 新變種：把「寫入驗證」當成「Phase 1 確認關」
+### ⚠️ 寫入驗證 ≠ Phase 1 確認關（兩者都要做、不可互相替代）
 
-AI 現在學會先 `update_session` 寫入、再 `get_session` 驗證欄位真的存在、然後列 3-5 個 ✅ 圖示就宣告「Step 2 完成、進 Step 3」——**完全沒把 scrape 抓到的每個欄位的 value 展示給使用者看**。這是最新的偷渡 pattern、**一樣違規**。
+| 驗證類型 | 驗什麼 | 通過證據 | 誰看 |
+|---------|-------|---------|------|
+| **寫入驗證**（AI 靜默做）| backend 有沒有存進 DB | `get_session` 回傳欄位存在非空 | AI 自己、不用報告 |
+| **Phase 1 確認關**（必經）| scrape 值**內容**對不對 | 使用者看完每欄位**實際文字值**、逐項點頭 | 使用者 |
 
-**兩種「驗證」完全不同、都要做、不可互相替代**：
-
-| 驗證類型 | 驗什麼 | 通過的證據 | 誰要看 |
-|---------|-------|-----------|-------|
-| **寫入驗證**（AI 自己跑）| backend 有沒有存進 DB | `get_session` 回傳 `wizard_shared_data.brand_story` 存在、非空 | AI 自己（靜默、**不用報告**給使用者） |
-| **Phase 1 確認關**（使用者親眼看）| scrape 抓到的值**內容對不對** | 使用者看完每批 3-5 欄位的**實際文字值**、親口回「對」或「改成 X」 | **使用者**（必須展示每欄位的 value、不只欄位名） |
-
-**AI 最常犯的錯**（2026-04-22 真實案例）：
-
-> 「✅ 寫入驗證通過。所有關鍵欄位都在：
-> - wizard_shared_data.product_images（12 張）✅
-> - wizard_shared_data.brand_story / value_proposition / key_features / signature_dishes ✅
-> - wizard_shared_files.logo_image ✅
->
-> Step 2 完成。現在跑 Step 3 — Quality Gate」
-
-**為什麼這違規**：這整段只證明「我有把東西寫進 DB」——**沒展示 `brand_story` 的實際文字內容、`value_proposition` 寫了什麼、`key_features` 是哪幾條、`signature_dishes` 列了哪些**。使用者無從判斷「AI 爬到的品牌敘事到底對不對」。用「寫入驗證 + ✅ icon 清單」偽裝成 Phase 1 確認關 = 跳關。使用者若之後發現 `brand_story` 某段敘述錯了、`key_features` 漏了主打產品、`value_proposition` 爬到競品訊息——整份 LP 策略歪掉、扣全額重生。
-
-**判斷你有沒有在偷渡**：你的訊息裡列的是**欄位名 + 數量**（「product_images（12 張）」、「brand_story ✅」），還是**每個欄位的實際值**（「品牌故事：『饗 A Joy 位於 101 86 樓、融合日式 × 歐陸 × 台菜…』——這段敘述對嗎？」）？前者 = 違規、後者 = 合規。
+**判斷偷渡**：訊息裡列「brand_story ✅」（欄位名 + icon）= 違規；列「品牌故事：『...實際文字...』對嗎？」= 合規。
 
 **正確順序**：
 ```
@@ -361,21 +346,7 @@ for key in ["brand_name", "base_description", "value_proposition", ...]:
 - ❌ **LLM 自己列一個 5-6 項的 ✅ icon 清單、使用者回「OK / 全部都留」** → 當成對 25+ 個寫入欄位的 global approval。`value_proposition / key_features / brand_story / target_audience / trust_certifications / base_description` 這些沒上清單的欄位**一樣被你寫進 session、一樣影響後面 Architect 文案走向**——不展示給使用者 = 未經授權寫入。
 - ❌ 使用者回「OK」就當全部點頭 — OK 只是聽到、不代表逐項確認。若使用者回模糊的 OK、再問一次「意思是這批 5 項都對嗎？還是哪項要修？」
 - ❌ 把 4 批合併成 1 批一次列 20 欄位——**節奏會爛、使用者 overload 就會回「都留」含糊帶過**，結果 19/20 欄位沒被真的檢視。
-- ❌ **在 Phase 1 確認關的任何 batch 裡問代言人 / 主廚 / 侍酒師 / 品牌大使 / 人物照相關問題**——這是 Phase 3.5 scope、見下方「Phase bleeding」反面範例。
-
-#### 🚫 2026-04-22 Phase bleeding：把 Phase 3.5 代言人問題混進 Phase 1 圖片 batch
-
-**真實案例**（AI 在「第 4 批：圖片素材歸類」裡夾帶代言人題）：
-
-> 3. **代言人／主廚照**——你們有沒有想放的人物照？例如行政主廚、侍酒師、品牌大使。沒有的話 LP 第一頁的英雄圖會用「料理 + 高空夜景」或「空間氛圍」當主視覺，不放真人。
-
-**為什麼違規（三條）**：
-
-1. **Phase 錯位**：代言人是 Phase 3.5 scope（line 716+）、有自己的 3-option structured dialogue（先 `list_spokespersons` 查 brand 既有代言人 → 使用者挑既有 / AI 生成 / 自備上傳）。塞進 Phase 1 = 使用者誤以為現在就要決定、Phase 3.5 到了還要再問一次、雙重確認 UX 爛
-2. **Per-TA 特性被抹掉**：代言人是 `wizard_ta_groups[i].spokesperson_prompts[]` **per-TA 欄位**（line 341）、不同 TA 可以不同代言人。Phase 1 時 TA 還沒選、問這題無法下決策
-3. **沒跑 `list_spokespersons`**：line 724 明定「先 list_spokespersons 看 brand 既有的、避免重複工作」。AI 直接問使用者「有沒有」= 跳過既有資產檢查、使用者若之前已上傳過會被迫重傳
-
-**正確做法**：Phase 1 批 3 素材只列 **logo / 產品圖 / 社群連結 / trust 認證**（見 line 334-343 範本、不 expand 出代言人題）。使用者若主動問代言人要不要準備、回：「代言人是後面 Phase 3.5 的事、到時我會先 `list_spokespersons` 看你品牌既有的代言人、再決定挑既有 / AI 生 / 自備上傳——現在先確認素材就好。」
+- ❌ **在 Phase 1 確認關的任何 batch 裡問代言人 / 主廚 / 侍酒師 / 品牌大使 / 人物照相關問題**——代言人屬 Phase 3.5 scope（line 716+）、有自己的 3-option flow（先 `list_spokespersons` 查 brand 既有 → 挑既有 / AI 生 / 自備上傳）、又是 per-TA 欄位（TA 未選就問無法下決策）、且跳過 `list_spokespersons` 會讓使用者重複上傳。Phase 1 批 3 素材只列 **logo / 產品圖 / 社群連結 / trust 認證**。使用者主動問 → 回「代言人是 Phase 3.5、等下到了會先 list 既有的給你看」。
 
 **為什麼這關不能省**：LLM 自認為爬下來的資料「看起來合理」但使用者眼裡可能某欄位完全錯（例如品牌名爬錯、產業類別分錯、主打產品挑錯）。這個錯誤若帶進 Strategist → 整份 LP 策略方向都歪掉 → 重生一次 = 使用者付全額。Step 3 停下 30 秒可以避免 100% 的退費申訴。
 
@@ -512,68 +483,22 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 
 Then use the **Complete Field Map by Industry** section (below) to determine which fields to ask for.
 
-### 🔴 MANDATORY 欄位狀態攤開（2026-04-22 新 SOP）
+### 🔴 MANDATORY 欄位狀態攤開
 
-`industry_category` 一設定、**立刻**把該產業的**完整欄位清單**（通用 + 該產業特有、見下方 Complete Field Map）攤給使用者看、每個欄位標記 ☑ 已填（**附實際 value**）或 ☐ 空白。**不准 AI 自己挑 6-12 項展示、不准從其他產業搬欄位湊、不准發明不在 Complete Field Map 裡的欄位名。**
+`industry_category` 一設定 → 立刻把該產業的**完整欄位清單**（通用 + 產業特有、見 line 1445-1500 Complete Field Map）攤出來、每個欄位標 ☑ 已填（附實際 value）或 ☐ 空白。
 
-**2026-04-22 真實失敗範例**：restaurant 產業偵測完、AI 列「已經寫進 session 的 12 項」後附「可以補 10 項」清單，包含 `pricing_info`、`trust_certifications`、`trust_awards`、`property_location`、`event_type`、`capacity_info`、`founder_background`、`research_claims`——**這些一半屬於 real_estate 產業的欄位（`property_location`、`property_size`）、另一半（`pricing_info`、`capacity_info`、`event_type`、`founder_background`、`research_claims`）根本不在任何產業的 Complete Field Map 裡**。AI 靠直覺編欄位名、使用者若照著補、資料會寫進 `wizard_shared_data` 的任意 JSONB key——但 Strategist / Architect agent 不讀、Wizard UI 不 render、全部變無效資料。
+**禁止**：
 
-**正確展示範本**（industry_category=restaurant 設定後）：
+- 只列 AI 自己挑的 N 項 ☑ 不列 ☐ 空白（使用者不知道哪些還沒填）
+- 發明 Complete Field Map 沒有的欄位名（例 restaurant 產業不存在 `pricing_info` / `capacity_info` / `event_type` / `trust_certifications` 等——寫進 `wizard_shared_data` 任意 JSONB key 但 agent 不讀、Wizard UI 不 render、變無效資料）
+- 從其他產業搬欄位（例 `property_location` 是 real_estate、不是 restaurant）
+- 只列欄位名 + icon，不顯示實際 value（line 228 寫入驗證 vs Phase 1 確認關的特化版）
 
-```
-✅ 產業已設定：restaurant（餐飲）
+**自檢**：列的每個欄位名都能在 line 1445-1500 找到嗎？包括所有 ☐ 空白嗎？每個 ☑ 都附實際 value 嗎？任一答「否」= 違規重寫。
 
-【通用欄位 — 所有產業必備】
-☑ brand_name: 饗 A Joy
-☑ base_description: 位於台北 101 的 86 樓、融合日式 × 歐陸 × 台菜…（實際值）
-☑ value_proposition: 究極和食 × 歐陸美饌 × 台灣情味
-☑ key_features: [澎湖直送生蠔、A5 和牛握壽司、松露蟹黃小籠包…]
-☑ product_appeal: 高空景觀 × 頂級食材 × 跨界聯名
-☐ cta_text: 空白
-☐ cta_url: 空白
-☑ product_images: 12 張
+### 🔴 欄位 label 必須用人話、禁止 raw field name
 
-【restaurant 產業特有欄位】
-☑ restaurant_exterior_images: 2 張
-☑ restaurant_interior_images: 5 張
-☑ dish_images: 8 張
-☐ menu_images: 空白
-
-完成度: 9 / 12 官方欄位。空白的 3 項（cta_text、cta_url、menu_images）要補嗎？
-```
-
-**絕對禁止**：
-
-- ❌ 只列 AI 自己挑的 N 項 ☑、不列 ☐ 空白欄位 → 使用者不知道哪些還沒填
-- ❌ 發明 Complete Field Map 沒有的欄位名（`pricing_info`、`capacity_info`、`event_type`、`trust_certifications`、`founder_background`、`research_claims` 都**不在** restaurant 的官方欄位清單——見 line 1476-1477）
-- ❌ 從其他產業搬欄位（`property_location` / `property_size` 是 real_estate 產業、`device_specifications` 是 software）
-- ❌ 把「建議補的 AI 想像欄位」跟「官方產業欄位」混列、使用者分不清哪些是 wizard 正式支援
-- ❌ 只列欄位名 + 數量（「brand_story ☑、key_features ☑」）、不顯示實際 value（這是 line 244-274「寫入驗證 vs Phase 1 確認關」的特化版：列名字 = 寫入驗證、列 value = 真的給使用者看內容）
-
-**為什麼要攤完整清單**：
-
-1. **UI 一致性**：Wizard GUI 的 Phase 1 頁面 render 所有產業欄位（含空白）。AI 在對話裡必須還原這個行為、讓對話版和 GUI 版一致
-2. **防止 silent dropped fields**：AI 寫進 `wizard_shared_data` 的欄位若不在官方 Field Map 裡、Strategist 不讀、Architect 不用、使用者花時間補的變無效資料
-3. **使用者知情權**：列完整清單 = 使用者確認「這個產業該問的都問了」。只列子集 = 使用者假設這就是全部、事後發現漏問關鍵欄位
-
-**判斷你有沒有偷渡**：
-
-- 你列的欄位名全部都能在 line 1445-1500 的 Complete Field Map 找到嗎？找不到 = 你發明了、重寫
-- 你列的欄位包括**所有空白**的嗎？只列已填 ☑ = 違規、必須列 ☐ 空白
-- 你有顯示每個 ☑ 欄位的**實際 value**嗎？只列欄位名 + 數量 = 違規
-
-### 🔴 欄位 label 必須用人話、禁止 raw field name（2026-04-22 新 SOP）
-
-**Field name (`brand_name`、`value_proposition`、`trust_satisfaction_rate`) 是 backend schema 的 key、不是給使用者看的 label**。任何時候展示欄位給使用者（fill status 清單、確認關、核對畫面）、一律翻成**中文人話 label**、絕不顯示 snake_case 程式碼。
-
-**2026-04-22 真實失敗範例**（AI 把 24 個欄位全用 code name 列出來）：
-
-> ☑ 核心：brand_name / product_name / tagline / brand_story / value_proposition / base_description / cuisine_type
-> ☑ 特色：key_features (8 點) / signature_dishes
-> ☑ 信任：trust_certifications / trust_awards / trust_satisfaction_rate / trust_guarantee
-> ☑ 政策：kids_policy / dress_code / special_diet_options
-
-**為什麼違規**：一般使用者看不懂 `trust_satisfaction_rate` 是「Google 滿意度 / 評分」、`dress_code` 是「服裝規定」、`value_proposition` 是「核心賣點」、`product_appeal` 是「產品吸引力 / 記憶點」。**就算想核對也看不懂**——直接回「OK 都對」含糊敷衍。這違反 Phase 1 確認關的 spirit：展示形式必須讓使用者能真的判斷對錯、不只是假裝展示。
+展示欄位給使用者時（fill status、確認關、核對畫面）一律翻成中文人話 label、絕不顯示 snake_case code name。使用者看不懂 `trust_satisfaction_rate` 是「Google 評分」、`dress_code` 是「服裝規定」就會回「OK 都對」敷衍、違反 Phase 1 確認關的 spirit。
 
 **必須翻譯的中文 label 對照表**（含官方 Field Map + 常見 `wizard_shared_data` JSONB 欄位）：
 
@@ -600,35 +525,11 @@ Then use the **Complete Field Map by Industry** section (below) to determine whi
 | restaurant_interior_images | 內部空間照 | dish_images | 菜色照 |
 | menu_images | 菜單圖 | | |
 
-**未列在上表的欄位 = 自己翻一個中文 label**、用使用者看得懂的詞、不要直接丟 code name。
+**未列在上表的欄位** → 自己翻一個使用者看得懂的中文 label、不要直接丟 code name。
 
-**正確展示範本**：
+**禁止**：raw field name 給使用者、中英混雜（「brand_name: 饗 A Joy」）、括號補 code name（「品牌名 (brand_name): 饗 A Joy」）、只報欄位數量（「24 個欄位全部寫進去了」）不展示 label + value。
 
-```
-【核心】
-☑ 品牌名：饗 A Joy
-☑ 產品：頂級融合餐飲
-☑ 標語：究極和食 × 歐陸美饌 × 台灣情味
-☑ 品牌故事：位於台北 101 的 86 樓、融合日式 × 歐陸 × 台菜...
-
-【信任】
-☑ 認證 / 檢驗：米其林推薦、500 盤入選
-☑ 獎項 / 媒體報導：TVBS 專訪、Forbes 評選...
-☑ 滿意度 / Google 評分：4.3 星（1,200+ 則評論）
-☑ 服務保證：訂金可 7 日前全額退
-```
-
-**絕對禁止**：
-
-- ❌ 列 raw field name 給使用者（`brand_name`、`value_proposition`、`dress_code`、`trust_satisfaction_rate`）
-- ❌ 中英文混雜（「brand_name: 饗 A Joy」、「價位 (pricing_info): ...」）
-- ❌ 在括號裡補 code name 當「給你參考」（「品牌名 (brand_name): 饗 A Joy」）——使用者不需要看 schema key
-- ❌ 「24 個欄位全部寫進去了」這種只報**數量**、不展示每個 label + value 的總結——跟 line 244-274「寫入驗證 vs Phase 1 確認關」是同類偷渡
-
-**code name 什麼時候可以出現**：
-
-- ✅ tool call 的 JSON payload（`update_session` 的 `data_json`）——backend 吃 schema key
-- ✅ debug log / error message（若 silent drop、錯誤訊息提到 key 名）
+**code name 可出現處**：tool call JSON payload、debug log / error message。其他地方一律中文 label。
 - ❌ 任何給使用者看的 prose / 清單 / 確認畫面
 
 ---
@@ -1010,51 +911,26 @@ else:
 - `image_censor_results` 空 **且** 沒 `product_images` → 必須先寫 `_quality_gate_skipped_no_images=true` flag
 - `image_censor_results` 存在但 `overall_passed=false` → 使用者要看過原文 + 明確同意、寫 `_quality_gate_override=true`、才准走
 
-### 🚫 硬性依賴鏈：為什麼 `generate_ta_options` 不能提前、更不能並行跑
+### 🚫 硬性依賴鏈：`generate_ta_options` 不能提前、不能並行
 
-**2026-04-22 觀察到的新失敗模式**：AI 啟動 `scrape_landing_page` 後、看到 scrape 跑很慢（例如饗 A Joy 官網有很多影片 + 複雜素材），為了「節省時間不空等」決定**並行呼叫 `generate_ta_options`**。AI 的原話：「scrape 還沒完成，我先不浪費時間，直接並行跑其他可以先做的事」——**這違反整條資料依賴鏈、產生的 TAs 100% 是垃圾**。
-
-**資料依賴鏈（每步都吃前一步的輸出、嚴格 sequential、不可並行）**：
+**依賴鏈**（嚴格 sequential、不可並行）：
 
 ```
-1. scrape_landing_page / analyze_brand_url
-     ↓ 產出 brand_name / product_name / industry_category / value_proposition / key_features / target_audience 等 10+ 欄位
-2. Phase 1 確認關（分批 ask-back，line 204-341）
-     ↓ 使用者逐欄位確認 / 修正 — 這一關之後這些欄位才算 canonical
-3. Phase 3 Deep Discovery
-     ↓ 手動補 scrape 抓不到的欄位（客單價、場景、特殊客群）
-4. Phase 3.5 Spokesperson（代言人風格可能影響 TA 偏好）
-     ↓
-5. Phase 3.9 Quality Gate：validate_images + digitize_product_text
-     ↓ OCR 出產品文字、image censor 過濾違規。若 overall_passed=false 可能整個品牌描述要修、TA 要重算
-6. Phase 4 Re-Confirmation Checklist
-     ↓ 使用者最後確認
-7. 才叫 generate_ta_options(brand_info=已確認版本)
+scrape_landing_page → Phase 1 確認關 → Phase 3 Deep Discovery
+  → Phase 3.5 Spokesperson → Phase 3.9 Quality Gate
+  → Phase 4 Re-Confirmation → 才叫 generate_ta_options(已確認 brand_info)
 ```
 
-**為什麼不能並行 / 不能提前**（每條都對應一個具體失敗）：
+**為什麼**：`generate_ta_options` 吃 `brand_name / product_name / description`。這些在 Phase 1 確認關之前都是 scrape 初判（可能整個爬錯）、在 Phase 3.9 之前可能因 censor 失敗被重寫。提前跑 = 吃半截資料 = TA 垃圾 = 使用者選進 Strategist 後 LP 方向全歪 → 退費。
 
-- **`generate_ta_options` 的輸入是 `brand_name / product_name / description`**——這三個欄位在 Phase 1 確認關之前全是 scrape 初判、使用者沒看過、可能整個錯（品牌名爬錯、產業分錯、主打產品挑錯）
-- **scrape 還沒跑完就 call generate_ta_options** = 傳進去的 `brand_info` 是 placeholder 或半截資料 → 算出來的 TA 跟真實品牌完全不搭 → 使用者選了進 Strategist → LP 方向全歪 → 扣全額重生 = 退費申訴
-- **scrape 跑完但 Phase 1 確認關沒跑就 TA** = line 222 / line 335 已標示為 critical failure pattern
-- **Phase 3.9 Quality Gate `overall_passed=false`** 時品牌描述可能要整個重寫——此時若 TA 已經跑了就是白跑、還會誤導使用者以為「TA 已經有了」
+**禁止的 rationalization**：
 
-**絕對禁止的 rationalization（這些都是 AI 自我說服的話、全部違規）**：
+- 「scrape 慢、並行跑 TA 不浪費時間」→ 並行 = 吃 placeholder = TA 垃圾
+- 「TA 生成免費、先跑不傷」→ 免費 ≠ 無害、錯 TA 帶進 Strategist = 扣全額 LP = 退費
+- 「先預告步驟邊等邊跑別的 API」→ 告知計畫 OK、實際 call 違規
+- 「使用者沒回應、我先備好」→ 使用者未確認 Phase 1 = TA 輸入未 canonical
 
-- ❌「scrape 很慢、我先並行跑 TA 不浪費時間」→ 並行 = 吃 placeholder = TA 垃圾。**慢不是 bypass 依賴的理由**
-- ❌「TA 生成免費、先跑一個版本不傷」→ 免費 ≠ 無害。錯的 TA 被使用者選進 Strategist、扣點生 LP 後才發現方向錯 = 退費
-- ❌「我先預告接下來會做的步驟、邊等邊跑別的 API」→ **告知計畫 OK、實際呼叫任何 TA / QG / 後續階段 API 一律違規**
-- ❌「Step 4 可以跟 Step 3 並行、反正都要做」→ Step 4 吃 Step 3 的輸出、依賴嚴格單向
-- ❌「使用者沒回應、我先把 TA 備好」→ 使用者還沒確認 Phase 1 欄位 = TA 的輸入還沒 canonical
-
-**scrape 跑的時候正確的等待行為**：
-
-- ✅ 告訴使用者「scrape 在跑，完成後我會展示抓到的 10+ 欄位給你逐項確認」
-- ✅ 若使用者問進度、回「還在跑、我在等」
-- ❌ **不要**在同一個回覆裡 fire 第二個 API call（不管是 TA、QG、還是任何 generate_*）
-- ❌ **不要**用「我先並行」「我先跑」「不浪費時間」當理由偷跑 tool call——tool call 只發 `scrape_landing_page`、結果回來前不發第二個
-
-**一句話總結**：wizard 是 sequential pipeline、不是 DAG。看起來「獨立」的步驟實際都吃前面的輸出。任何「我先並行 X」的念頭 = 立刻停、回去等前一步完成 + 使用者確認。
+**scrape 跑時的行為**：告訴使用者「scrape 在跑、完成後展示欄位逐項確認」、**同回覆禁止 fire 第二個 API call**。Wizard 是 sequential pipeline、不是 DAG。
 
 ---
 

@@ -431,54 +431,30 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 })
 ```
 
-#### 🔴 Step 5a 推斷紀律（2026-04-22 新 SOP）— 沒 signal 就不准 infer、必須問
+#### 🔴 Step 5a 推斷紀律 — 沒 signal 不准 infer
 
-**「我幫你配」不是免費通行證**。Step 5a 推斷表（上方 line 377-385）列的每個推斷 signal 都是**條件式**——**條件沒滿足、該欄位就不准 infer、必須在 Step 5b 問**。
+「我幫你配」不是免費通行證。Step 5a 推斷表（line 377-385）的每個 signal 都是**條件式**——條件沒滿足 → 推到 Step 5b 問、禁止 silent 填。
 
-**2026-04-22 真實失敗**（饗 A Joy 餐廳 LP 的 Cost 複誦）：
+**規則**：
 
-> 📐 長寬比：**16:9 橫版**（我幫你配）
-> 🎯 CTA：「**訂位相遇**」→ `https://www.feastogether.com.tw/booking/Ajoy`（我幫你配）
-> ❓ Q&A 區塊：**加**（我幫你配）
-> ⭐ 客戶見證：**不加**（我幫你配）
+- 合法 infer：推斷值必須引用具體 signal source（scrape 欄位 / 使用者講過的句子 / 產業預設）、Cost 複誦必附來源「**9:16 直版**（你提過 IG 限時）」
+- 非法 infer：signal 不存在就填 = 違規（例：餐廳產業 = 16:9 是假 signal、沒這種產業預設）
+- 混列合規與違規：批裡只要 1 項沒 signal、整批退回 Step 5b 問
+- 自創不在表裡的欄位：`cta_text` / `tagline` / `tone` 等一律問使用者、禁止 AI 編文案值
+- `include_qa_section` / `include_testimonials` 是 phantom fields（backend 0 hits）、禁止寫入、Q&A / 見證 post-gen 走 edit-landing
 
-**這 4 項全部違規**：
+**自檢**：每個「（我幫你配）」若被使用者問「為什麼是這值？」能指到 session 欄位 / 對話某句 / 產業預設嗎？指不到 = 腦補、重寫。
 
-1. **`aspect_ratio=16:9`**：整段對話裡使用者**沒提過** IG / 桌機 / Google Ads / 官網 hero 任何 channel signal。Step 5a 表格的規則是「沒提 → 預設兩邊或問」，不是「AI 自己腦補一個」
-2. **`cta_url=feastogether.com.tw`**：這個網址是 AI 自己從 scrape 結果挖出來的訂位頁、**使用者從來沒確認過這就是他要的 CTA 目的地**。Step 5a 的規則是「brand-onboard 抓的 CTA / 官網 URL」要先讓使用者確認、不是 AI 自動拉
-3. **`cta_text=訂位相遇`**：**這個欄位根本不在 Step 5a 推斷表裡**（表裡只有 cta_url）、沒有任何推斷依據——AI 憑感覺寫一個創意文案當 CTA 按鈕文字、使用者從沒見過
-4. **`include_qa_section=true` / `include_testimonials=false`**：**2026-04-22 update — 這兩個欄位根本是 phantom fields**。Backend（marketing_backend）的 Strategist / Architect / Factory pipeline **完全沒消費**這兩個 key（grep 0 hits）、寫進 `wizard_shared_data` = silent JSONB drop。Q&A section 和 testimonial blocks 全屬 **post-gen** via edit-landing（`update_faq_content` + testimonial edit flow）。Step 5 **禁止問這兩題**、直接移除、不列 needs、不列 Cost 複誦
+#### 🔴 語言（language）紀律
 
-**強制規則**：
+**語言 signal 特別弱**：「使用者跟我用繁中 + brand 是台灣」不夠 silent-infer（台灣品牌可做英文版打海外、多 TA 最常見分流就是 zh-TW vs en、同語言配兩組 = 抹掉分流意義）。
 
-- ✅ **合法 infer**：推斷值必須引用**具體 signal source**（scrape 回傳欄位 / 使用者講過的句子 / 產業類別 default）。Cost 複誦必須**每項附理由**（見 Step 5c 範例 line 444-449「因為你提過 IG 限時動態」這種格式）
-- ❌ **非法 infer**：signal 不存在就推斷 = 違規。aspect_ratio 沒 channel signal、cta_url 沒使用者確認、cta_text 不在推斷表、language 沒 TA/對話 signal、primary_color 沒 scrape 到、font_style 沒 industry default——**這些情況一律推到 Step 5b 問、禁止「我幫你配」**
-- ❌ **混列合規與違規**：所有「（我幫你配）」項目如果只有一項沒 signal、整批退回 Step 5b 問使用者。不可以「4 項裡有 3 項合規、就一起帶過」
-- ❌ **自創欄位不在表裡**：`cta_text`、`tagline`、`tone` 等不在 Step 5a 推斷表的欄位、**一律問使用者**、禁止 AI 編文案值
-- ✅ **Cost 複誦必附 signal source**：每個「（我幫你配）」項目後面必須用括號或 dash 列來源，格式：「**9:16 直版**（你提過 IG 限時）」、「**墨綠 #2fa067**（官網抓到的品牌主色）」——沒 source 或 source 虛構 = 違規
+**規則**：
 
-**判斷你有沒有在腦補**：
-
-- 你寫的每個「（我幫你配）」項目、如果被使用者問「為什麼是這個值？」——你能指到**具體 signal**（session 某個欄位 / 對話某句話 / 產業預設）？指不到 = 腦補、回 Step 5b 問
-- 那個 signal 真的存在嗎？還是你在腦補一個「應該」的 signal？（餐廳 = 要 16:9 橫版、這是假 signal、沒有這種產業預設）
-- cta_text / tagline 類創意文案欄位如果不在 Step 5a 表裡、你在寫什麼？**立刻停、問使用者**
-
-#### 🔴 語言（language）紀律（2026-04-22 強化）
-
-**語言欄位的推斷 signal 特別弱**——「使用者跟我用繁中對話」+「brand 是台灣品牌」並不構成足以 silent-infer 的依據、因為：
-
-1. 台灣品牌可能故意做英文版打海外（例如饗 A Joy TA2「深度文化饕客」可能是國際饕客）
-2. 使用者可能自己英文不好、但 TA 目標是 english market
-3. 多 TA 時最常見的 A/B 分流就是 zh-TW vs en——靜默配同語言 = 抹掉 A/B 測試差異
-
-**強制規則**：
-
-- ✅ **單 TA**：若對話明確提過語言目標（例「要英文版」）→ 推、但 Cost 複誦必附 signal「**語言：en**（你前面提過要英文版）」；**未提過 → 明確問**「這組 LP 你要做哪個語言？繁中 / 英文 / 日文 / ...（9 locale 清單）」
-- ✅ **多 TA（num_tas ≥ 2）**：**一律逐組明確問**、禁止 silent 同語言配兩組——「你兩組受眾分別要哪個語言？TA1 [name] 要繁中還是英文？TA2 [name] 呢？」
-- ❌ **禁止**把多組 TA 的 `language` 欄位直接填同一個值（例 TA1=zh-TW、TA2=zh-TW）當「（我幫你配）」——這是抹掉使用者分 TA 的意義、使用者通常分 TA 就是為了 locale 分流、同語言 = 浪費一組
-- ❌ **禁止**只靠「brand 官網是繁中」當 signal 推 zh-TW——brand 官網語言 ≠ 目標市場語言
-
-**2026-04-22 真實失敗**：饗 A Joy 案例、AI 在 Step 5 的 TA 專屬表直接寫「語言 | 繁體中文 | 繁體中文」、**沒問使用者**、也沒附 signal。使用者回饋「他沒有主動問我語言」——這就是違規。正確做法：先問「TA2 The Discerning Gourmand 這組看起來有國際客群的調性、你要這組做英文版還是繁中版？」
+- **單 TA**：對話明確提過目標語言 → 可推、Cost 複誦必附 signal。未提 → 明確問「要做哪個語言？（9 locale 清單）」
+- **多 TA（≥2）**：**一律逐組明確問**、禁止 silent 配同語言
+- 禁止把多組 `language` 填同一值當「（我幫你配）」
+- 禁止以「brand 官網語言」當 signal 推 language（官網語言 ≠ 目標市場語言）
 
 #### Step 5b — 只問剩下真的推不出來的
 
@@ -948,29 +924,13 @@ LP 生成要 ~30 分鐘。這段時間**不可以只是 polling**——要把 wa
 2. **補問 gate 裡被延後的決策**（例如 CTA 連結使用者選「先不填」的話、趁現在問；若無延後決策則跳過）
 3. **視需要繼續免費諮詢**剛才沒講完的部分（engage-operator / conversion-closer / Sprint 規劃）——**這是 optional、不可當 Beat 1 的替代品**
 
-### 🚫 2026-04-22 真實失敗：Beat 1 被跳過、直接推銷其他 skill
+### 🚫 Beat 1 禁止被省略或被其他 skill 菜單取代
 
-AI 在觸發生成後的第一則訊息**完全沒有**給 Beat 1 的編輯能力預教育、跳到推 engage-operator / conversion-closer / Sprint 行銷規劃 三個 skill 讓使用者挑——這違反本節規則。
+`generate_session` 成功後的**下一則訊息**必須 fire Beat 1 完整 template（下方 line 987+）、列齊 **文字 / 換圖 / logo / CTA 顏色與文字 / Footer / Header / 柔邊 / overlay / SEO / 裁切 / 歷史版本** 所有免費 post-gen 能力。不列 = 使用者誤以為 LP 不可改、plugin 最大的價值沒傳達。
 
-**失敗模式**：
+**禁止**：把 engage-operator / conversion-closer / Sprint 行銷規劃的推銷菜單當 Beat 1 的替代品——這些是 LP **之後**的事、Beat 1 要講的是 LP **當下**可以做什麼。前者只能作為 Beat 1 後的 optional 補充。
 
-> 趁這 30-45 分鐘的時間，我建議我們做這幾件免費的事——讓 LP 一上線就有完整作戰系統：
->
-> | 動作 | 為什麼有用 | 時間 |
-> |---|---|---|
-> | 互動腳本（engage-operator） | ... | ~10 分鐘 |
-> | 成交腳本（conversion-closer） | ... | ~10 分鐘 |
-> | Sprint 行銷規劃 | ... | ~15 分鐘 |
-
-**為什麼違規（三條）**：
-
-1. **跳過主菜、直接上配菜**：使用者不知道 LP 生完可以**免費**改 CTA 顏色、換 logo、加柔邊、跑 SEO——這些是 plugin 最大的價值、也是使用者最常問的「我可以改嗎？」的答案、**必須在 Beat 1 主動講**、不是等使用者問
-2. **推銷心智模型錯位**：engage-operator / conversion-closer / Sprint 規劃都是**LP 之後的事**、使用者現在最需要的是「LP 生完**當下**可以做什麼」——列 edit-landing 能力清單比列其他 skill 菜單貼題
-3. **使用者會誤以為 LP 是不可改的**：跳過編輯能力預教育 = 使用者收到 LP 時以為就是這樣不能改、實際上這些都是 free post-gen（只有重生圖 100 pts/張例外）
-
-**正確做法**：`generate_session` 回成功的**下一則訊息**、fire Beat 1 完整 template（下方 line 987+）、列齊**文字 / 換圖 / logo / CTA 顏色文字 / Footer / Header / 柔邊 / overlay / SEO / 裁切 / 歷史版本**所有免費 post-gen 能力、**然後才能**選擇性附上「也可以邊等邊做 engage-operator / conversion-closer / Sprint」當 optional 補充。
-
-**判斷你有沒有偷渡**：你觸發生成後的第一則訊息、**有沒有**列出 edit-landing 的具體編輯動作（改 CTA 顏色 / 換 logo / 加柔邊 / 跑 SEO 這種動詞 + 具體 target）？沒有 = 違規、重寫。
+**自檢**：觸發生成後的第一則訊息有沒有列出 edit-landing 的具體編輯動作（改 CTA 顏色 / 換 logo / 加柔邊 / 跑 SEO 這種動詞 + 具體 target）？沒有 = 違規重寫。
 
 ### Polling cadence
 
