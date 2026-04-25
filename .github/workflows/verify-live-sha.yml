@@ -1,0 +1,163 @@
+name: Verify live salecraft.ai SHA matches plugin master
+
+# Synthetic check: even if every other guardrail (push trigger, GCP IAM,
+# Cloud Run traffic routing, marketingx-site cloudbuild.yaml) is healthy,
+# the only thing that *actually* matters for end users is whether
+# salecraft.ai serves the latest plugin SHA in its install URL. This
+# workflow asks that question directly, every hour.
+#
+# Failure modes this catches that the rebuild workflow can't:
+#   - Cloud Build succeeded but Cloud Run traffic stayed pinned to old revision
+#   - marketingx-site rebuilt but cloudbuild.yaml fell back to literal "master"
+#     (e.g. git ls-remote failed for some reason)
+#   - Some manual intervention rolled back to an earlier revision
+#   - DNS / Cloudflare / Cloud Run misrouting
+
+on:
+  schedule:
+    - cron: '17 * * * *'   # hourly at :17 (avoid GitHub cron stampede on the hour)
+  workflow_dispatch: {}
+  workflow_run:
+    workflows: ["Rebuild marketingx-site on plugin push"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Compare live SHA against plugin master HEAD
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # If triggered by workflow_run (post-rebuild), give Cloud Build
+          # ~6 min to finish before checking. Skip the wait for cron / manual.
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "Triggered by rebuild workflow — waiting 6 min for Cloud Build to complete..."
+            sleep 360
+          fi
+
+          EXPECTED=$(gh api repos/${{ github.repository }}/commits/master --jq .sha)
+          LIVE=$(curl -sL "https://salecraft.ai/zh-TW" | grep -oE 'connactai/Salecraft-Plugin/[a-f0-9]+/CLAUDE\.md' | head -1 | sed -E 's|.*/([a-f0-9]+)/.*|\1|')
+
+          echo "Expected (plugin master): $EXPECTED"
+          echo "Live (salecraft.ai):     $LIVE"
+          echo "expected=$EXPECTED" >> $GITHUB_OUTPUT
+          echo "live=$LIVE" >> $GITHUB_OUTPUT
+
+          # Empty live = either page changed structure or salecraft.ai down
+          if [ -z "$LIVE" ]; then
+            echo "::error::Couldn't extract SHA from salecraft.ai/zh-TW HTML — page structure changed or site down"
+            echo "status=missing" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          if [ "$EXPECTED" = "$LIVE" ]; then
+            echo "::notice::✅ Live SHA matches plugin master ($EXPECTED)"
+            echo "status=ok" >> $GITHUB_OUTPUT
+            echo "## ✅ SHA in sync" >> $GITHUB_STEP_SUMMARY
+            echo "Both at \`${EXPECTED:0:8}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            # How many commits behind?
+            BEHIND=$(gh api "repos/${{ github.repository }}/compare/${LIVE}...${EXPECTED}" --jq '.ahead_by' 2>/dev/null || echo "?")
+            echo "::error::Live SHA $LIVE is behind plugin master $EXPECTED by $BEHIND commits"
+            echo "status=drift" >> $GITHUB_OUTPUT
+            echo "behind=$BEHIND" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Open / bump tracking issue on drift
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const expected = '${{ steps.check.outputs.expected }}';
+            const live = '${{ steps.check.outputs.live }}';
+            const behind = '${{ steps.check.outputs.behind }}';
+            const status = '${{ steps.check.outputs.status }}';
+
+            const title = '[ci] salecraft.ai live SHA drifted from plugin master';
+            const body = [
+              `Live install URL on salecraft.ai is **out of sync** with plugin \`master\`.`,
+              ``,
+              `| | SHA |`,
+              `|---|---|`,
+              `| **Plugin master HEAD (expected)** | \`${expected}\` |`,
+              `| **salecraft.ai (live)** | \`${live || '(missing — page parse failed)'}\` |`,
+              `| **Commits behind** | ${behind || 'unknown'} |`,
+              `| **Detection** | ${status} |`,
+              ``,
+              `**End-user impact:** LLM web_fetch calls to the install URL are reading a stale CLAUDE.md.`,
+              ``,
+              `**Diagnosis:**`,
+              `1. Check rebuild workflow: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/workflows/rebuild-marketingx-site.yml`,
+              `2. Check Cloud Build history: https://console.cloud.google.com/cloud-build/builds;region=asia-east1?project=gen-lang-client-0747655769`,
+              `3. Check Cloud Run traffic split is \`latestRevision: true\`:`,
+              `   \`\`\`bash`,
+              `   gcloud run services describe marketingx-site --region=asia-east1 \\`,
+              `     --project=gen-lang-client-0747655769 --format='yaml(spec.traffic)'`,
+              `   \`\`\``,
+              ``,
+              `**Manual force-rebuild:**`,
+              `\`\`\`bash`,
+              `gcloud builds triggers run marketingx-site-on-plugin-push \\`,
+              `  --region=asia-east1 --project=gen-lang-client-0747655769 --branch=master`,
+              `\`\`\``,
+              ``,
+              `Auto-closed when next sync check succeeds.`,
+            ].join('\n');
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'sha-drift',
+              state: 'open',
+            });
+
+            if (issues.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body: `Drift still present at ${new Date().toISOString()}: live=\`${live}\`, expected=\`${expected}\`, behind=${behind}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['sha-drift'],
+              });
+            }
+
+      - name: Auto-close drift issue if check succeeds
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'sha-drift',
+              state: 'open',
+            });
+            for (const issue of issues) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ Drift resolved — live SHA now matches plugin master.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+              });
+            }
