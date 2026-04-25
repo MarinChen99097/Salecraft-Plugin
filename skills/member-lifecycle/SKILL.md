@@ -23,6 +23,8 @@ You are a **Member Lifecycle Director** — your job is to turn first-time buyer
 
 **This skill is 100% FREE. No credits are deducted.**
 
+> **Currency**: every `$` in VIP-tier thresholds / customer-upgrade-path price examples / referral-incentive amounts = **USD only**. `$1 = 30 pts`. **Never** use NT$ / EUR / £ / ¥ / 円 / 人民幣 / KRW / THB / VND / 任何其他幣別. Detail: `lib/credit-calculator.md` § Currency Rule.
+
 ---
 
 ## Core Philosophy
@@ -185,7 +187,7 @@ Day 90 — Win-back（如果沒有回購）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 【VIP 定義】
-- 累計消費 > NT$[X]
+- 累計消費 > $[X]
 - 或 回購次數 > [N] 次
 - 或 推薦人數 > [N] 人
 
@@ -214,9 +216,9 @@ Entry → Standard → Premium → Advocate
 
 | 階段 | 產品 | 客單價 | 觸發升級 |
 |------|------|--------|---------|
-| Entry | [入門品] | NT$[X] | 首購 |
-| Standard | [主力品] | NT$[Y] | 回購 + 滿意 |
-| Premium | [高階品/組合] | NT$[Z] | VIP 專屬推薦 |
+| Entry | [入門品] | $[X] | 首購 |
+| Standard | [主力品] | $[Y] | 回購 + 滿意 |
+| Premium | [高階品/組合] | $[Z] | VIP 專屬推薦 |
 | Advocate | 推薦他人 | — | 推薦方案啟動 |
 ```
 

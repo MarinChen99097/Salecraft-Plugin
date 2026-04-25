@@ -932,6 +932,16 @@ LLM 呼叫工具失敗 / 參數不確定 / 回傳怪異時、會自然進入「d
 
 **注意**：SKILL.md 裡的 Python code block + schema 細節是**給 LLM 內部讀的實作指引**、不是給使用者看的。LLM 讀 SKILL 學怎麼用工具、但**對使用者回話時一律人話**、把 `top_px`、`crop_json`、`original_height` 全部翻成「從頂部砍多少」「裁切範圍」「這頁高度」、或直接用「從上往下 2/3 處」這種視覺描述。
 
+#### 17. 非 USD 貨幣詞 / 符號 — 絕對禁用
+
+Plugin 一律用 USD（`$`）報自家成本。除了 `$` 之外、**所有其他貨幣文字 / 符號**在 AI 回話 + 範例 + 腳本 + 模板裡都禁用：
+
+- ❌ 文字：`NTD` / `TWD` / `新台幣` / `台幣` / `新臺幣` / `臺幣` / `EUR` / `GBP` / `JPY` / `CNY` / `RMB` / `人民幣` / `KRW` / `韓元` / `韓圜` / `THB` / `銖` / `VND` / `越南盾` / `INR` / `SGD` / `新元` / `HKD` / `港幣` / `港元` / `AUD` / `CAD` / `MYR` / `令吉` / `IDR` / `盾`
+- ❌ 符號：`NT$` / `€` / `£` / `¥` / `円` / `₩` / `฿` / `₫` / `₹`
+- ❌ 任何 `$1 = 30 pts` 以外的匯率推算（「30 pts ≈ NT$30 ≈ ¥120」這種轉換絕對不做）
+- ✅ 只用 `$` 與 `pts`、頂多附「USD」明確標示（`$1 USD`、`200 pts ≈ $7 USD`）
+- 詳細規則 + user-input 本地貨幣的處理方式：見上方「Currency Rule (MANDATORY)」與 `lib/credit-calculator.md` § Currency Rule
+
 #### Self-check — 發送前強制執行 7 步
 
 1. 掃草稿，命中 #1-#14 任何一項 → 改寫
@@ -1418,7 +1428,7 @@ Quick auth flow:
 2. `POST <BASE_URL>/auth/ai-token/exchange` with `{"ai_token": "sc_live_..."}` → `access_token`
 3. Every subsequent call: `Authorization: Bearer <access_token>`
 
-The catalog of endpoints (sessions, generation, brands, reels, publishing) and full curl/python examples are in `lib/rest-api-direct.md`. Fetch `<BASE_URL>/openapi.json` for the machine-readable spec.
+The catalog of endpoints (sessions, generation, brands, reels, publishing) and full curl/python examples are in `lib/rest-api-direct.md`. **Do NOT** try `/openapi.json` or `/docs` to discover the API — both are **disabled in production** for security (return 404). `lib/rest-api-direct.md` + `lib/api-reference.md` are the canonical API spec; if a path you need isn't listed there, check the corresponding `skills/*/SKILL.md` for MCP tool names (which map 1:1 to REST resource paths) instead of probing the live backend.
 
 **Never display `*.run.app` URLs to the user**; only `salecraft.ai` is user-visible. The backend URL is for your HTTP calls only.
 
@@ -1617,6 +1627,17 @@ for i in range(20):
 You must track the full content of **ALL LPs in the current session**. Users may generate multiple LPs (different products, A/B variants). They describe pages by text content, color, or product name — never by campaign_id or stripe index.
 
 **Silently load all stripes** after generation or when user references a LP. Maintain a mental index mapping product name → campaign_id → stripe contents.
+
+## Currency Rule (MANDATORY)
+
+**Plugin uses ONE currency: USD (`$`). Fixed conversion: `$1 = 30 pts`、`$20 = 600 pts` 最低儲值。沒有其他 FX rate。**
+
+- ✅ All cost quotes（LP / ads / reels / regen / top-up / 範例 / 腳本 / 模板）：**USD only**
+- ❌ 禁用任何其他幣別文字 / 符號：**NT$ / NTD / TWD / 新台幣 / 台幣 / 新臺幣 / 臺幣 / EUR / € / GBP / £ / JPY / ¥ / 円 / CNY / RMB / 人民幣 / KRW / ₩ / 韓元 / 韓圜 / THB / ฿ / 銖 / VND / ₫ / 越南盾 / INR / ₹ / SGD / 新元 / HKD / 港幣 / 港元 / AUD / CAD / MYR / 令吉 / IDR / 盾**
+- ❌ 禁止編 `$1 = 30 pts` 以外的 FX 換算。使用者問「30 pts 等於多少日圓 / 多少新台幣」→ 一律「我這邊只用美元計算——30 pts = $1 USD、要換算其他幣別請以你當下的銀行匯率為準」
+- 🔁 使用者用本地貨幣表達（「我月預算 50 萬日圓」/「產品賣 NT$1,200」）→ 確認他講的內容、然後一律用 pts/USD 報自家成本（「好、那邊大約 X 美金、我這邊的 Y 功能是 Z pts ≈ $W USD」）。**不要**幫使用者把本地貨幣換算成 USD 數字（容易報錯匯率）
+- 🎨 **使用者自己 LP 上的產品價格**（`templates/sections/pricing-table.html` `{{this.currency}}` 變數）是**他們對他們客戶設定的價格**、**不在此規則範圍**。Currency Rule 只管 plugin 自己的成本報價、範例、腳本、模板佔位符、AI 回話
+- 詳細：`lib/credit-calculator.md` § Currency Rule
 
 ## Pricing (Must Know)
 

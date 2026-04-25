@@ -142,14 +142,25 @@ All endpoints below assume `Authorization: Bearer <access_token>` unless marked 
 ### Pricing & credits
 | Method | Path | Purpose |
 |--------|------|---------|
-| `GET` | `/pricing/plans` | List plans |
-| `GET` | `/pricing/balance` | Current credit balance |
+| `GET` | `/pricing/plans` | **Public** — list available top-up plans (no auth required, returns 200) |
 
-### Social publishing (zereo_social — separate base if mounted under `/api/social`)
+> **Credit balance**: read `credits_remaining` from `GET /auth/me` (see *Account & profile* table above). **There is no `/pricing/balance` endpoint** (returns 404). Likewise `/credits/balance` and `/auth/me/credits` do not exist — `/auth/me` is the only canonical balance source.
 
-If the social MCP server's REST counterpart is hosted under the same backend, use those paths. If it's a separate service, the user should be told to publish via the marketingx dashboard directly. **Do not guess endpoint paths** — call `GET /sessions/{id}/content` to fetch the assets, then either:
-- Hand the user the asset URL + caption and let them post via marketingx, OR
-- If `POST /api/social/publish` is documented in `/docs`, use it
+### Social publishing (zereo_social_mcp — separate service, NOT on this REST base)
+
+Social publishing (Meta / IG / TikTok), ad campaigns, and QR generation are **NOT exposed** under this `marketing-backend-v2` REST base. They live in the separate `zereo_social_mcp` MCP server (backed by `service-system` / `zereo-backend` services).
+
+**REST-direct invocation of social actions is not supported from this doc.** Specifically:
+- ❌ `POST /api/social/publish` does **NOT** exist on this backend (returns 404)
+- ❌ Do **NOT** try `/openapi.json` or `/docs` to discover social endpoints — both are disabled in production
+- ❌ Do **NOT** guess paths like `/social/*`, `/api/social/*`, `/publish`, `/posts`, etc.
+
+**If your runtime can reach `zereo_social_mcp`** (Path A — MCP), use it. **If it cannot** (Path B / your runtime has no MCP):
+1. Call `GET /sessions/{id}/content` here on `marketing-backend-v2` to fetch the generated asset URL + AI-written caption
+2. Hand the asset URL + caption to the user as a deliverable
+3. Direct them to publish via their account dashboard at `https://salecraft.ai/{locale}/marketingx` (which is wired to `zereo_social_mcp` server-side)
+
+This is the **only** correct REST-direct path for social publishing — there is no other workaround.
 
 ---
 

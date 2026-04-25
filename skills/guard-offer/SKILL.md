@@ -23,6 +23,8 @@ You are an **Offer Guard** — you ensure product claims, pricing, comparisons, 
 
 **This skill is 100% FREE. No credits are deducted.**
 
+> **Currency**: every `$` in price-consistency check tables / locked-claim entries / cross-touchpoint comparison = **USD only**. `$1 = 30 pts`. **Never** use NT$ / EUR / £ / ¥ / 円 / 人民幣 / KRW / THB / VND / 任何其他幣別. **Customer's actual product LP can use any currency** (handled by `templates/sections/pricing-table.html` `{{this.currency}}`) — but the audit / consistency-check tables Guard-Offer produces must use USD throughout. Detail: `lib/credit-calculator.md` § Currency Rule.
+
 ---
 
 ## When to Use
@@ -60,11 +62,11 @@ Gather claims from every touchpoint:
 
 | 觸點 | 承諾/宣稱 | 價格 | 優惠 | 出處 |
 |------|---------|------|------|------|
-| LP 首屏 | "[主張]" | NT$[X] | [優惠] | [URL] |
+| LP 首屏 | "[主張]" | $[X] | [優惠] | [URL] |
 | LP FAQ | "[回答]" | — | — | [URL] |
-| IG 貼文 | "[文案]" | NT$[Y] | [優惠] | [連結] |
-| 廣告 | "[標題]" | NT$[Z] | [優惠] | [平台] |
-| Line 自動回覆 | "[內容]" | NT$[W] | [優惠] | — |
+| IG 貼文 | "[文案]" | $[Y] | [優惠] | [連結] |
+| 廣告 | "[標題]" | $[Z] | [優惠] | [平台] |
+| Line 自動回覆 | "[內容]" | $[W] | [優惠] | — |
 | 話術庫 | "[話術]" | — | — | [文件] |
 ```
 
@@ -79,7 +81,7 @@ Gather claims from every touchpoint:
 
 | 位置 A | 位置 B | 衝突描述 | 嚴重度 |
 |--------|--------|---------|--------|
-| LP: "NT$999" | Ad: "NT$899" | 價格不一致 | 🔴 Critical |
+| LP: "$33" | Ad: "$30" | 價格不一致 | 🔴 Critical |
 | LP: "限時3天" | 已跑超過1週 | 虛假限時 | 🔴 Critical |
 | LP: "100%有機" | 實際: 95%有機 | 過度宣稱 | ⚠️ High |
 | 話術: "免運" | LP: "滿$500免運" | 條件不一致 | ⚠️ Medium |
@@ -94,7 +96,7 @@ Gather claims from every touchpoint:
 
 | 承諾 | 正確版本 | 不可改為 |
 |------|---------|---------|
-| 產品價格 | NT$[X] | 不可在不同地方寫不同價格 |
+| 產品價格 | $[X] | 不可在不同地方寫不同價格 |
 | 核心效益 | "[精確描述]" | 不可誇大或縮減 |
 | 優惠條件 | "[精確條件]" | 不可省略條件 |
 | 退換政策 | "[精確政策]" | 不可各寫各的 |

@@ -24,6 +24,8 @@ You are a **Conversion Design Director** — your job is to shorten the distance
 
 **This skill is 100% FREE. No credits are deducted.**
 
+> **Currency**: every `$` in this skill's pricing scripts / objection-handling templates / examples = **USD only**. `$1 = 30 pts`. **Never** use NT$ / EUR / £ / ¥ / 円 / 人民幣 / KRW / THB / VND / 任何其他幣別. If the user gives their product price in a local currency, acknowledge their wording but **never auto-convert** with a fabricated FX rate. Detail: `lib/credit-calculator.md` § Currency Rule.
+
 ---
 
 ## Core Philosophy
@@ -105,7 +107,7 @@ For each common objection, use the **AECR Framework**:
 異議 1:「太貴了」
   A: 「完全理解，投資在 [類別] 確實要考慮清楚。」
   E: 「你目前有在用其他 [產品] 嗎？大概花多少？」
-  C: 「其實算下來，[產品] 每天只要 NT$[X]，而且 [具體效益]。
+  C: 「其實算下來，[產品] 每天只要 $[X]，而且 [具體效益]。
       我們的客戶 [名字] 說用了之後 [成果]。」
   R: 「要不要先試試 [入門方案/試用]？這樣你可以先感受效果。」
 
@@ -148,16 +150,16 @@ For each common objection, use the **AECR Framework**:
 3. 用比較鋪墊 → 「一般 [類別] 市場價 [X]，我們...」
 
 【報價策略】
-A) 日均成本法：「每天只要 NT$[X]，比一杯咖啡還少。」
+A) 日均成本法：「每天只要 $[X]，比一杯咖啡還少。」
 B) ROI 計算法：「用了之後預計省下 [X]，等於 [月數] 就回本。」
 C) 對比鋪墊法：「在 [競品/替代方案] 要花 [X]，我們只要 [Y]。」
-D) 分期法：「分 3 期，每期只要 NT$[X]。」
+D) 分期法：「分 3 期，每期只要 $[X]。」
 E) 試用降門檻：「先試 [金額]，滿意再買正式版。」
 
 【報價格式】
-不要：「我們的產品 NT$1,200。」（冷冰冰）
+不要：「我們的產品 $40。」（冷冰冰）
 要：「[品牌名] [產品] 包含 [A+B+C]，市場上類似的要 [高價]，
-    我們只要 NT$1,200。而且現在 [優惠]。」
+    我們只要 $40。而且現在 [優惠]。」
 ```
 
 ### 3C. Social Proof Structure（社會證明結構）

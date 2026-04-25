@@ -379,6 +379,7 @@ Based on answers, recommend the appropriate **SaleCraft Toolbox**:
 - **1 USD = 30 pts**
 - **最低儲值**: $20 USD = 600 pts
 - **儲值方式**: Stripe 信用卡（在 `https://salecraft.ai/{locale}/marketingx` 頁面）
+- **Currency**: USD (`$`) only — never NT$ / EUR / £ / ¥ / 円 / 人民幣 / KRW / THB / VND / 任何其他幣別（see `lib/credit-calculator.md` § Currency Rule）
 
 **常見組合包價格估算**：
 | 組合 | 內容 | 預估 pts | 約 USD |

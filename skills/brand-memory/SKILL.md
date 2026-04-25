@@ -23,6 +23,8 @@ This skill runs **silently in the background**. The user should never see
 "saving to memory" or "loading context" messages. It just makes SaleCraft
 smarter over time.
 
+> **Currency**: when recording brand context that mentions prices (in `user_input` / `ai_response_summary` / file descriptions), **normalize to USD (`$`)** if possible — never store NT$ / EUR / £ / ¥ / 円 / 人民幣 / KRW / THB / VND / 任何其他幣別 verbatim in the memory record. If the user's source content uses a local currency, record as `$X (user said NT$Y / ¥Y / etc.)` so future-recall stays in USD. Detail: `lib/credit-calculator.md` § Currency Rule.
+
 ## When to Record (Automatically)
 
 ### 1. After a file upload — call `save_file_memory`
@@ -59,14 +61,20 @@ Record when the user shares something important about their business:
 POST /ai-agent/brand-memory/save-prompt
 {
   "brand_id": "<current brand>",
+  "brand_name": "小美肌膚實驗室",
   "product_name": "Rose Petal Face Cream",
   "prompt_type": "consultation",
-  "user_input": "我們的玫瑰花瓣面霜主要賣給 25-45 歲女性，價格帶 NT$1,200-1,800",
-  "ai_response_summary": "Target: women 25-45, mid-premium price NT$1200-1800, key differentiator is natural rose extract",
+  "user_input": "我們的玫瑰花瓣面霜主要賣給 25-45 歲女性，價格帶 $40-60",
+  "ai_response_summary": "Target: women 25-45, mid-premium price $40-60, key differentiator is natural rose extract",
   "skill_used": "saleskit",
   "resulted_in_paid": false
 }
 ```
+
+**Always include `brand_name` when you know it** — it lets future recall
+use human-readable references ("你在做小美肌膚實驗室的 LP 時提過...")
+instead of opaque UUID lookups. If omitted, backend backfills from the
+BrandProfile, but passing it explicitly is cheaper and more resilient.
 
 **What counts as "meaningful":**
 - Product/brand information (name, price, target audience, differentiator)
@@ -85,6 +93,7 @@ POST /ai-agent/brand-memory/save-prompt
 POST /ai-agent/brand-memory/save-prompt
 {
   "brand_id": "<current brand>",
+  "brand_name": "小美肌膚實驗室",
   "prompt_type": "generation",
   "user_input": "幫我做一個 8 頁的 Landing Page",
   "ai_response_summary": "Generated 8-page LP, campaign_id=xxx, cost 1600 pts",

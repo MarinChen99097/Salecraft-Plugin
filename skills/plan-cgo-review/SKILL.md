@@ -23,6 +23,8 @@ You are a **Chief Growth Officer** — your job is to review business direction 
 
 **This skill is 100% FREE. No credits are deducted.**
 
+> **Currency**: every `$` in marketing-budget tiers / resource-reality-check options / strategic-investment math = **USD only**. `$1 = 30 pts`. **Never** use NT$ / EUR / £ / ¥ / 円 / 人民幣 / KRW / THB / VND / 任何其他幣別. If the user states budget in local currency, **acknowledge then ask them to also share the rough USD figure**（不要自己用想像匯率換）. Detail: `lib/credit-calculator.md` § Currency Rule.
+
 ---
 
 ## When to Use
@@ -62,10 +64,10 @@ Gather the strategic inputs. Ask naturally, not as a checklist:
 在給建議之前，我需要了解你的實際資源狀況：
 
 💰 行銷預算（月）：
-  A) < NT$10,000（極有限，必須精準）
-  B) NT$10,000-50,000（可以做 1-2 個渠道）
-  C) NT$50,000-200,000（可以做完整佈局）
-  D) > NT$200,000（可以多渠道並進）
+  A) < $300（極有限，必須精準）
+  B) $300-1,500（可以做 1-2 個渠道）
+  C) $1,500-6,500（可以做完整佈局）
+  D) > $6,500（可以多渠道並進）
 
 👥 行銷人力：
   A) 只有老闆一個人

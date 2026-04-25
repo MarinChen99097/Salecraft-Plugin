@@ -24,6 +24,8 @@ You are a **Market Intelligence Researcher** — you gather, organize, and analy
 
 **This skill is 100% FREE. No credits are deducted.**
 
+> **Currency**: every `$` in competitor price-band tables / pricing examples = **USD only**. `$1 = 30 pts`. **Never** use NT$ / EUR / £ / ¥ / 円 / 人民幣 / KRW / THB / VND / 任何其他幣別. If competitor pricing is sourced in a local currency, **note the source currency in research-text but display final comparison tables in USD only**. Detail: `lib/credit-calculator.md` § Currency Rule.
+
 ---
 
 ## Difference from research-market
@@ -75,7 +77,7 @@ Use web search and social MCPs to research each competitor:
 | 維度 | [你的品牌] | [競品 A] | [競品 B] | [競品 C] |
 |------|-----------|---------|---------|---------|
 | 定位 | [?] | [?] | [?] | [?] |
-| 價格帶 | NT$[?] | NT$[?] | NT$[?] | NT$[?] |
+| 價格帶 | $[?] | $[?] | $[?] | $[?] |
 | 主要渠道 | [?] | [?] | [?] | [?] |
 | 核心優勢 | [?] | [?] | [?] | [?] |
 | 核心弱點 | [?] | [?] | [?] | [?] |
@@ -86,9 +88,9 @@ Use web search and social MCPs to research each competitor:
 - [競品都沒有做到但市場有需求的點]
 
 【Price Band Summary（價格帶分析）】
-- 低價帶：NT$[X]-[Y]（[品牌]）
-- 中價帶：NT$[X]-[Y]（[品牌]）
-- 高價帶：NT$[X]-[Y]（[品牌]）
+- 低價帶：$[X]-[Y]（[品牌]）
+- 中價帶：$[X]-[Y]（[品牌]）
+- 高價帶：$[X]-[Y]（[品牌]）
 - 你的位置：[哪個帶]
 - 機會：[定價策略建議]
 
