@@ -88,7 +88,7 @@ logout(user_token) -> end session
 | `validate_images` / `digitize_product_text` | **免費**（吃 Gemini 配額但使用者無感）| Phase 3.9 Quality Gate |
 | `generate_ta_options` | **免費** | Step 4 TA 選之前 |
 | `generate_ta_spokesperson` | **免費**（吃配額）| 使用者選 Phase 3.5 option 2（單人 AI 代言人）時 |
-| `generate_group_spokesperson` | **免費**（吃配額、跟單人共用、一張團體圖算 1 次）| 使用者選 Phase 3.5 option 3（2-5 人合成圖）時 |
+| `generate_group_spokesperson` | **免費**（吃配額、跟單人共用、一張團體圖算 1 次）| 使用者選 Phase 3.5 option 3（1-5 人合成圖、可挑 4 種 composition）時 |
 | **`generate_session`** | **扣點！** `stripe_cost × 頁數 × TA 組數` | Step 6 Cost 複誦 + 啟動詞之後 |
 
 **LLM 常犯的錯**：以為 create_session 也扣點、所以故意等到最後才建 session「一次性寫入省錢」。**這是錯的**。create + update 全免費、session 要**儘早建**、讓後續 wizard 每步都有地方寫資料。批次累積答案再一次性寫入會讓對話 context 一斷資料就掉、**每輪答完就 `update_session` 寫回**。
@@ -800,11 +800,17 @@ Most users don't realize the AI will GENERATE a realistic human image. Be explic
    ⚠️ 這個人是 AI 生成的，不是真人，但看起來非常真實。
    最適合：產品/服務品牌，不需要「真人」代言的情況
 
-3. 👥 AI 生成 2~5 人合成圖（多 persona / cast lineup）
-   一張圖把多個 TA 對應的代言人合成在一起、當 hero 視覺或跨 stripe 的參考圖。
-   最適合：你選了多組 TA、想做「全家福」或「多 persona 並列」的品牌氣勢
-   → 我會逐人收外觀偏好（性別 / 年齡 / 氣質 / 穿著）、組好再生 1 張
-   → 配額跟單人生成共用、一張團體圖算 1 次
+3. 👥 AI 生成 1~5 人合成圖（單人特殊版面 / 多 persona / cast lineup）
+   一張圖把 1 ~ 5 個代言人合成在一起、當 hero 視覺或跨 stripe 的參考圖。
+   最適合：你選了多組 TA、想做「全家福」或「多 persona 並列」的品牌氣勢；
+        或單人但想要特定版面（不是 option 2 預設的「正面+側面」）
+   → 我會逐人收外觀偏好（性別 / 年齡 / 氣質 / 穿著）+ 你挑 4 種版面之一：
+      - standing_row（一字排開、上半身、最常用）
+      - seated_panel（會議桌坐成一排、頭肩照、正式感）
+      - candid_group（自然對話、生活感、informal）
+      - portrait_grid（等距格網、2x2/1x3/1x5、一致光線）
+   → 加 3 種背景之一：neutral_studio / brand_office / outdoor_lifestyle
+   → 配額跟單人生成共用、一張團體圖（不管 1-5 人）算 1 次
 
 4. 🚫 不使用人物
    純文字 + 圖形 + 產品圖，沒有人臉。
@@ -818,7 +824,7 @@ Most users don't realize the AI will GENERATE a realistic human image. Be explic
 
 **If user chooses option 1** -> Upload their photo as spokesperson (see upload flow below)
 **If user chooses option 2** -> **Do NOT just say "AI 會自己生一張"**. Collect AI-generation parameters (see below). Default silently = random output the user won't recognize
-**If user chooses option 3** -> Collect 2-5 sets of structured preferences (one per person), call `generate_group_spokesperson` with `prompts_json` array, show the composite image, get user approval. See "Group Spokesperson" section below for full flow.
+**If user chooses option 3** -> Collect 1-5 sets of structured preferences (one per person) PLUS ask the user to pick `composition` (standing_row / seated_panel / candid_group / portrait_grid) and `background` (neutral_studio / brand_office / outdoor_lifestyle). NEVER silently default these — explicitly say "我幫你預設 standing_row + neutral_studio、要改告訴我" if user doesn't volunteer. Call `generate_group_spokesperson` with `prompts_json` array + chosen `composition` + `background`, show the composite image, get user approval. See "Group Spokesperson" section below for full flow.
 **If user chooses option 4** -> Note this preference for the session config (no spokesperson generation / upload needed)
 
 ### Group Spokesperson — 1-5 人合成在同一張圖（cast lineup / TA-set group photo）
