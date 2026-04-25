@@ -138,10 +138,38 @@ if not session_id:
 
 **session_id 確定存在後才進下面 Step 0-3**。Phase 2 任何 `analyze_brand_url` / `scrape_landing_page` / PDF 上傳 / 圖片上傳、scrape 後**一律 `update_session(session_id, wizard_shared_data={...})` 寫進 session**、不要留在 brand buffer。
 
+### 🔴 Auto-Write 路徑（2026-04-25 新增）
+
+以下三個 ingestion endpoint **接受 `session_id` 參數、會在 ingestion 完成後自動 Gemini Flash 分類圖片 + 寫進 `wizard_shared_data` + `wizard_shared_files`**——LLM 拿到 session_id 就**只 call 一次 tool 即可**、不需要後續再 call `update_session` 把每張圖逐一塞回對應 zone（之前最常踩的雷）：
+
+| Tool | 加 session_id 的效果 |
+|------|---------------------|
+| `scrape_landing_page(url, mode="detailed", session_id="...")` | Playwright 爬 + Gemini 分類 + 自動寫進 session 對應 zone（product_images / logo_images / landing_page_images / spec_sheet_images / 行業細分桶等）|
+| `gdrive_import(file_ids=[...], session_id="...")` 或 `gdrive_import_shared_link(url, session_id="...")` | Drive 下載 + Gemini 分類 + 自動寫進 session |
+| `process_pdf_import(data_json={..., "session_id": "..."})` | PDF 解析 + 圖片擷取 + 分類 + 自動寫進 session |
+
+**回傳值多一個 `session_merge` 欄位**：
+```
+{
+  "session_merge": {
+    "ok": true,
+    "merged_into_data": {"product_images": 16, "logo_images": 2, "landing_page_images": 9},
+    "merged_into_files": {"product_images": 16, "logo_images": 2, "landing_page_images": 9},
+    "skipped_zones": ["_DISCARD"],
+    "session_id": "sess_..."
+  }
+}
+```
+
+**失敗 fallback**：若 `session_merge.ok=false`、原本的 imported / classified_images 仍在 response 裡、LLM 可手動 call `update_session` 補寫。
+
+**🔴 重要**：**只在 session 已存在的時候帶 session_id**。如果還沒 create_session 就 ingestion，傳 session_id="" 讓 backend 跳過 auto-merge、之後再手動串。
+
 **❌ 絕對不可**：
 - 拿到 token 就直接 `analyze_brand_url`、沒有 session_id
 - 爬完品牌資料說「現在開始問素材跟規格」但沒 call create_session
 - 期待 backend 幫你自動建 session（沒這回事、MCP 沒 implicit session）
+- 已有 session_id 卻**沒**傳給 ingestion endpoint、結果分類完還要再手動 `update_session`（多一次 round-trip + 容易忘記分桶規則）
 
 **Goal**: Collect as much brand material as possible with MINIMUM effort from the user. The fastest path is always URL or Google Drive import — explain this upfront.
 
