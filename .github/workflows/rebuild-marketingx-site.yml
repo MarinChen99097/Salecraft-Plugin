@@ -1,0 +1,55 @@
+name: Rebuild marketingx-site on plugin push
+
+# Why this exists:
+#   marketingx-site embeds the install URL as
+#   https://raw.githubusercontent.com/connactai/Salecraft-Plugin/<COMMIT_SHA>/CLAUDE.md
+#   The SHA is fetched from the GitHub API at *build time* (see
+#   marketingx-site/cloudbuild.yaml) and baked into the JS bundle as
+#   NEXT_PUBLIC_PLUGIN_SHA. So plugin pushes don't reach end users until
+#   marketingx-site is rebuilt — this workflow closes that gap.
+#
+# Mechanism:
+#   POST to a Cloud Build webhook trigger (`marketingx-site-on-plugin-push`)
+#   in GCP project `gen-lang-client-0747655769`. The trigger re-runs the
+#   marketingx-site build, which fetches the latest plugin SHA and rebuilds.
+#
+# Secret:
+#   MARKETINGX_REBUILD_WEBHOOK_URL — full URL with API key + webhook secret
+#   embedded as query params. Stored in GitHub repo secrets; the underlying
+#   secret value lives in GCP Secret Manager (`salecraft-plugin-webhook-secret`).
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+# Don't queue duplicate rebuilds during rapid pushes — keep only the latest.
+concurrency:
+  group: marketingx-rebuild
+  cancel-in-progress: true
+
+jobs:
+  trigger-rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: POST Cloud Build webhook
+        run: |
+          HTTP_CODE=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"branchName\":\"master\",\"sha\":\"${{ github.sha }}\"}" \
+            "${{ secrets.MARKETINGX_REBUILD_WEBHOOK_URL }}")
+          echo "Webhook HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Webhook failed with HTTP $HTTP_CODE"
+            cat /tmp/resp.json
+            exit 1
+          fi
+          BUILD_ID=$(jq -r '.metadata.build.id // .name // "unknown"' /tmp/resp.json)
+          echo "✅ Triggered marketingx-site rebuild for plugin ${GITHUB_SHA:0:8}"
+          echo "Build: $BUILD_ID"
+          echo "## marketingx-site rebuild triggered" >> $GITHUB_STEP_SUMMARY
+          echo "- Plugin commit: \`${GITHUB_SHA:0:8}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Build ID: \`$BUILD_ID\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Console: https://console.cloud.google.com/cloud-build/builds;region=asia-east1?project=gen-lang-client-0747655769" >> $GITHUB_STEP_SUMMARY
