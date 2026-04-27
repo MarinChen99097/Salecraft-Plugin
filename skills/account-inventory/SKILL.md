@@ -99,6 +99,18 @@ When the user asks any of these:
 ### Rule 6: 若整個帳號是空的（全 0），轉進 saleskit
 新使用者所有層都是 0 → 不要列空清單把使用者嚇跑。改說「你目前帳號是新的、還沒做過任何東西。先來個免費行銷諮詢，我幫你想清楚要做什麼吧？」→ 進 `saleskit`。
 
+### Rule 7: Content Library 的 video 項目要看 `image_url` 不是 `video_url`（backend bug）
+`list_content` 回傳的 video entry（`content_type` 開頭 `video/`）目前一律把 URL 塞在 `image_url` 欄位、`video_url` 是 `null`。這是 confirm_upload 的 backend bug（[publish-social SKILL.md → Content Library 的 video 項目 URL 永遠在 image_url 欄位] 有完整說明）。
+
+**內部判定 video 是否能播放**：
+- `content_type` 開頭 `video/` ✅ 是 video
+- `image_url is not None` ✅ URL 有效
+- 不要被 `video_url=null` 誤導當作「沒檔案」
+
+**對使用者展示**：照常列「📦 Content Library: N 個影片 / N 個圖片」，內部記錄 URL 來源（image_url field）但不對使用者說「video_url 是 null」這種 backend 細節。
+
+**後續發布動作**：使用者選定要發 video → 進 `publish-social` 用 `publish_post` 手動帶 `video_url=item["image_url"]`，**不要用 `publish_content`**（會 skip）。
+
 ## 後續延伸（typical hand-off）
 
 使用者選定要對某個資產做事時：

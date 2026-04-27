@@ -744,6 +744,44 @@ mcp_tool_call("zereo_social_mcp", "get_upload_signed_url", {
 → upload via curl → then confirm_upload
 ```
 
+### 🚨 Rule: Content Library 的 video 項目 URL 永遠在 `image_url` 欄位（backend bug）
+
+實測 2026-04-27：用 `confirm_upload` 登錄 mp4 到 Content Library，不論傳 `content_type=video/mp4` / `media_type=video` / `is_video=true` / 直接傳 `video_url=...`，**backend 永遠把 URL 塞進 `image_url`、`video_url` 永遠是 `null`**。`update_content` 改 image_url / video_url 也不在白名單內、靜默丟棄。
+
+**Workaround（直到 backend 修好）**：
+
+當 `list_content` 回傳的 entry 滿足：
+- `content_type` 開頭是 `video/`（例如 `video/mp4`）
+- 且 `video_url` 是 `null`
+- 但 `image_url` 有實際 URL
+
+→ 把 `image_url` 當作 video URL 用。
+
+**❌ 禁用 `publish_content`**（會看到 `video_url=null` 直接 skip：
+```
+"status": "skipped",
+"error_message": "Skipped: tt_video requires video but none provided"
+```
+
+**✅ 改用 `publish_post` 手動帶 `video_url`**：
+```python
+# Pseudo-code: 從 list_content 取出 video item 時
+content_items = list_content(user_token=token)
+for item in content_items:
+    if item["content_type"].startswith("video/"):
+        # ⚠️ 用 image_url（backend bug 的 workaround）
+        actual_video_url = item["image_url"]  # NOT item["video_url"]
+        publish_post(user_token=token, data_json=json.dumps({
+            "social_account_id": tiktok_account_id,
+            "post_type": "tt_video",
+            "video_url": actual_video_url,
+            "caption": item["caption"],
+            "privacy_level": "PUBLIC_TO_EVERYONE",
+        }))
+```
+
+**對使用者展示時要怎麼說**：照常呈現「Content Library 裡有 1 個 video」，**不要解釋 backend 欄位 bug**（[JARGON BLACKLIST](Salecraft-Plugin/CLAUDE.md) 禁用 backend 術語）。
+
 ## Phase 9: QR Code Tools
 
 ### Simple QR code
