@@ -167,7 +167,47 @@ mcp_tool_call("zereo_social_mcp", "get_post_detail", {
 - **比例**：9:16 最佳（vertical），支援 1:1 / 16:9 但會被 TikTok 裁切
 - **長度**：沙盒帳號最多 60 分鐘（`max_video_duration: 3600s`），一般帳號最多 3 分鐘
 - **檔案大小**：最大 500MB
-- **格式**：MP4（H.264 + AAC）
+- **格式**：MP4 — 必為 **H.264 video + AAC audio**（其他 codec 副檔名是 .mp4 也會踩坑、見下方 Rule）
+
+**Rule: tt_video 上傳前必確認 codec 是 H.264，OpenCV / cv2 / mp4v 產生的 mp4 必須先用 ffmpeg 重編。**
+
+實測 2026-04-27：用 `cv2.VideoWriter_fourcc(*"mp4v")` 寫的 5s 9:16 mp4 發 `tt_video`：
+- ✅ `publish_post` → `status="published"`、有 `platform_post_id`（看似成功）
+- ❌ TikTok App 開影片 → 「**播放這部影片時遇到問題。請重新整理並再試一次。**」
+
+**根因**：`mp4v` fourcc 是 **MPEG-4 Part 2**（2003 年 DivX/Xvid 標準），TikTok 後端轉檔失敗但 publish API 不會回 error（API 看到「上傳完成」即回 `published`）。**publish API 200 ≠ 影片可播放** — 必須親自打開 TikTok App 確認。
+
+**修復**（一行 ffmpeg、無例外）：
+```bash
+ffmpeg -i input.mp4 \
+  -f lavfi -i anullsrc=r=44100:cl=stereo \
+  -c:v libx264 -profile:v high -level 4.0 -pix_fmt yuv420p -r 30 \
+  -c:a aac -b:a 128k -shortest -movflags +faststart \
+  output.mp4
+```
+- `-c:v libx264 -profile:v high -pix_fmt yuv420p`：標準 H.264，TikTok 100% 接受
+- `-f lavfi -i anullsrc -c:a aac`：加 silent AAC stereo 軌（無音軌 mp4 部分播放器會 hang）
+- `-movflags +faststart`：moov atom 移到檔頭，streaming 更快
+- `-shortest`：避免 silent audio 比 video 長
+
+**驗證指令**（產出後一定要跑，否則白忙）：
+```bash
+ffmpeg -i output.mp4 2>&1 | grep "Stream"
+# 必須看到：
+#   Stream #0:0: Video: h264 (High) (avc1...) yuv420p
+#   Stream #0:1: Audio: aac (LC) (mp4a...) 44100 Hz stereo
+# 如果看到 Video: mpeg4 (Simple Profile) = mp4v、會壞、必須重編
+```
+
+**沒裝 ffmpeg？** Python 環境跑 `pip install --user imageio-ffmpeg` 會 bundle ffmpeg 7.1 binary，不需 admin、不污染 PATH。binary 路徑：
+```python
+import imageio_ffmpeg
+imageio_ffmpeg.get_ffmpeg_exe()
+# → C:\Users\<user>\AppData\Local\...\imageio_ffmpeg\binaries\ffmpeg-win-x86_64-v7.1.exe
+```
+
+- ✅ 任何來源（用戶上傳、AI 生成、cv2 / moviepy / PIL 拼接、Shotstack render output）發 TikTok 前**先 grep 一次 codec**，確認 `h264 (High)`，再走 publish_post
+- ❌ 不要靠副檔名 `.mp4` 判斷、不要靠 `publish_post` 的 status 判斷、不要假設「Salecraft 內部生成的影片就一定是 H.264」（generate-reels 走 Shotstack 通常 OK，但本地 cv2 / 自家 ffmpeg pipeline 不一定）
 
 ### tt_photo（TikTok 圖文貼文）
 
@@ -206,6 +246,7 @@ mcp_tool_call("zereo_social_mcp", "publish_post", {
 | `Failed to download video` | 我方抓不到用戶給的 video_url | 「影片網址下載失敗，請確認網址可以公開存取（不需要登入）且 1 小時內不會過期。」 |
 | `Video upload failed: HTTP 4xx` | TikTok 拒絕影片檔（格式、大小、長度） | 檢查影片規格（見上方） |
 | `Polling timed out` | TikTok 處理超過 2.5 分鐘還沒完成 | 「TikTok 這次處理比較慢，影片可能還在後台轉檔 — 請 5 分鐘後打開 TikTok App 看「僅自己可見」分類確認是否發出。」 |
+| **無 error_message** 但 TikTok App 開影片顯示「播放這部影片時遇到問題」 | mp4v / 非 H.264 codec — TikTok 後端轉檔失敗、API 不回 error 只回 `published` | 用上方 **Rule: tt_video 上傳前必確認 codec** 的 ffmpeg 命令重編成 H.264 + AAC，重新上傳 + 重新 publish。**這個錯誤無法從 API response 偵測**，必須使用者實機驗證後才能發現 |
 
 
 ## Social Post Generation (Image + Caption)

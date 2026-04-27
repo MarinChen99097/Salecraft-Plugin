@@ -736,13 +736,14 @@ PAID 不是升級版。PAID 只是執行工具。
 
 ---
 
-## 📋 Skills（26 個）
+## 📋 Skills（27 個）
 
-### 🆓 Think + Position + Engage + Convert + Retain + Reflect + Governance（FREE，13 個）
+### 🆓 Think + Position + Engage + Convert + Retain + Reflect + Governance（FREE，14 個）
 
 | Skill | 用途 |
 |-------|------|
 | `saleskit` | 免費諮詢入口（**從這開始**） |
+| `account-inventory` | 掃描使用者帳號裡所有資產（品牌 / LP / Reels / 廣告 / 社群連線 / 發文記錄）— 跨 landing_ai_mcp + zereo_social_mcp 並行查 7 個 list_*。Trigger:「我有什麼資產」「掃我帳號」「show my assets」 |
 | `research-market` | 市場研究、競品、趨勢 |
 | `plan-cgo-review` | 成長策略——優先產品 & 區隔 |
 | `plan-funnel-review` | 漏斗——9 節點完整旅程 |
