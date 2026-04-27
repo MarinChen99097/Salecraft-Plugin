@@ -44,6 +44,46 @@ context" messages. It just makes SaleCraft smarter over time.
 
 ---
 
+## 🔴 RULE 0 — Identify yourself on every brand-memory call (MANDATORY)
+
+Every write to brand-memory **must** carry a SKILL identifier so the
+backend can attribute who wrote what. Without it, future PLTV /
+segments / debugging cannot distinguish SaleCraft writes from other
+clients, and `skill_used=NULL` rows show up in production audits
+(observed 2026-04-27 for user-driven `/memorize`).
+
+The identifier is a short string of the form `salecraft-plugin@<version-or-sha>`.
+Use the latest plugin commit short-SHA when known (run `git rev-parse --short HEAD`
+inside `Salecraft-Plugin/` to find it); otherwise fall back to a semver
+like `salecraft-plugin@v1`. Do **not** invent ad-hoc names like
+"plugin" or "claude" — keep the `salecraft-plugin@` prefix so audits
+can group consistently.
+
+**REST path** — set the `X-Skill-Identifier` header on **every** brand-memory
+HTTP call (`/memorize`, `/save-prompt`, `/save-file`, `/context`,
+`/preferences`, `/files`, `/prompts`, `/compile-metadata`):
+
+```
+X-Skill-Identifier: salecraft-plugin@<sha-or-version>
+```
+
+If the runtime cannot set per-call headers (rare), fall back to passing
+`source_skill` (memorize) / `skill_used` (save-prompt) in the JSON body.
+The backend resolves body → header in that order, so per-call body
+values still override the header when needed.
+
+**MCP path** — pass the same identifier in the `arguments` dict under
+the field name the tool documents (`source_skill` for `memorize`,
+`skill_used` for `save_prompt_memory`). MCP transport has no header
+concept; the body field is the only channel.
+
+**Why both paths matter**: MCP and REST hit the same backend table.
+Mixing — some calls with identifier, some without — leaves audit holes
+that compound over time. Set this *once* at the top of any tool-call
+sequence and reuse it.
+
+---
+
 ## 🛠 Two transport paths — MCP tools and REST endpoints (pick what your host supports)
 
 Every brand-memory action exists as **both** an MCP tool and a REST
@@ -69,7 +109,8 @@ mcp_tool_call("landing_ai_mcp", "memorize", {
   "user_token": "<access_token>",
   "brand_id": "<current Project>",
   "content": "User prefers serif fonts for B2B brand voice",
-  "kind": "preference"
+  "kind": "preference",
+  "source_skill": "salecraft-plugin@<sha-or-version>"
 })
 ```
 
@@ -78,6 +119,7 @@ mcp_tool_call("landing_ai_mcp", "memorize", {
 POST /ai-agent/brand-memory/memorize
 Authorization: Bearer <access_token>
 Content-Type: application/json
+X-Skill-Identifier: salecraft-plugin@<sha-or-version>
 
 {
   "brand_id": "<current Project>",
@@ -104,12 +146,14 @@ When the user says ANY of these (Chinese / English variants):
 
 ```
 POST /ai-agent/brand-memory/memorize
+Authorization: Bearer <access_token>
+X-Skill-Identifier: salecraft-plugin@<sha-or-version>   # see RULE 0
 {
   "brand_id": "<current Project>",
   "content": "User prefers serif fonts for B2B brand voice",
   "kind": "preference",       # 'preference' | 'fact' | 'decision' | 'goal'
   "session_id": "<current MarketingSession id, optional>",
-  "source_skill": "brand-onboard"   # which skill the user was in
+  "source_skill": "brand-onboard"   # which **inner** skill triggered this (NOT the plugin name — the plugin name belongs in the X-Skill-Identifier header above)
 }
 ```
 
