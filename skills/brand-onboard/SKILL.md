@@ -1624,20 +1624,29 @@ that don't apply (e.g., don't ask for `dish_images` from a software company).
 - Text: `brand_name`, `product_name`, `base_description`, `value_proposition`, `key_features[]`, `product_appeal`
 
 ### `general`:
-- Images: `inner_packaging_images`, `outer_packaging_images`, `ingredients_images`, `spec_sheet_images`, `handheld_product_images`, `product_closeup_images`, `packaging_images`, `before_after_images`, `certification_images`
-- Text: `inner_packaging_dimensions`, `outer_packaging_dimensions`, `product_dimensions`, `ingredients_dimensions`
+（最簡產業、適合不知道分類或單品 SaaS 用）
+- Images: `product_images`, `spec_sheet_images`, `handheld_product_images`, `logo_images`, `landing_page_images`
+- Text: 無產業特有 text 欄位（用通用 brand_name / product_name / base_description / value_proposition / key_features / product_appeal）
+- 🔴 注意：之前 SKILL 列了 inner_packaging / outer_packaging / ingredients / before_after / packaging / certification / product_closeup 等 — 這些都**不在** backend `general` zone map 裡、frontend wizard 也不 render。LLM 不要問使用者這些欄位（會被當成沒人讀的 phantom field）
 
-### `software` / `electronics`:
-- Images: `screenshot_images`, `mockup_images`, `device_angle_images`, `spec_sheet_images`
+### `electronics` / `home_appliances`:
+- Images: `device_angle_images`, `feature_highlight_images`, `spec_sheet_images`, `handheld_product_images`, `logo_images`, `landing_page_images`
 - Text: `device_dimensions`, `device_specifications`
 
+### `software`:
+- Images: `screenshot_images`, `mockup_images`, `logo_images`, `landing_page_images`
+- Text: 無產業特有 text 欄位（純 SaaS 通常不需要實體規格）
+- 🔴 注意：以前 SKILL 把 software 跟 electronics 合併、列了 device_angle / spec_sheet — software 不需要這些。LLM 對軟體類產業只問截圖跟裝置展示圖
+
 ### `cosmetics`:
-- Images: `cosmetic_product_images`, `texture_images`, `before_after_images`, `ingredients_images`, `handheld_product_images`, `inner_packaging_images`, `outer_packaging_images`, `handheld_swatch_images`
+- Images: `cosmetic_product_images`, `texture_images`, `before_after_images`, `handheld_container_images`, `handheld_swatch_images`, `logo_images`, `landing_page_images`
 - Text: `ingredients_text`
+- 🔴 注意：以前 SKILL 列了 ingredients_images / inner_packaging / outer_packaging / handheld_product — 這些**不在** backend cosmetics zone map。cosmetics 用的手持桶是 `handheld_container_images`（手拿瓶罐）跟 `handheld_swatch_images`（手上塗抹色票），不是通用 handheld_product
 
 ### `biotech`:
-- Images: `biotech_lab_images`, `biotech_cert_images`, `biotech_product_images`, `ingredients_images`, `spec_sheet_images`
-- Text: `biotech_certifications`, `biotech_research_basis`, `biotech_regulatory_status`, `ingredients_text`
+- Images: `biotech_lab_images`, `biotech_cert_images`, `biotech_product_images`, `logo_images`, `landing_page_images`
+- Text: `biotech_certifications`, `biotech_research_basis`, `biotech_regulatory_status`
+- 🔴 注意：以前 SKILL 加了 ingredients_images / spec_sheet_images — 這兩個不在 backend biotech zone map。biotech 不像 supplements 是消費品、不需要成分標 / 規格表桶
 
 ### `health_food` / `supplements` / `food` / `drinks` / `healthy_meals` / `desserts` / `gift_box`:
 （這幾個都用同一組 zone — backend `_ZONE_DEFINITIONS["food"]` 是 source-of-truth）
@@ -1650,8 +1659,13 @@ that don't apply (e.g., don't ask for `dish_images` from a software company).
 - 注意：`biotech_*_images` 跟 `harvest_*` / `farmer_story_*` / `handheld_produce_*` 等舊 SKILL 條目對 supplements **不適用**——上一版 SKILL 把 biotech/agricultural 欄位錯抄到 supplements、frontend 跟 backend 都不認得這些 key
 
 ### `agricultural`:
-- Images: `product_closeup_images`, `harvest_images`, `certification_images`, `packaging_images`, `farmer_story_images`, `logo_images`, `landing_page_images`
+- Images: `product_closeup_images`, `harvest_images`, `certification_images`, `packaging_images`, `farmer_story_images`, **`handheld_produce_images`**, **`handheld_packaging_images`**, `logo_images`, `landing_page_images`
 - Text: `origin_region`, `harvest_season`, `storage_instructions`, `product_variety`, `farming_method`, `weight_per_unit`, `shelf_life`, `nutritional_info`
+- 🔴 **手持照片分桶規則**（同 supplements 模式）：
+  - 畫面**沒有人手** → product_closeup（產品本體）/ packaging（包裝）
+  - 畫面**有人手**拿水果/蔬菜/作物 → `handheld_produce_images`
+  - 畫面**有人手**拿禮盒/袋裝 → `handheld_packaging_images`
+  - 重點是**人物**（農夫工作）→ `farmer_story_images`（不是 handheld）
 
 ### `restaurant`:
 - Images: `restaurant_exterior_images`, `restaurant_interior_images`, `dish_images`, `menu_images`
@@ -1668,13 +1682,17 @@ that don't apply (e.g., don't ask for `dish_images` from a software company).
 - Images: `film_still_images`, `poster_images`, `behind_scenes_images`, `cast_images`
 - Text: `film_synopsis`, `film_director`, `film_cast_info`
 
-### `property` / `real_estate`:
-- Images: `property_exterior_images`, `property_interior_images`, `floor_plan_images`, `amenity_images`, `location_images`
+### `property` / `private_island`:
+（`private_island` 共用 property 大部分欄位、少 floor_plan_images）
+- Images: `property_exterior_images`, `property_interior_images`, `floor_plan_images`（property 才有、private_island 沒有）, `amenity_images`, `location_images`, `logo_images`, `landing_page_images`
 - Text: `property_location`, `property_size`, `property_features`, `property_price_range`
+- 🔴 注意：backend 沒有 `real_estate` 這個 industry value、SKILL 之前用了過時 alias。canonical 是 `property`（一般房產）跟 `private_island`（私人島嶼/度假村）
 
-### `automotive`:
-- Images: `vehicle_exterior_images`, `vehicle_interior_images`, `vehicle_engine_images`, `vehicle_action_images`
+### `passenger_car` / `motorcycle` / `sports_car` / `scooter` / `bicycle`:
+（五種車輛類別共用同一組 zone map）
+- Images: `vehicle_exterior_images`, `vehicle_interior_images`, `vehicle_engine_images`, `vehicle_action_images`, `logo_images`, `landing_page_images`
 - Text: `vehicle_specs`, `vehicle_features`, `vehicle_price_range`
+- 🔴 注意：backend 沒有 `automotive` 這個 industry value、SKILL 之前用了過時 alias。`passenger_car` 是 canonical name、其他四種子類別 alias 到同一組 zones
 
 ### `venue_event`:
 - Images: `venue_images`, `event_activity_images`, `facility_images`
