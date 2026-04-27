@@ -441,12 +441,100 @@ update_session(data={"wizard_ta_groups": [
 
 **Reuse 情境簡化**：若 Step 0 使用者直接挑了資產庫現有代言人、就跳過 Step A（已經在資產庫裡了）、只做 Step B、用既有的 `spokesperson_id` + `photo_urls`。
 
+### 🔴 使用者說「N 個代言人」/「N 位代言人」/「再多幾個」— 必須 disambiguate（不准自己解讀）
+
+當使用者對某組 TA 講出「N 個 / N 位 / 多生幾個 / 多一點選擇」這類數量訊號、**有兩種完全不同的可能**、絕對禁止 LLM 自己挑一個解讀：
+
+| 解讀 | 視覺結果 | Tool | 配額 |
+|---|---|---|---|
+| **A. N 張獨立圖（A/B 比較）** | 每張圖一個人、獨立背景、用來挑選或 split test | `generate_ta_spokesperson` × N 次 | **N 配額**（每張 1 次）|
+| **B. 1 張群像合成（cast lineup）** | 一張圖內 1-5 人並列（合照 / 陣容 / 多 persona hero shot）| `generate_group_spokesperson` × 1 次 | **1 配額**（一張團體圖） |
+
+**典型訊號詞 → 預設假設**（仍要追問確認、不准 silently 套）：
+- 「**多生幾個**讓我選」、「**A/B 看一下**」、「**比較**一下哪個好」 → 偏向 **A**（獨立比較）
+- 「**5 個代言人放在一張**」、「**陣容圖**」、「**全家福**」、「**多人 hero**」、「**團體照**」 → 偏向 **B**（群像）
+- 「TA 1 想要 5 個代言人」（沒講「分開」也沒講「同一張」）→ **必須追問**：
+
+```
+等等、你說 5 個代言人 — 想要的是哪種？
+  A. 5 張獨立圖（A/B/C/D/E 比較、用 5 配額）
+  B. 1 張群像合成（5 人並列在同一張、cast lineup 風格、用 1 配額）
+
+兩種視覺意圖完全不同 ── A 是給你挑、B 是給你的 LP 直接用一張多人 hero。
+```
+
+**選 A** → 走原本流程 (`generate_ta_spokesperson` 跑 N 次、每次配額 -1)、依序 preview。
+
+**選 B** → 走 `generate_group_spokesperson`（詳見 `brand-onboard/SKILL.md` 「Group Spokesperson」段）、需要：
+- `prompts_json` — N 個 persona 描述（1-5 人、N=5 已是上限、再多需要拆兩張）
+- `composition` — `standing_row` / `seated_panel` / `candid_group` / `portrait_grid`（不准 silently default、明說「我幫你預設 X、要改告訴我」）
+- `background` — `neutral_studio` / `brand_office` / `outdoor_lifestyle`（同上）
+
+**關鍵 corner case**：候選 persona 不夠
+- `generate_ta_options` 預設只回 2 個 spokesperson_prompts／TA、使用者要 N>2 時、必須補 N-2 個 persona 描述
+- LLM 要主動列舉「我幫你補的 N-2 個方向」、讓使用者挑或修改、**禁止**靜默 hard-coded 預設一些變體就跑
+
+**配額不夠時的 fallback**（同 Phase 2.5 開頭的配額檢查邏輯）：
+- A 路徑：`remaining < N` → 縮減 N、或部分上傳替代、或 mix（部分 AI + 部分既有資產）
+- B 路徑：`remaining < 1` → 不能跑、改建議走 reuse 既有資產或上傳照片合成
+
 ### 絕對禁止
 
 - ❌ 拿 `spokesperson_prompts` 的文字描述進 Cost 複誦、當成使用者已經看過代言人 → 使用者其實沒看過實際圖
 - ❌ 把 2+ 組 TA 的 preview 平行展示（「TA1 正面 / 側面、TA2 正面 / 側面」一次 4 張圖）→ 使用者 overload 會亂點、分辨不出對應哪組
 - ❌ `generate_ta_spokesperson` 生完就直接 `create_spokesperson` 登記 → 使用者沒看過實際圖 = 盲簽
 - ❌ 只展示 front_url 不展示 side_url → 側面是代言人在 LP hero 擺位的關鍵、兩張都要看
+- ❌ 使用者講「N 個代言人」LLM 自己選擇解讀「N 張獨立 / 1 張群像」、不追問
+- ❌ 走群像路徑時 `composition` / `background` silently default 而不對使用者明說「我幫你預設 X、要改告訴我」
+- ❌ 候選 persona 不夠 N 個時、靜默 hard-code 一些變體湊數、不讓使用者看 / 修改
+
+---
+
+## 🚨 GATE — 進 Phase 3 前的 spokesperson preflight（MANDATORY、不准跳）
+
+**症狀回報 (2026-04-28)**：實測 production session 中、LLM 從 Phase 2 (TA 選定) 直接衝 Phase 4 (spec) → Phase 5 / Step 6 (頁數)、**完全略過 Phase 2.5**、使用者被 Cost 複誦時才反問「怎麼沒有代言人」。這是**規範漏執行**、不是規範不存在。
+
+進 Phase 3 之前、對**每組** TA group **必須**逐一確認、其中之一已成立：
+
+| 路徑 | session 狀態 | 證據 |
+|---|---|---|
+| A. **Reuse 既有資產** | `wizard_ta_groups[i].spokesperson_id` = 既有 `sp_xxx`（從 `list_spokespersons` 結果挑的）| Phase 2.5 Step 0 完成 |
+| B. **新生（單人）批准** | `wizard_ta_groups[i].spokesperson_id` = 新建 `sp_xxx` + `spokesperson_front_url` + `spokesperson_side_url` 都填 | `generate_ta_spokesperson` 跑完 + 使用者 OK + `create_spokesperson` 登記 |
+| C. **新生（群像）批准** | `wizard_ta_groups[i].spokesperson_id` = 新建 `sp_xxx`（群像登記）| `generate_group_spokesperson` 跑完 + 使用者 OK + `create_spokesperson` 登記 |
+| D. **使用者上傳照片** | `wizard_ta_groups[i].spokesperson_id` = 上傳路徑登記的 `sp_xxx` | Phase 2.5 上傳分支完成 + `create_spokesperson(is_ai_generated=False)` |
+| E. **明確不用** | `wizard_ta_groups[i].spokesperson_id` = `null` 或 `omit` + 對話中使用者明確說「不用」/「都不用」/「skip」 | 使用者明示拒絕 |
+
+**Preflight 檢查（進 Phase 3 前 silent run）**：
+
+```python
+sess = mcp_tool_call("landing_ai_mcp", "get_session", {...})
+gaps = []
+for ta in sess["wizard_ta_groups"]:
+    sp_id = ta.get("spokesperson_id")
+    declined = ta.get("_spokesperson_declined") is True   # 使用者明說「不用」時 LLM 自己標
+    if not sp_id and not declined:
+        gaps.append(ta["ta_name"])
+if gaps:
+    # 不准進 Phase 3、回頭跑 Phase 2.5 把 gaps 補完
+    raise FlowViolation(f"Phase 2.5 incomplete for: {gaps}")
+```
+
+**找到 gap 時的對話形態**（**不要**裝沒事繼續、**不要**說「我跳過了」之後就直接接著問頁數）：
+
+```
+等等、{ta_names} 還沒決定代言人路徑 — 先補這個再進規格 / 頁數。
+
+對 {ta_name}、你想：
+  1. 從你 brand 資產庫挑現成的（{N} 個可用 / 0 個 = 跳這選項）
+  2. 我幫你 AI 生（單人、剩 {remaining} 配額 — 我會 preview 給你看才定）
+  3. 群像合成（如果這組 TA 想多人 hero）
+  4. 你自己上傳照片
+  5. 不用代言人（純產品 / 場景圖當主視覺）
+
+回 1/2/3/4/5 + 必要說明。
+```
+
+**為什麼這個 gate 不能砍**：spokesperson_id 是 LP hero 段的核心圖元、**一旦 generate_session 啟動就無法回頭加**（會生出沒人物的 hero）。Phase 2.5 漏跑 = 使用者付了錢拿到無代言人 LP = 退費。
 
 ---
 
