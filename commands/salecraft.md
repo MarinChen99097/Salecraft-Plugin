@@ -21,15 +21,18 @@ Read `CLAUDE.md` for full context. Present the main menu:
 
 ━━━━━━━ 💰 付費服務 ━━━━━━━
 
-5. /salecraft-create    → 建立 Landing Page + 品牌首頁
-6. /salecraft-edit      → 編輯現有 Landing Page
-7. /salecraft-homepage  → 從 LP 建立完整網站（FREE）
-8. /salecraft-publish   → 社群發佈 + 廣告投放
-9. /salecraft-reels     → AI 短影音生成
+5. /salecraft-create              → 建立 Landing Page + 品牌首頁
+6. /salecraft-edit                → 編輯現有 Landing Page
+7. /salecraft-homepage            → 從 LP 建立完整網站（FREE）
+8. /salecraft-publish             → 社群發佈 + 廣告投放
+9. /salecraft-reels               → AI 短影音生成
+10. /salecraft-post-consultant    → 設計社群貼文（AIDA / 漏斗 / 受眾結構化）
+11. /salecraft-identity-consultant → 設計品牌識別（Logo + 色系 + 字型 + 應用）
+12. /salecraft-reels-consultant   → 設計短影音（鉤子 / 節奏 / 旁白）
 
 ━━━━━━━ 📊 帳戶管理 ━━━━━━━
 
-10. /salecraft-status   → 查看點數餘額 / 生成狀態
+13. /salecraft-status   → 查看點數餘額 / 生成狀態
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -60,7 +63,9 @@ Based on user response, invoke the appropriate skill or command. If the user des
 | "做 LP" / "landing page" | `/salecraft-create` |
 | "編輯" / "改 LP" | `/salecraft-edit` |
 | "發文" / "社群" / "發 IG" | `/salecraft-publish` |
-| "影片" / "reels" | `/salecraft-reels` |
+| "影片" / "reels" / "短影音" | `/salecraft-reels-consultant` (or `/salecraft-reels` for legacy flow) |
+| "做貼文" / "做 IG 貼文" / "carousel" / "限動" | `/salecraft-post-consultant` |
+| "做 logo" / "品牌識別" / "brand identity" | `/salecraft-identity-consultant` |
 | "餘額" / "credits" | `/salecraft-status` |
 
 ## Platform Awareness
