@@ -1635,12 +1635,22 @@ that don't apply (e.g., don't ask for `dish_images` from a software company).
 - Images: `cosmetic_product_images`, `texture_images`, `before_after_images`, `ingredients_images`, `handheld_product_images`, `inner_packaging_images`, `outer_packaging_images`, `handheld_swatch_images`
 - Text: `ingredients_text`
 
-### `biotech` / `supplements`:
+### `biotech`:
 - Images: `biotech_lab_images`, `biotech_cert_images`, `biotech_product_images`, `ingredients_images`, `spec_sheet_images`
 - Text: `biotech_certifications`, `biotech_research_basis`, `biotech_regulatory_status`, `ingredients_text`
 
-### `health_food` / `food` / `agricultural`:
-- Images: `harvest_images`, `farmer_story_images`, `handheld_produce_images`, `handheld_packaging_images`, `packaging_images`, `product_closeup_images`, `certification_images`
+### `health_food` / `supplements` / `food` / `drinks` / `healthy_meals` / `desserts` / `gift_box`:
+（這幾個都用同一組 zone — backend `_ZONE_DEFINITIONS["food"]` 是 source-of-truth）
+- Images: `product_images`, `inner_packaging_images`, `outer_packaging_images`, `ingredients_images`, `before_after_images`, **`handheld_outer_packaging_images`**, **`handheld_inner_packaging_images`**, `logo_images`, `landing_page_images`
+- Text: `ingredients_text`, `inner_packaging_dimensions`, `outer_packaging_dimensions`, `product_dimensions`, `ingredients_dimensions`
+- 🔴 **手持照片分桶規則**（Gemini 自動分類照這走）：
+  - 畫面中**沒有人手** → product / inner_packaging / outer_packaging / ingredients（依物件種類）
+  - 畫面中**有人手**拿著外盒/外袋 → `handheld_outer_packaging_images`
+  - 畫面中**有人手**拿著小包/沖泡袋/瓶身 → `handheld_inner_packaging_images`
+- 注意：`biotech_*_images` 跟 `harvest_*` / `farmer_story_*` / `handheld_produce_*` 等舊 SKILL 條目對 supplements **不適用**——上一版 SKILL 把 biotech/agricultural 欄位錯抄到 supplements、frontend 跟 backend 都不認得這些 key
+
+### `agricultural`:
+- Images: `product_closeup_images`, `harvest_images`, `certification_images`, `packaging_images`, `farmer_story_images`, `logo_images`, `landing_page_images`
 - Text: `origin_region`, `harvest_season`, `storage_instructions`, `product_variety`, `farming_method`, `weight_per_unit`, `shelf_life`, `nutritional_info`
 
 ### `restaurant`:
