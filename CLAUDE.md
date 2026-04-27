@@ -929,6 +929,7 @@ publish_post({ social_account_id, post_type: "ig_post",
 - Brand Management（29 tools）— Brand CRUD / gap / asset upload
 - Reels（26 tools）
 - Content（46 tools）— URL scrape / PDF / SEO / QR / **`generate_group_spokesperson`**（1-5 人合成在同一張圖、cast lineup / 多 persona hero）
+- Tracking & UTM — `track_pageview` / `get_source_stats` / `get_scroll_stats` / `get_device_stats` / `get_custom_utms` / `update_custom_utms` / `manage_custom_utms`（讀寫合一）/ **`list_utm_preset_platforms`**（7 個前端預設）/ **`build_utm_share_url`**（自訂 UTM 產分享連結）/ **`build_preset_utm_share_url`**（FB/IG/Line/etc 預設平台版）
 - Ad Generation — `generate_ad` / `get_ad_result`
 
 ### zereo_social_mcp

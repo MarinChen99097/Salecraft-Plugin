@@ -194,7 +194,7 @@ Select variant(s) or edit:
 |---|------|---------|
 | 3 | `campaign_objective` | **問**——5 個 OUTCOME_* 完整列出讓使用者挑（不要 LLM 替挑）|
 | 4 | `cta_type` | 依 objective 推 default 但**明說**（OUTCOME_TRAFFIC → LEARN_MORE / OUTCOME_SALES → SHOP_NOW、etc.）、使用者反對才改。完整 8 個值見下方 |
-| 5 | `cta_url` | **問**——不要 silent default 到 brand 官網。提示可拼 UTM 參數追蹤 |
+| 5 | `cta_url` | **問**——不要 silent default 到 brand 官網。**強烈建議**用 `build_preset_utm_share_url(platform="facebook"\|"instagram", ta_name=<TA>)` 產出帶 UTM 的 LP 連結，這樣這支廣告帶進來的流量在 GA4 / Meta Pixel 才看得出是 FB/IG 來的（沒 UTM = 全部 mix 在一起無法歸因）|
 | 6 | `creative_message` | 廣告貼文文字（Meta feed 顯示的 caption）。Phase 3 已生內容裡通常有 / 可改、**明列給使用者確認** |
 
 對話模板：
@@ -211,8 +211,21 @@ E) 💰 OUTCOME_SALES — 直接優化購買轉換
 CTA 按鈕文字（點下去使用者會看到的）：
 LEARN_MORE / SHOP_NOW / SIGN_UP / BOOK_TRAVEL / CONTACT_US / DOWNLOAD / GET_QUOTE / WATCH_MORE
 
-CTA 點下去要去哪：（你的 LP / 官網 / 預約頁、可以加 UTM 追蹤）
+CTA 點下去要去哪：（你的 LP / 官網 / 預約頁）
+（建議：我幫你產一條帶 UTM 的 LP 連結、這樣 GA4 才能看出這支廣告帶來幾個訪客）
 ```
+
+**UTM 強烈建議**——廣告流量歸因的標準做法：
+
+> 投 Meta 廣告前**先 silent 呼叫** `build_preset_utm_share_url(campaign_id, platform="facebook" 或 "instagram", ta_name=<選定 TA 名>, locale=<使用者語系>)` 拿到帶 UTM 的 LP URL、再用這條當 `cta_url`。產出 URL 範例：
+>
+> ```
+> https://landingai.info/zh-TW/landing-page?id=<campaign_id>&utm_source=facebook&utm_medium=social&utm_campaign=<ta_name_slug>
+> ```
+>
+> 同一個 LP 投兩個平台（FB + IG）→ 拆兩支 ad campaign、各用各的 utm_source、Meta Pixel 才能分流量。
+> 沒有對應 TA → `ta_name="default"` 或使用者自訂的 campaign 名（轉英文 / 底線）。
+> 機制細節（為什麼是 inbound 而非 CTA-overlay）見 `edit-landing` SKILL 的 UTM 段。
 
 #### 批 3 — 預算 + 排程（3 欄位）
 
@@ -271,7 +284,8 @@ B) 指定日期：____
 帳號：ACME (Meta) ad_account_id=act_123456789
 素材：image, https://...generate_ad_image.png
 目標：OUTCOME_TRAFFIC
-CTA：LEARN_MORE → https://landingai.info/zh-TW/lp/<campaign_id>?utm_source=meta&utm_campaign=launch
+CTA：LEARN_MORE → https://landingai.info/zh-TW/landing-page?id=<campaign_id>&utm_source=facebook&utm_medium=social&utm_campaign=<ta_name>
+       (用 build_preset_utm_share_url 產的、所以這支 FB 廣告帶來的流量在 GA4 看得出來)
 廣告文：「探索無毒保養的真誠選擇——今天就試試。」
 
 預算：$10 USD/day × 14 天 = $140 total
@@ -414,7 +428,7 @@ mcp_tool_call("zereo_social_mcp", "get_tiktok_ad_cta_types", { "user_token": tok
 |---|------|---------|
 | 4 | `campaign_objective` | **問**——8 個 TikTok 值（REACH / TRAFFIC / **VIDEO_VIEWS** / ENGAGEMENT / LEAD_GENERATION / CONVERSIONS / PRODUCT_SALES / APP_PROMOTION）。Meta 沒 `VIDEO_VIEWS`、TikTok 是常見選擇 |
 | 5 | `cta_type` | TikTok CTA 比 Meta 多 2 個：`ORDER_NOW` / `SUBSCRIBE` / `INSTALL_NOW` / `WATCH_NOW`（共 10 個） |
-| 6 | `cta_url` | 同 Meta、可拼 UTM |
+| 6 | `cta_url` | 同 Meta、**強烈建議**用 `build_utm_share_url(campaign_id, utm_source="tiktok", utm_medium="paid_social", utm_campaign=<ta_name 或 spring_launch 等>, locale=...)` 拿帶 UTM 的 LP URL（TikTok 不在 7 個預設平台清單裡、所以用 `build_utm_share_url` 而非 `build_preset_utm_share_url`）|
 | 7 | `creative_message` | TikTok 廣告文（max 1024 chars）、**問使用者**或從 `social_copy` 帶過來 |
 
 #### 批 3 — 預算 + 排程
@@ -441,7 +455,8 @@ TikTok 廣告投放規格：
 帳號：@martin_tiktok（advertiser_id=...）
 素材：video, https://...generate_reels.mp4
 目標：TRAFFIC
-CTA：LEARN_MORE → https://landingai.info/zh-TW/lp/<id>?utm_source=tiktok&utm_campaign=launch
+CTA：LEARN_MORE → https://landingai.info/zh-TW/landing-page?id=<campaign_id>&utm_source=tiktok&utm_medium=paid_social&utm_campaign=<ta_name>
+       (用 build_utm_share_url 產的、GA4 會把這支 TikTok 廣告流量分開歸因)
 廣告文：「[800 字以內]」
 
 預算：$25 USD/day × 14 天 = $350 total
@@ -564,7 +579,7 @@ C) Done
 |---|------|---------|
 | 1 | `social_post_id` | 從 `get_post_history(status_filter="published")` 列出 IG Reel 讓使用者挑（**只能 boost 已發佈的 ig_reel、不能是 ig_post / ig_story / fb_post**）|
 | 2 | `cta_type` | 8 個值（LEARN_MORE / SHOP_NOW / SIGN_UP / BOOK_TRAVEL / DOWNLOAD / 等）— **問** |
-| 3 | `cta_url` | **問**——點 CTA 去哪、可拼 UTM |
+| 3 | `cta_url` | **問**——點 CTA 去哪。Boost 也建議用 `build_preset_utm_share_url(platform="instagram", ta_name=<原 Reel 對應 TA>)` 帶 UTM、否則 boost 流量跟自然流量混不分 |
 | 4 | `daily_budget` | **問**——USD、最低 $1。建議 $5-30 |
 | 5 | `target_age_min` | 從 TA 推 + 明說、預設 18 |
 | 6 | `target_age_max` | 同上、預設 65 |

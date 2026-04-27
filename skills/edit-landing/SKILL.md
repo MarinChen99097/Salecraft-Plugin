@@ -300,41 +300,146 @@ mcp_tool_call("landing_ai_mcp", "update_stripe_text_styling", {
 
 這些都是 **page shell** 編輯——改的是頁面外框、不碰 stripe 內 AI 生成圖片。**不扣點**。
 
-#### UTM Tracking Parameters — 自訂 CTA 連結追蹤
+#### UTM Tracking Parameters — 產生 LP 追蹤分享連結
 
-**Trigger**：使用者說「加 UTM 追蹤」/「我想知道 LP 流量從哪來」/「加上廣告追蹤參數」/「我這個 campaign 用哪些 utm_source」/「Google Analytics 抓不到我的 LP」/「設定 utm_source / utm_medium / utm_campaign」。
+**心智模型先說清**（避免**最常見的誤解**）：
 
-**Tool**：`manage_custom_utms`（讀寫合一、傳空字串 = 讀、傳 json = 寫）— 也有 `get_custom_utms`（純讀）/ `update_custom_utms`（純寫）兩個分開的版本、優先用 `manage_custom_utms`。
+> 這個系統的 UTM **不是**「在 LP 內 CTA 按鈕後面加追蹤碼」、是「**把 LP 的網址加 UTM 參數後做成可分享的連結**」、放到 IG / FB / EDM / LINE 廣告 / KOL post 裡、訪客點進來時 Google Analytics / Meta Pixel 才知道流量是哪邊來的。
+
+| 概念 | 實際做什麼 | 結果 |
+|---|---|---|
+| **建一筆 UTM 模板**（library） | `manage_custom_utms` 寫進專案、留著重複用 | 後台儲存清單、不影響 LP 渲染 |
+| **產生分享連結**（share URL） | `build_utm_share_url` / `build_preset_utm_share_url` | 拿到一條長網址、複製到廣告 / 社群貼文 |
+| ❌ **不會做的事** | UTM 不會自動寫進 LP 內按鈕的 href | LP 內 CTA 還是連到 `cta_url`（不變）|
+
+---
+
+**Trigger**：使用者說「加 UTM 追蹤」/「我想知道 LP 流量從哪來」/「給我 FB 的 UTM 連結」/「我這個 campaign 用哪些 utm_source」/「Google Analytics 抓不到我的 LP」/「設定 utm_source / utm_medium / utm_campaign」/「自訂一個 UTM」。
+
+---
+
+**Step 1 — 預設平台還是自訂？**先給選項：
+
+> 「想要追蹤從哪邊進來？兩種：
+> ① **預設平台**（FB / IG / Line / Messenger / Discord / X / Email）— 我幫你按平台慣例自動配 utm_source + utm_medium、你只要告訴我 campaign 名（通常用 TA 名）
+> ② **自訂**（自己決定 source / medium / campaign）— 適合電子報、Linktree、KOL post、特殊投放」
+
+---
+
+**Step 2A — 預設平台**（最常見、最快）
 
 ```
-# 讀目前 UTM 設定
+# 看可用平台清單（純讀、不要 token）
+mcp_tool_call("landing_ai_mcp", "list_utm_preset_platforms", {})
+→ { "platforms": [
+    {"key": "facebook",  "label": "Facebook",  "utm_source": "facebook",  "utm_medium": "social"},
+    {"key": "instagram", "label": "Instagram", "utm_source": "instagram", "utm_medium": "social"},
+    {"key": "line",      "label": "Line",      "utm_source": "line",      "utm_medium": "social"},
+    {"key": "messenger", "label": "Messenger", "utm_source": "messenger", "utm_medium": "social"},
+    {"key": "discord",   "label": "Discord",   "utm_source": "discord",   "utm_medium": "social"},
+    {"key": "x",         "label": "X",         "utm_source": "x",         "utm_medium": "social"},
+    {"key": "email",     "label": "Email",     "utm_source": "email",     "utm_medium": "email"}
+  ]}
+
+# 直接拿一條 FB 用的分享連結
+mcp_tool_call("landing_ai_mcp", "build_preset_utm_share_url", {
+  "campaign_id": campaign_id,
+  "platform": "facebook",
+  "ta_name": "新手媽媽",       # 會自動 slug 化成 utm_campaign="新手媽媽"
+  "locale": "zh-TW"
+})
+→ { "share_url": "https://landingai.info/zh-TW/landing-page?id=<id>&utm_source=facebook&utm_medium=social&utm_campaign=新手媽媽",
+    "utm_source": "facebook", "utm_medium": "social",
+    "utm_campaign": "新手媽媽", "platform_label": "Facebook" }
+```
+
+**注意**：`utm_campaign` 建議用**英文 / 數字 / 底線**（例如 `new_moms_q2`）。中文也能用、但 GA4 / Meta Pixel 顯示時會 URL-encoded（`%E6%96%B0...`）、看起來醜。要不要轉英文**先問使用者**。
+
+---
+
+**Step 2B — 自訂 UTM**（含「FB 標籤但要自訂名稱」這類情境）
+
+**核心提醒**——使用者問「我自訂名稱會出現在 UTM 連結嗎」**必複誦給他**：
+
+> ⚠️ **`name` 欄位是給後台儲存用的標籤**（讓你之後在 dashboard 找得到這筆 UTM）、**不會**出現在 URL 裡。URL 裡只會有 `utm_source` / `utm_medium` / `utm_campaign` 三個參數。如果你要讓「自訂名稱」出現在連結裡、應該寫進 `utm_campaign`。
+
+**範例對話**——使用者說「我要建一個叫『春季 FB 廣告』的 FB UTM」：
+
+> LLM：「OK 確認一下、後台想存的標籤是『春季 FB 廣告』、URL 裡的 `utm_campaign` 我幫你寫成 `spring_fb_ad`（轉英文、GA4 比較好讀）。可以嗎？」
+
+確認後：
+
+```
+# Step 1：寫進專案的 UTM library（後台保存、可重用）
+mcp_tool_call("landing_ai_mcp", "manage_custom_utms", {
+  "user_token": token,
+  "project_id": campaign_id,
+  "utms_json": json.dumps({
+    "utms": [
+      {
+        "name": "春季 FB 廣告",          # ← label only、後台顯示用
+        "utm_source": "facebook",
+        "utm_medium": "cpc",
+        "utm_campaign": "spring_fb_ad"   # ← 真正進 URL 的字
+      }
+      # 可以一次塞多筆、PUT 是 full replace、所以要保留舊的記得連舊的一起塞
+    ]
+  })
+})
+
+# Step 2：拿可分享的長連結
+mcp_tool_call("landing_ai_mcp", "build_utm_share_url", {
+  "campaign_id": campaign_id,
+  "utm_source": "facebook",
+  "utm_medium": "cpc",
+  "utm_campaign": "spring_fb_ad",
+  "locale": "zh-TW"
+})
+→ { "share_url": "https://landingai.info/zh-TW/landing-page?id=<id>&utm_source=facebook&utm_medium=cpc&utm_campaign=spring_fb_ad" }
+```
+
+把 `share_url` 給使用者、告訴他這條貼到 FB 廣告 / 貼文裡就會被追蹤到。
+
+---
+
+**Step 3 — 讀 / 列出已存的 UTM library**
+
+```
 mcp_tool_call("landing_ai_mcp", "manage_custom_utms", {
   "user_token": token,
   "project_id": campaign_id,
   "utms_json": ""   # 空字串 = read mode
 })
-→ { "utm_source": "...", "utm_medium": "...", "utm_campaign": "...", "utm_term": "...", "utm_content": "..." }
-
-# 設定 UTM
-mcp_tool_call("landing_ai_mcp", "manage_custom_utms", {
-  "user_token": token,
-  "project_id": campaign_id,
-  "utms_json": "{\"utm_source\":\"facebook\",\"utm_medium\":\"cpc\",\"utm_campaign\":\"q2_skincare_launch\",\"utm_content\":\"hero_cta\"}"
-})
+→ {"project_id": "...", "utms": [
+    {"id": "...", "name": "春季 FB 廣告", "utm_source": "facebook",
+     "utm_medium": "cpc", "utm_campaign": "spring_fb_ad",
+     "created_at": "..."},
+    ...
+  ]}
 ```
 
-**設定原則**（**LLM 必先問用戶**、不要自作主張填）：
+或純讀版本：`get_custom_utms`（不需 utms_json）。
+
+---
+
+**設定原則**（**LLM 必先問用戶、不要自作主張填**）：
+
 | 參數 | 用途 | 典型值 |
 |------|------|--------|
-| `utm_source` | 流量來自哪個平台/網站 | `facebook` / `instagram` / `tiktok` / `google` / `email` / `linktree` |
-| `utm_medium` | 廣告類型 / 流量類別 | `cpc`（付費點擊）/ `social`（社群有機）/ `email` / `display` / `referral` |
-| `utm_campaign` | campaign 名稱 | `q2_skincare_launch` / `summer_sale_2026` — 自由命名 |
-| `utm_term` | （選填）關鍵字 | `hyaluronic_acid_serum`、適合搜尋廣告 |
-| `utm_content` | （選填）區分同 campaign 不同素材 | `hero_cta` / `footer_link` / `variant_a` |
+| `name` | 後台 dashboard 顯示的標籤、**不進 URL** | 自由命名（含中文 OK） |
+| `utm_source` | 流量來自哪個平台 / 網站、**進 URL** | `facebook` / `instagram` / `tiktok` / `google` / `email` / `linktree` |
+| `utm_medium` | 廣告類型 / 流量類別、**進 URL** | `cpc`（付費點擊）/ `social`（社群有機）/ `email` / `display` / `referral` |
+| `utm_campaign` | campaign 名稱、**進 URL** | `q2_skincare_launch` / `spring_sale_2026` — 建議英文 / 底線 |
 
-設定完成後、所有從 LP 連出去的 CTA 連結會自動帶上這些參數、Google Analytics / Meta Pixel / 其他追蹤工具能歸因到正確 source。
+**目前不支援**：`utm_content` / `utm_term`——這個 endpoint 只有 4 欄位、後台 schema 不接、就算傳了也會被 silently dropped。前端 dialog 也沒這兩個欄位。需要的話走廣告平台自己的 dynamic UTM（例如 Meta Ads Manager 的 `{{ad.id}}` macro）。
 
-**何時不用**：使用者只想改 CTA URL 本身（不關 tracking）→ 用 `update_cta_link`；要改 CTA 整個 metadata（顏色、文字、URL）→ `update_cta`。
+---
+
+**何時不用這個 flow**：
+- 使用者只想改 CTA 按鈕連去**哪**（不關 tracking）→ 用 `update_cta_link` 改 `cta_url`
+- 要改 CTA 整個 metadata（顏色、文字、URL）→ `update_cta`
+- 想要一條快速分享連結、沒要儲存到 library → 直接 `build_preset_utm_share_url`、跳過 `manage_custom_utms`
+- 使用者要看「這條 UTM 帶進來幾個訪客」→ 不在這個 skill、用 `get_source_stats` (流量分析 tab)
 
 #### Logo Swap Flow (header logo at top-left of sales page)
 
