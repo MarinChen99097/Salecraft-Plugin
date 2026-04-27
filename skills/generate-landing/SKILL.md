@@ -1225,6 +1225,81 @@ mcp_tool_call("landing_ai_mcp", "get_landing_page", {
 - ❌ Phase 6 結尾完全不提 CTA 連到哪 — 用戶沒辦法 verify
 - ❌ 看到 drift 就問用戶「你之前說連到 X 對嗎？」— 是、但**先修再問**、不要讓用戶等下一輪互動才修好
 
+## Phase 5.6: Color Harmony Verification（🔴 MANDATORY — Phase 5.5 跑完後立刻跑、silent 跑、有 fail 才 surface）
+
+> **背景**：Wizard 階段不問配色細節（primary_color 從品牌官網抓 / 推斷、CTA / header / footer 顏色由 Architect agent + 後處理規則自動配）。**多數時候沒事**——但 brand primary 撞 CTA 預設文字色（例如 brand 色 `#FFD700` 黃 + 預設白字 → 對比 1.5:1 直接 fail）會生出**讀不到字的按鈕**、用戶上線才發現。Phase 5.6 用 **AI 配色 + WCAG 對比度檢查**自動把這個 risk 擋掉、且**失敗才打擾用戶**——pass 就完全 silent。
+
+### 流程（2 步、必跑）
+
+**Step 1 — 靜默呼叫 analyze_color_harmony（read-only 模式）**
+
+```
+mcp_tool_call("landing_ai_mcp", "analyze_color_harmony", {
+  "user_token": token,
+  "campaign_id": campaign_id,
+  "target": "all",       # 一次審 cta_button + header + footer
+  "apply": False         # ⚠️ 永遠 False、不可在 Phase 5.6 自動套色
+})
+→ {
+  "primary_color": "...",
+  "current_audit": [
+    {"target": "cta_button", "background": "#...", "text": "#...", "contrast_ratio": 4.8, "accessibility": "AA",       "needs_attention": false},
+    {"target": "header",     "background": "#...", "text": "#...", "contrast_ratio": 2.1, "accessibility": "FAIL",     "needs_attention": true,  "text_inferred": true},
+    {"target": "footer",     "background": "#...", "text": "#...", "contrast_ratio": 4.6, "accessibility": "AA",       "needs_attention": false}
+  ],
+  "suggestions": [...]
+}
+```
+
+對話**不旁白**這個呼叫（Rule 7 SILENT EXECUTION）—— 用戶不需要知道我們檢查了。
+
+**Step 2 — 看 needs_attention 決定 silent 還是 surface**
+
+| 情境 | 動作 |
+|------|------|
+| `current_audit` 全部 `needs_attention=false`（CTA / header / footer 都 ≥ AA）| ✅ **完全 silent**、Phase 6 不提配色、直接 present LP link |
+| 有任一 `needs_attention=true`（FAIL 或 AA-large only）| 🔧 在 Phase 6 結尾**主動 surface**（template 見下方）+ 給用戶 1-click 套用最佳建議的選項 |
+
+**Surface template**（中文示例、其他語言對應翻譯）：
+
+```
+⚠️ 配色檢查發現 [N] 個地方對比度可以再提升、影響可讀性：
+
+[逐項列出 needs_attention=true 的 target]
+- **[target_zh]** 目前是 [bg] 配 [text]、對比 [ratio]:1（[accessibility]）→ AI 建議改成 [suggested_bg] 配 [suggested_text]、提升到 [suggested_ratio]:1（[suggested_accessibility]）
+  > 改善理由：[suggestion.rationale]
+
+要我直接套用最佳建議嗎？
+A) 全部套用（一鍵改三處 / 改 [N] 處）
+B) 只改 [target_zh]（你最在意哪個）
+C) 先不改、我自己看（你可以隨時叫我「幫我重配 CTA」/「header 換深色」）
+```
+
+**target_zh 對應表**：
+- `cta_button` → 「CTA 按鈕」
+- `header` → 「頁首（最上方品牌帶）」
+- `footer` → 「頁尾（底部）」
+
+**用戶選擇後**：
+- A → `analyze_color_harmony({target: "all", apply: True})`、回報「已套用、刷新 LP 看新配色」
+- B（單一 target） → `analyze_color_harmony({target: "<single>", apply: True})`、回報同上
+- C → 不動、跳到 Phase 6 normal flow
+
+### 🔴 這個 phase 為什麼 mandatory
+
+**LLM 在 wizard 不收配色細節 = 賭 Architect 自動配的 CTA / header / footer 都過 WCAG AA。多數情況沒事、但黃 / 螢光綠 / 淺粉等亮色 brand 撞預設白字 = 直接 fail**。Phase 5.6 用 backend 既有的 WCAG 計算（不是 LLM 自己腦袋算）自動把這個洞補起來、用戶不用看到一個讀不到字的按鈕才發現。
+
+**Anti-pattern 禁止**：
+- ❌ 跳過 Phase 5.6、直接 present LP — 賭運氣、撞到 fail case 用戶體感極差
+- ❌ 即使 needs_attention=false 也主動講「我幫你檢查了配色、都沒問題」— 廢話、增加噪音、違反 SILENT EXECUTION Rule 7
+- ❌ 在 Phase 5.6 直接用 `apply=True` 自動覆蓋（沒問用戶）— 即使 fail、用戶可能就是要這個顏色（藝術風 / 某些品牌就是用低對比）、要先 surface 等用戶決定
+- ❌ `current_audit` 全 unknown（顏色都沒 set）就跳過 — 那是 backend 沒拿到資料的 case、Phase 6 順便提一句「你的 LP 用了預設色系、要客製可以隨時叫我」
+
+### 何時 phase 5.6 可略過（罕見）
+
+- `analyze_color_harmony` 整個呼叫失敗（network / model 問題、>10 秒 timeout）→ silent 跳過、不要對用戶 surface 系統層錯誤（Rule 14 + 16）
+- 用戶在 wizard 階段**親口**講過「配色完全交給 AI、我都接受」/「不在意對比度、我要藝術風」→ skip Phase 5.6（這個訊號要在 wizard summary 標 `_color_audit_skip=true`）
+
 ## Phase 6: Present Results + All Links (MANDATORY)
 
 ### Step 1: Create share token
