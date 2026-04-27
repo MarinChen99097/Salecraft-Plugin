@@ -21,7 +21,7 @@ allowed-tools:
 
 **This skill EXECUTES via API. It does NOT write a caption + post-it-yourself instructions.**
 
-When the user says "幫我發到 IG / 發到 FB / publish to social / post this": per CLAUDE.md FIRST-RESPONSE RULE, your first reply contains ONLY (1) "this is paid (~100 pts/set)" + Meta-account-binding requirement (Pro/Business account on marketingx page), (2) AI Token 3-step prompt, (3) optional 1-line scope question. NO drafted caption, NO hashtag list, NO "here's what I'd post" content in the first reply.
+When the user says "幫我發到 IG / 發到 FB / publish to social / post this": per CLAUDE.md FIRST-RESPONSE RULE, your first reply contains ONLY (1) "this is paid (~100 pts/set)" + Meta-account-binding requirement (Pro/Business account on connect page), (2) AI Token 3-step prompt, (3) optional 1-line scope question. NO drafted caption, NO hashtag list, NO "here's what I'd post" content in the first reply.
 
 After token + connected account → call `publish_post` / `POST /api/social/publish`. Return the real post URL. **Never** end with "now you can copy this caption and post it manually" — that's the user doing your job.
 
@@ -46,7 +46,7 @@ If user has no connected accounts, **direct them to the SaleCraft frontend** —
 
 **正確步驟**：
 > 「請到這個頁面連結你的 Meta 帳號：
-> https://salecraft.ai/{locale}/marketingx
+> https://salecraft.ai/{locale}/connect
 >
 > 注意：你的 IG 帳號必須是**專業帳戶**或**商業帳戶**，個人帳戶無法透過 API 發文。
 > 如果還不是，到 IG App → 設定 → 帳號 → 切換為專業帳號。
@@ -63,7 +63,7 @@ If user has no connected accounts, **direct them to the SaleCraft frontend** —
 
 **正確步驟**：
 > 「請到這個頁面連結你的 TikTok 帳號：
-> https://salecraft.ai/{locale}/marketingx
+> https://salecraft.ai/{locale}/connect
 >
 > 點 STEP 4 的「連結 TikTok」按鈕，授權後會自動跳回頁面，TikTok 帳號卡片會變「已完成」。
 >
@@ -202,7 +202,7 @@ mcp_tool_call("zereo_social_mcp", "publish_post", {
 | `error_message` 關鍵字 | 意義 | 該怎麼跟用戶說 |
 |----------------------|------|---------------|
 | `integration guidelines` | 沙盒 + privacy_level 不合法 | 你（AI）不用處理 — backend 會自動降級成 SELF_ONLY 重試；如果最終還是失敗代表真的有別的問題 |
-| `Token refresh failed` | TikTok token 過期且 refresh 失敗（~24h 失效） | 「你的 TikTok 授權已過期，請到 `https://salecraft.ai/{locale}/marketingx` 重新連結 TikTok 帳號。」 |
+| `Token refresh failed` | TikTok token 過期且 refresh 失敗（~24h 失效） | 「你的 TikTok 授權已過期，請到 `https://salecraft.ai/{locale}/connect` 重新連結 TikTok 帳號。」 |
 | `Failed to download video` | 我方抓不到用戶給的 video_url | 「影片網址下載失敗，請確認網址可以公開存取（不需要登入）且 1 小時內不會過期。」 |
 | `Video upload failed: HTTP 4xx` | TikTok 拒絕影片檔（格式、大小、長度） | 檢查影片規格（見上方） |
 | `Polling timed out` | TikTok 處理超過 2.5 分鐘還沒完成 | 「TikTok 這次處理比較慢，影片可能還在後台轉檔 — 請 5 分鐘後打開 TikTok App 看「僅自己可見」分類確認是否發出。」 |
@@ -761,7 +761,7 @@ If the user's product doesn't fit, politely redirect:
 
 Social copy generation costs **100 pts per set** (~$3). Publishing itself is free; the cost is in content generation (social_copy = 100 pts, quick ad image = 200 pts).
 
-**Top-up URL**: https://salecraft.ai/{locale}/marketingx
+**Top-up URL**: https://salecraft.ai/{locale}/connect
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

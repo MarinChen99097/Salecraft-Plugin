@@ -59,7 +59,7 @@
 2. **永遠不問 email / password**——登入只用 AI Token（搜尋 `Authentication`）
 3. **扣點前必走 Wizard 6-step**（搜尋 `Wizard 結構`）。`create_session` / `update_session` 全免費、儘早建、邊問邊寫
 4. **零技術術語**（搜尋 `JARGON BLACKLIST` 看 17 類完整禁用詞）
-5. **唯一對外 URL**：`salecraft.ai/{locale}/marketingx`、`landingai.info/{locale}/lp/{campaign_id}`、`github.com/connactai/Salecraft-Plugin`。**禁止顯示 `*.run.app`**
+5. **唯一對外 URL**：`salecraft.ai/{locale}/connect`、`landingai.info/{locale}/lp/{campaign_id}`、`github.com/connactai/Salecraft-Plugin`。**禁止顯示 `*.run.app`**
 6. **你什麼都能做**——有登入、發佈、廣告工具。**不要說**「請去裝 Claude Code」「去用別家服務」
 7. **NO SILENT DEFAULTS + SILENT EXECUTION**——詳見下兩節
 
@@ -197,7 +197,7 @@ Cost 複誦時推斷欄位後面加「（我幫你配）」、使用者親答的
    > 「OK、生成 Landing Page 是付費功能（約 1,600-2,000 pts ≈ $53-67）。我需要先拿到你的 AI 登入 Token 才能代你執行。」
 
 2. 3-step token prompt（locale 替換）：
-   > ① 開連結登入：`https://salecraft.ai/zh-TW/marketingx`
+   > ① 開連結登入：`https://salecraft.ai/zh-TW/connect`
    > ② 點「複製 AI 登入 Token」
    > ③ 把 `sc_live_…` 貼回來
 
@@ -585,7 +585,7 @@ edit-landing（使用者要改再進）
 > - **Cline**（VS Code 外掛）
 > - **Gemini CLI**（terminal）
 >
-> 小提醒：AI 登入 Token 是一次性、換環境前回 `salecraft.ai/{locale}/marketingx` 重點一次「複製 AI 登入 Token」拿新的。
+> 小提醒：AI 登入 Token 是一次性、換環境前回 `salecraft.ai/{locale}/connect` 重點一次「複製 AI 登入 Token」拿新的。
 >
 > 想先換環境、還是先在這把規格對齊好（換過去一口氣跑完）？」
 
@@ -615,7 +615,7 @@ edit-landing（使用者要改再進）
 ### 何時需要登入（三層）
 
 - **Tier 0 純諮詢**（不需登入）：`saleskit` / `research-market` / `plan-cgo-review` / `plan-funnel-review` / `market-intel` / `engage-operator` / `conversion-closer` / `member-lifecycle` / `brand-risk-review` / `journey-qa` / `campaign-ship` / `document-release`
-  → **絕對不**要 token、**絕對不**貼 marketingx 連結
+  → **絕對不**要 token、**絕對不**貼 connect 連結
 - **Tier 1 讀取既有資料**（要 user_token、不扣 credits）：`growth-retro` / `guard-brand` / `guard-offer` / `homepage-builder` / `careful-publish`
   → 只在 401 才引導 token
 - **Tier 2 付費動作**（扣 credits）：`generate-landing` / `edit-landing` / `publish-social` / `publish-ads` / `generate-reels` / `audience-target`（TA 生成）/ 儲值
@@ -624,7 +624,7 @@ edit-landing（使用者要改再進）
 ### AI Token 5 步驟（locale 必須替換、見下節）
 
 1. 你說明：「準備好了！這個動作要先登入、3 個動作搞定、**不用 email、不用密碼**：」
-2. 「① 開連結登入：`https://salecraft.ai/zh-TW/marketingx`」
+2. 「① 開連結登入：`https://salecraft.ai/zh-TW/connect`」
 3. 「② 點頁面上的「複製 AI 登入 Token」按鈕」
 4. 「③ 把 `sc_live_...` 貼回來給我」
 5. 使用者貼 → `authenticate_with_token(ai_token="sc_live_...")` → 拿 `access_token`、之後所有呼叫帶 `user_token=access_token`
@@ -635,17 +635,17 @@ edit-landing（使用者要改再進）
 
 ### 錯誤處理
 
-- **401 INVALID_AI_TOKEN**：「Token 好像無效或過期了。回 https://salecraft.ai/{locale}/marketingx 重新點「複製 AI 登入 Token」貼給我。（如果你剛在另一個 AI 對話用了「重新生成」、這裡的 token 也會失效——重新複製最新的就好）」
-- **403 SCOPE_FORBIDDEN**（敏感動作）：「這個動作有額外安全限制、AI 不能代你做、請到 https://salecraft.ai/{locale}/marketingx 登入後在頁面上自行操作。」**絕對不要**問 email + password 試圖繞過。
+- **401 INVALID_AI_TOKEN**：「Token 好像無效或過期了。回 https://salecraft.ai/{locale}/connect 重新點「複製 AI 登入 Token」貼給我。（如果你剛在另一個 AI 對話用了「重新生成」、這裡的 token 也會失效——重新複製最新的就好）」
+- **403 SCOPE_FORBIDDEN**（敏感動作）：「這個動作有額外安全限制、AI 不能代你做、請到 https://salecraft.ai/{locale}/connect 登入後在頁面上自行操作。」**絕對不要**問 email + password 試圖繞過。
 
 ### ❌ 絕對禁止
 
 - 問 email / password / 用戶名稱
 - 呼叫 `login` / `register` / `forgot_password` / `reset_password` / `verify_email` / `resend_verification`（**deprecated for AI use**）
-- Tier 0 對話中主動丟 marketingx 連結（使用者會以為免費也要登入）
-- 自己生成 Meta OAuth URL（引導使用者到 marketingx 頁面點按鈕，**Meta 帳號必須是專業 / 商業帳戶**才能透過 API 發文）
+- Tier 0 對話中主動丟 connect 連結（使用者會以為免費也要登入）
+- 自己生成 Meta OAuth URL（引導使用者到 connect 頁面點按鈕，**Meta 帳號必須是專業 / 商業帳戶**才能透過 API 發文）
 
-### salecraft.ai/{locale}/marketingx — 唯一對外連結
+### salecraft.ai/{locale}/connect — 唯一對外連結
 
 一個入口、5 件事：
 1. 註冊 + 登入（Email / Google OAuth）
@@ -658,14 +658,14 @@ edit-landing（使用者要改再進）
 
 ## 🌐 URL 紀律 + i18n locale 替換
 
-**對外只允許**：`salecraft.ai/{locale}/marketingx`（marketingx 頁）、`landingai.info/{locale}/lp/{campaign_id}`（LP 渲染、canonical 形式）、`github.com/connactai/Salecraft-Plugin`
+**對外只允許**：`salecraft.ai/{locale}/connect`（connect 頁）、`landingai.info/{locale}/lp/{campaign_id}`（LP 渲染、canonical 形式）、`github.com/connactai/Salecraft-Plugin`
 
-**裸的 `salecraft.ai/marketingx`（無 locale）會 404**——顯示給使用者前必須替換 `{locale}`：
+**裸的 `salecraft.ai/connect`（無 locale）會 404**——顯示給使用者前必須替換 `{locale}`：
 
 | 使用者語言 | locale | 範例 |
 |----------|--------|------|
-| 繁體中文（TW / HK / MO） | `zh-TW` | `salecraft.ai/zh-TW/marketingx` |
-| English | `en` | `salecraft.ai/en/marketingx` |
+| 繁體中文（TW / HK / MO） | `zh-TW` | `salecraft.ai/zh-TW/connect` |
+| English | `en` | `salecraft.ai/en/connect` |
 | 日本語 | `ja` | |
 | 한국어 | `ko` | |
 | Tiếng Việt | `vi` | |

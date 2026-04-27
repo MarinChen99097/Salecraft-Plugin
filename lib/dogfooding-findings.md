@@ -643,7 +643,7 @@ explicit migration runbook.
 Plugin docs showed the public LP URL as
 `https://salecraft.ai/{locale}/landing-page?id=...`. **Two bugs**:
 1. Wrong domain — `salecraft.ai` is the brand/marketing site (where the
-   marketingx token page lives), NOT the LP renderer. LPs are served by
+   connect token page lives), NOT the LP renderer. LPs are served by
    `marketing-frontend` Cloud Run service mapped to `landingai.info`.
    `salecraft.ai/.../landing-page?id=...` returns 404.
 2. Wrong path — even on the correct domain, `/landing-page?id=X` is the

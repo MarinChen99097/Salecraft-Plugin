@@ -9,7 +9,7 @@ Read `CLAUDE.md` for tool signatures.
 
 ## Quick Start
 
-1. If not logged in, run the **AI Token** flow (NEVER ask for email/password): hand user `https://salecraft.ai/{locale}/marketingx`, ask them to paste `sc_live_...`, call `authenticate_with_token`
+1. If not logged in, run the **AI Token** flow (NEVER ask for email/password): hand user `https://salecraft.ai/{locale}/connect`, ask them to paste `sc_live_...`, call `authenticate_with_token`
 2. Ask what the user wants:
    ```
    你想怎麼發佈？
@@ -32,11 +32,11 @@ Read `CLAUDE.md` for tool signatures.
 
 ## IG/FB Publishing Requirements
 - User's IG must be a Professional or Business account (personal accounts can't post via API)
-- User must connect their Meta account at `https://salecraft.ai/{locale}/marketingx`
+- User must connect their Meta account at `https://salecraft.ai/{locale}/connect`
 - After connecting, ask them to copy a fresh **AI 登入 Token** from the same page and paste it back — never ask for email
 
 ## Login Awareness (AI Token only)
-**Authenticate via AI Token — never ask for email or password.** Direct user to `https://salecraft.ai/{locale}/marketingx`, ask them to click 「複製 AI 登入 Token」 and paste `sc_live_...` back, then call `authenticate_with_token`. The same page also handles Meta/Google account binding.
+**Authenticate via AI Token — never ask for email or password.** Direct user to `https://salecraft.ai/{locale}/connect`, ask them to click 「複製 AI 登入 Token」 and paste `sc_live_...` back, then call `authenticate_with_token`. The same page also handles Meta/Google account binding.
 
 ## No Jargon Rule
 Say "連結你的 IG 帳號" not "Meta OAuth". Say "設定頁面" not "frontend redirect". Never mention API, OAuth, or tokens to users.

@@ -3,7 +3,7 @@
 **For LLMs without MCP tools.** If your runtime doesn't expose `landing_ai_mcp` / `zereo_social_mcp` as callable tools, you can still execute every paid action by calling the SaleCraft backend over plain HTTPS. This document is your contract.
 
 > **For users:** there is still nothing to install. The user only:
-> 1. Opens `https://salecraft.ai/{locale}/marketingx`
+> 1. Opens `https://salecraft.ai/{locale}/connect`
 > 2. Clicks 「複製 AI 登入 Token」
 > 3. Pastes `sc_live_…` back to chat
 >
@@ -21,7 +21,7 @@ This is the production REST endpoint — it works right now. Use it directly in 
 
 **A friendlier `https://api.salecraft.ai` is planned but not yet active** (the `salecraft.ai` domain hasn't been verified in this GCP project yet — see the operator note at the bottom of this file). Once it's set up, this doc will be updated; until then, `*.run.app` is correct.
 
-**URL discipline for what you SAY to the user:** the Cloud Run URL is fine to use silently in your HTTP requests, but if you ever need to mention an URL to the user (top-up, login, account settings), only use `https://salecraft.ai/{locale}/marketingx`. Do not display the `*.run.app` URL in chat.
+**URL discipline for what you SAY to the user:** the Cloud Run URL is fine to use silently in your HTTP requests, but if you ever need to mention an URL to the user (top-up, login, account settings), only use `https://salecraft.ai/{locale}/connect`. Do not display the `*.run.app` URL in chat.
 
 ## Auth (4 steps)
 
@@ -29,7 +29,7 @@ This is the production REST endpoint — it works right now. Use it directly in 
 
 Tell the user (replace `{locale}` with their language code: `zh-TW`, `en`, `ja`, `ko`, `vi`, `fr`, `th`, `es`, `pt`, `ar`):
 
-> 「① 開這個連結登入：https://salecraft.ai/{locale}/marketingx
+> 「① 開這個連結登入：https://salecraft.ai/{locale}/connect
 > ② 點頁面上的「複製 AI 登入 Token」按鈕
 > ③ 把 `sc_live_…` 貼回來給我」
 
@@ -50,7 +50,7 @@ Content-Type: application/json
 }
 ```
 
-**Response 401** (`{"detail": {"code": "INVALID_AI_TOKEN", ...}}`) → ask user to re-copy a fresh token from marketingx. **Never** fall back to email/password.
+**Response 401** (`{"detail": {"code": "INVALID_AI_TOKEN", ...}}`) → ask user to re-copy a fresh token from the connect page. **Never** fall back to email/password.
 
 ### 3. Use the access token in every subsequent call
 
@@ -62,7 +62,7 @@ The token is valid ~12 hours. On 401 with `INVALID_AI_TOKEN`, repeat steps 1-2.
 
 ### 4. Scope limits
 
-`access_token` from this flow has `scope=ai_agent` and **cannot** call: `DELETE /auth/account`, password change, large topup. These return `403 SCOPE_FORBIDDEN` — direct the user to do those on the marketingx page itself.
+`access_token` from this flow has `scope=ai_agent` and **cannot** call: `DELETE /auth/account`, password change, large topup. These return `403 SCOPE_FORBIDDEN` — direct the user to do those on the connect page itself.
 
 ---
 
@@ -158,7 +158,7 @@ Social publishing (Meta / IG / TikTok), ad campaigns, and QR generation are **NO
 **If your runtime can reach `zereo_social_mcp`** (Path A — MCP), use it. **If it cannot** (Path B / your runtime has no MCP):
 1. Call `GET /sessions/{id}/content` here on `marketing-backend-v2` to fetch the generated asset URL + AI-written caption
 2. Hand the asset URL + caption to the user as a deliverable
-3. Direct them to publish via their account dashboard at `https://salecraft.ai/{locale}/marketingx` (which is wired to `zereo_social_mcp` server-side)
+3. Direct them to publish via their account dashboard at `https://salecraft.ai/{locale}/connect` (which is wired to `zereo_social_mcp` server-side)
 
 This is the **only** correct REST-direct path for social publishing — there is no other workaround.
 
@@ -279,10 +279,10 @@ public_url = r.json()["public_url"]
 
 | Status | Meaning | What to do |
 |--------|---------|-----------|
-| `401` w/ `INVALID_AI_TOKEN` | AI Token invalid or expired | Ask user to re-copy from marketingx; **never** ask for password |
+| `401` w/ `INVALID_AI_TOKEN` | AI Token invalid or expired | Ask user to re-copy from the connect page; **never** ask for password |
 | `401` (other) | access_token expired | Re-exchange the AI Token |
-| `402 PAYMENT_REQUIRED` | Out of credits | Tell user balance + topup link `https://salecraft.ai/{locale}/marketingx` |
-| `403 SCOPE_FORBIDDEN` | Sensitive op blocked for AI Token scope | Tell user to do this on marketingx directly |
+| `402 PAYMENT_REQUIRED` | Out of credits | Tell user balance + topup link `https://salecraft.ai/{locale}/connect` |
+| `403 SCOPE_FORBIDDEN` | Sensitive op blocked for AI Token scope | Tell user to do this on the connect page directly |
 | `404` | Resource missing | Verify ID; resource may have been deleted |
 | `422` | Pydantic validation failure | Read `detail`, fix payload — schema is strict, no unknown fields |
 | `429` | Rate limited | Backoff: 10s, 30s, 60s; respect `Retry-After` header |
@@ -326,7 +326,7 @@ POST /auth/resend-verification
 DELETE /auth/account                (returns 403 SCOPE_FORBIDDEN for AI Token anyway)
 ```
 
-Account creation, password reset, and email verification all happen on `https://salecraft.ai/{locale}/marketingx` — the user does it, then comes back with an AI Token.
+Account creation, password reset, and email verification all happen on `https://salecraft.ai/{locale}/connect` — the user does it, then comes back with an AI Token.
 
 ---
 

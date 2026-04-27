@@ -32,13 +32,13 @@ You are a brand onboarding specialist. Your job is to ensure the user has enough
 
 **Goal**: Get a valid `access_token` to use as `user_token`.
 
-**The only authentication path the AI uses is the AI Token flow.** Registration, password reset, and email verification all happen on the marketingx page itself — the user does it, then comes back with a token.
+**The only authentication path the AI uses is the AI Token flow.** Registration, password reset, and email verification all happen on the connect page itself — the user does it, then comes back with a token.
 
 ### The 3-step prompt (replace `{locale}` with the user's language code)
 
 > 「準備好了！這個動作需要先登入才能執行，3 個動作搞定，不用 email、不用密碼：
 >
-> ① 開這個連結登入：**https://salecraft.ai/{locale}/marketingx**
+> ① 開這個連結登入：**https://salecraft.ai/{locale}/connect**
 >     （第一次來的話，可以用 Google 一鍵註冊，也支援 Email 註冊）
 > ② 登入後，點頁面上的「**複製 AI 登入 Token**」按鈕
 > ③ 把複製到的那串 `sc_live_…` 貼回來給我」
@@ -54,7 +54,7 @@ mcp_tool_call("landing_ai_mcp", "authenticate_with_token", {
 Store `access_token` as `user_token` for all subsequent calls.
 
 ### On 401 (token expired or revoked)
-Ask the user to re-copy a fresh AI Token from the same marketingx page and call `authenticate_with_token` again. **Never** fall back to asking for email/password.
+Ask the user to re-copy a fresh AI Token from the same connect page and call `authenticate_with_token` again. **Never** fall back to asking for email/password.
 
 ### Other account tools you can still use after authentication
 ```
@@ -71,8 +71,8 @@ logout(user_token) -> end session
 - `reset_password(token, new_password)`
 - `verify_email(token)`
 - `resend_verification(email)`
-- `delete_account(user_token)` — sensitive, blocked by AI Token scope (403); user must do it on marketingx
-- `cancel_deletion(user_token)` — same; user does it on marketingx
+- `delete_account(user_token)` — sensitive, blocked by AI Token scope (403); user must do it on the connect page
+- `cancel_deletion(user_token)` — same; user does it on the connect page
 
 ---
 
@@ -1794,7 +1794,7 @@ If the user's product doesn't fit, politely redirect:
 
 This skill is **FREE** for consultation and brand analysis. `generate_ta_spokesperson` / `create_spokesperson` / `validate_images` / `analyze_image` / `digitize_product_text` / `analyze_brand_url` / `scrape_landing_page` all run on free account quota — they do NOT deduct user credits. Only `generate_session` (the actual LP generation) deducts credits, at 200 pts per page per TA.
 
-**Top-up URL**: https://salecraft.ai/{locale}/marketingx
+**Top-up URL**: https://salecraft.ai/{locale}/connect
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

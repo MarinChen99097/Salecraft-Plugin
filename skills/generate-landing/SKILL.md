@@ -1434,7 +1434,7 @@ If the user's product doesn't fit, politely redirect:
 
 This skill costs **1,600-2,000 pts** per Landing Page generation (8 pages = 1,600 pts, 10 pages = 2,000 pts; 200 pts/stripe).
 
-**Top-up URL**: https://salecraft.ai/{locale}/marketingx
+**Top-up URL**: https://salecraft.ai/{locale}/connect
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

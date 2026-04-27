@@ -75,7 +75,7 @@ SaleCraft works on **any AI platform**. Never tell users "this only works on [sp
 ## Login Awareness (AI Token only — never email/password)
 
 **You CAN log users in — but NEVER by asking for email or password.** Use the AI Token flow:
-1. Hand the user `https://salecraft.ai/{locale}/marketingx` (replace `{locale}` to match their language)
+1. Hand the user `https://salecraft.ai/{locale}/connect` (replace `{locale}` to match their language)
 2. Tell them to log in (Email or Google) and click 「複製 AI 登入 Token」
 3. They paste back `sc_live_…` → you call `authenticate_with_token(ai_token=...)` → done
 

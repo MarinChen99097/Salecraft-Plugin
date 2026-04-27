@@ -297,7 +297,7 @@ When user says "I don't know what reel to make", there's a direct AI-suggest flo
 
 #### Not-really-gaps (already covered or intentionally hidden)
 
-- **Google Drive** (7 tools): CLAUDE.md L1330-1332 documents Google Drive binding and `gdrive_import_shared_link`. Coverage is thin (only shared-link import mentioned, not full Drive API flow) but the user-visible flow (bind account on marketingx page → LLM imports via shared link) is documented. Marginally under-documented but not a gap.
+- **Google Drive** (7 tools): CLAUDE.md L1330-1332 documents Google Drive binding and `gdrive_import_shared_link`. Coverage is thin (only shared-link import mentioned, not full Drive API flow) but the user-visible flow (bind account on connect page → LLM imports via shared link) is documented. Marginally under-documented but not a gap.
 - **`import_pdf`**: brand-onboard mentions PDF upload but doesn't reference this specific MCP tool. Implementation uses it implicitly.
 - **`compress_memory` / `delete_memory`**: brand-memory SKILL handles these silently, no user surfacing needed.
 - **`summarize_conversation`**: could be a feature but not a claimed one — no drift, just unused capability.

@@ -95,7 +95,7 @@ Phase 10: Growth Retrospective [growth-retro]
 
 **Steps**:
 1. Authenticate via **AI Token** (NEVER email/password):
-   - Hand the user `https://salecraft.ai/{locale}/marketingx` (replace `{locale}`)
+   - Hand the user `https://salecraft.ai/{locale}/connect` (replace `{locale}`)
    - Ask them to log in, click 「複製 AI 登入 Token」, paste `sc_live_...`
    - Call `authenticate_with_token(ai_token=...)` → store `access_token` as `user_token`
 2. Check brands: `list_brands(user_token)` → show existing brands

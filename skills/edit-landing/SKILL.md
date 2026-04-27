@@ -1141,7 +1141,7 @@ free_remaining = p2.get("free_remaining", max(0, free_remaining - 1))
 
 **Key rule**: per-stripe actual cost = that stripe's API response `credits_deducted`. Never predict or announce a price without the response in hand — under race conditions the backend is the source of truth.
 
-**Top-up URL**: https://salecraft.ai/{locale}/marketingx
+**Top-up URL**: https://salecraft.ai/{locale}/connect
 
 Before ANY paid action:
 1. Read `regen_quota` via `get_landing_page` (don't guess from memory)

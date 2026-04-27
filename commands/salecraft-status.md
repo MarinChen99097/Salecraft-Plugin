@@ -49,7 +49,7 @@ mcp_tool_call("zereo_social_mcp", "list_ad_campaigns", { "user_token": token })
 ```
 
 ## Login Awareness (AI Token only)
-**Authenticate via AI Token — never ask for email or password.** If not logged in, direct user to `https://salecraft.ai/{locale}/marketingx`, ask them to click 「複製 AI 登入 Token」 and paste `sc_live_...` back, then call `authenticate_with_token`.
+**Authenticate via AI Token — never ask for email or password.** If not logged in, direct user to `https://salecraft.ai/{locale}/connect`, ask them to click 「複製 AI 登入 Token」 and paste `sc_live_...` back, then call `authenticate_with_token`.
 
 ## No Jargon Rule
 Show "剩餘點數" not "credits_remaining". Show "進行中" not "processing". Never expose raw API data to users.

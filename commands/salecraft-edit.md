@@ -9,7 +9,7 @@ Read `CLAUDE.md` for tool signatures.
 
 ## Quick Start
 
-1. If not logged in, run the **AI Token** flow (NEVER ask for email/password): hand user `https://salecraft.ai/{locale}/marketingx`, ask them to paste `sc_live_...`, call `authenticate_with_token`
+1. If not logged in, run the **AI Token** flow (NEVER ask for email/password): hand user `https://salecraft.ai/{locale}/connect`, ask them to paste `sc_live_...`, call `authenticate_with_token`
 2. Ask which landing page to edit, or list recent ones:
    ```
    mcp_tool_call("landing_ai_mcp", "list_sessions", { "user_token": token })
@@ -25,7 +25,7 @@ Read `CLAUDE.md` for tool signatures.
 Skip to step 3 — don't re-authenticate or re-list.
 
 ## Login Awareness (AI Token only)
-**Authenticate via AI Token — never ask for email or password.** Direct user to `https://salecraft.ai/{locale}/marketingx` → click 「複製 AI 登入 Token」 → paste `sc_live_...` back → call `authenticate_with_token`.
+**Authenticate via AI Token — never ask for email or password.** Direct user to `https://salecraft.ai/{locale}/connect` → click 「複製 AI 登入 Token」 → paste `sc_live_...` back → call `authenticate_with_token`.
 
 ## No Jargon Rule
 Present stripes as "第 1 頁", "第 2 頁" etc. Never mention campaign_id, session_id, or technical details to users.

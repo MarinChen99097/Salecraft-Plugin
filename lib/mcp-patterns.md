@@ -20,7 +20,7 @@ mcp__claude_ai_Service_System_Deep_Research__mcp_tool_call(
 
 You (the AI) tell the user (with `{locale}` replaced for their language):
 
-> 「① 開這個連結登入：https://salecraft.ai/{locale}/marketingx
+> 「① 開這個連結登入：https://salecraft.ai/{locale}/connect
 > ② 點頁面上的「複製 AI 登入 Token」按鈕
 > ③ 把 `sc_live_…` 貼回來給我」
 
@@ -48,7 +48,7 @@ mcp_tool_call(
 ```
 # NOTE: authenticate_with_token does NOT return a refresh_token.
 # When you get 401, ask the user to re-copy a fresh AI Token from
-# https://salecraft.ai/{locale}/marketingx and call authenticate_with_token again.
+# https://salecraft.ai/{locale}/connect and call authenticate_with_token again.
 # NEVER fall back to email/password — those tools are deprecated for AI use.
 # Token expires in ~12 hours.
 ```
@@ -62,7 +62,7 @@ Do **not** call any of these — they require credentials that the AI must never
 - `verify_email(token)`
 - `resend_verification(email)`
 
-Account creation, password reset, and email verification all happen on the marketingx page itself. The user does it, then comes back with an AI Token.
+Account creation, password reset, and email verification all happen on the connect page itself. The user does it, then comes back with an AI Token.
 
 ## Common Patterns
 
@@ -213,7 +213,7 @@ mcp_tool_call("zereo_social_mcp", "create_ad_campaign", {
 
 | Error | Cause | Resolution |
 |-------|-------|------------|
-| 401 | Token expired or revoked | Ask user to re-copy a fresh AI Token from `https://salecraft.ai/{locale}/marketingx`, call `authenticate_with_token` again, retry |
+| 401 | Token expired or revoked | Ask user to re-copy a fresh AI Token from `https://salecraft.ai/{locale}/connect`, call `authenticate_with_token` again, retry |
 | 402 | Insufficient credits | Inform user, show `get_me` balance |
 | 404 | Resource not found | Verify ID exists, may have been deleted |
 | 429 | Rate limited | Wait 10s, retry (max 3 retries) |

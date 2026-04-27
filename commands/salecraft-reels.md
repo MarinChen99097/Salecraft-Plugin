@@ -12,12 +12,12 @@ Execute these phases in order:
 ## Phase 1: Authentication & Context
 
 If not logged in (AI Token flow — NEVER ask for email/password):
-- Hand the user `https://salecraft.ai/{locale}/marketingx` (replace `{locale}`)
+- Hand the user `https://salecraft.ai/{locale}/connect` (replace `{locale}`)
 - Ask them to log in (Google or Email — they do it on the page, not in chat) and click 「複製 AI 登入 Token」
 - They paste back `sc_live_...`
 - Call `authenticate_with_token(ai_token=...)` → get `access_token`, store as `user_token`
 - Check credits via `get_me`
-- If they have no account, registration is on the same marketingx page
+- If they have no account, registration is on the same connect page
 
 If `brand_id` available from previous session, carry it forward.
 
@@ -79,7 +79,7 @@ Carry these values across all phases — never re-ask:
 → Input user's script, skip to Phase 4
 
 ## Login Awareness (AI Token only)
-**Authenticate via AI Token — never ask for email or password.** Direct user to `https://salecraft.ai/{locale}/marketingx`, ask them to click 「複製 AI 登入 Token」 and paste `sc_live_...` back, then call `authenticate_with_token`.
+**Authenticate via AI Token — never ask for email or password.** Direct user to `https://salecraft.ai/{locale}/connect`, ask them to click 「複製 AI 登入 Token」 and paste `sc_live_...` back, then call `authenticate_with_token`.
 
 ## No Jargon Rule
 Say "影片" not "Reels pipeline". Say "費用" not "pts deduction". Never mention agents, MCP, or technical internals to users.

@@ -17,7 +17,7 @@ Required BEFORE anything else. `create_session` needs `access_token`.
 
 ```
 對使用者（locale 替換）：
-「① 開 https://salecraft.ai/{locale}/marketingx
+「① 開 https://salecraft.ai/{locale}/connect
   ② 點「複製 AI 登入 Token」
   ③ 貼 sc_live_... 回來給我」
 

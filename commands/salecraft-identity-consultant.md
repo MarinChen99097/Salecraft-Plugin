@@ -193,17 +193,29 @@ When status reaches `awaiting_user_selection`, surface progress to the user:
 
 ## Phase 5 — Selection walk-through
 
-Walk the user through 3 selection steps using AskUserQuestion. For each, show
-the candidates with their `concept_name` / `name` + `rationale` + visual previews.
+Walk the user through 3 selection steps using AskUserQuestion. Logo concepts
+are presented as **text descriptions only** at this stage — actual rendered
+images appear only AFTER `/render` runs (Phase 6). Pre-render previews are not
+generated for cost reasons; the symbol_description + rationale are detailed
+enough to choose by.
 
-### 5.1 Logo selection
+### 5.1 Logo selection (text-only at this stage)
 
-Show the 4 `logo_concepts`:
+Show the 4 `logo_concepts` with their rationale + symbol_description so the
+user can imagine each. Set expectation explicitly: "actual logo images render
+after you pick one — that's a separate step":
 ```
-1. {concept_name_1} — {rationale_1[:80]}...
-2. {concept_name_2} — {rationale_2[:80]}...
-3. {concept_name_3} — {rationale_3[:80]}...
-4. {concept_name_4} — {rationale_4[:80]}...
+1. {concept_name_1} ({primary_construction_1})
+   Symbol: {symbol_description_1}
+   Why: {rationale_1[:120]}...
+2. {concept_name_2} ({primary_construction_2})
+   Symbol: {symbol_description_2}
+   Why: {rationale_2[:120]}...
+3. ...
+4. ...
+
+(Images will render after you select one — that step costs ~1000 pts depending
+on variation count.)
 ```
 
 User picks one →

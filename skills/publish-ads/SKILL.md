@@ -21,7 +21,7 @@ allowed-tools:
 
 **This skill EXECUTES via API. It does NOT write a "campaign plan" text.**
 
-When the user says "幫我跑廣告 / 投廣告 / run ads / create ad campaign": per CLAUDE.md FIRST-RESPONSE RULE, your first reply contains ONLY (1) "this is paid + needs ad account connected on marketingx", (2) AI Token 3-step prompt, (3) optional 1-line scope question (Meta? Google? budget range?). NO ad copy drafts, NO targeting suggestions written out, NO budget plan in the first reply.
+When the user says "幫我跑廣告 / 投廣告 / run ads / create ad campaign": per CLAUDE.md FIRST-RESPONSE RULE, your first reply contains ONLY (1) "this is paid + needs ad account connected on the connect page", (2) AI Token 3-step prompt, (3) optional 1-line scope question (Meta? Google? budget range?). NO ad copy drafts, NO targeting suggestions written out, NO budget plan in the first reply.
 
 After token + connected ad account → call `generate_ad`, poll, then `create_ad_campaign`. Return real campaign IDs and monitoring links.
 
@@ -647,7 +647,7 @@ If the user's product doesn't fit, politely redirect:
 
 This skill's cost depends on the ad creative generation: quick ad image = 200 pts (~$7), carousel = 300 + 100×N pts. Campaign creation itself uses the generated creative.
 
-**Top-up URL**: https://salecraft.ai/{locale}/marketingx
+**Top-up URL**: https://salecraft.ai/{locale}/connect
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

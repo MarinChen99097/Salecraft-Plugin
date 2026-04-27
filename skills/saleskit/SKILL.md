@@ -378,7 +378,7 @@ Based on answers, recommend the appropriate **SaleCraft Toolbox**:
 
 - **1 USD = 1 pt**
 - **最低儲值**: $20 USD = 20 pts
-- **儲值方式**: Stripe 信用卡（在 `https://salecraft.ai/{locale}/marketingx` 頁面）
+- **儲值方式**: Stripe 信用卡（在 `https://salecraft.ai/{locale}/connect` 頁面）
 - **Currency**: USD (`$`) only — never NT$ / EUR / £ / ¥ / 円 / 人民幣 / KRW / THB / VND / 任何其他幣別（see `lib/credit-calculator.md` § Currency Rule）
 
 **常見組合包價格估算**：
@@ -410,7 +410,7 @@ through AI conversation. No login, no token, no credits needed.
 > 接下來如果你想做 [LP / 發文 / 廣告]，需要先登入一下。
 > 很快，3 個動作搞定，**完全不用 email、不用密碼**：
 >
-> ① 開這個連結登入：👉 https://salecraft.ai/zh-TW/marketingx
+> ① 開這個連結登入：👉 https://salecraft.ai/zh-TW/connect
 >     （第一次來可以用 Google 一鍵註冊，也支援 Email 註冊）
 > ② 登入後，點頁面上的「**複製 AI 登入 Token**」按鈕
 > ③ 把那串 `sc_live_…` 貼回來給我，我就能直接幫你做後面的事

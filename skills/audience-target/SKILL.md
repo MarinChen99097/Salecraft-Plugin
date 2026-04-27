@@ -1071,7 +1071,7 @@ If the user's product doesn't fit, politely redirect:
 
 This skill is **FREE**. `generate_ta_options` / `generate_ta_spokesperson` / `get_spokesperson_generation_status` / `list_spokespersons` / `create_spokesperson` all run on free quota — they do NOT deduct user credits. The user only gets charged later when `generate_session` fires (at 200 pts per page per TA).
 
-**Top-up URL**: https://salecraft.ai/{locale}/marketingx
+**Top-up URL**: https://salecraft.ai/{locale}/connect
 
 Before ANY paid action:
 1. Tell the user the estimated cost in pts

@@ -192,7 +192,7 @@ Feed `image_url` directly into `create_ad_campaign.creative_image_url`
 | `422` | `field required: <name>` | param name drift — compare to this file | fix the param name, do NOT invent fields |
 | `422` | `value is not a valid <enum>` | enum value wrong (e.g. `TRAFFIC` instead of `OUTCOME_TRAFFIC`) | use exact enum per this file |
 | `429` | `Monthly publishing limit reached` | user hit `max_social_posts_per_month` | tell user to wait until the 1st of next month |
-| `400` | `No linked Facebook Page` | ads require FB Page connection on the account | tell user to bind a FB Page on salecraft.ai/marketingx |
+| `400` | `No linked Facebook Page` | ads require FB Page connection on the account | tell user to bind a FB Page on salecraft.ai/connect |
 | `500` | `column ... does not exist` | DB migration drift (backend bug) | retry after ~60s (auto-migration runs on next deploy); escalate to zereo@connact.ai if persistent |
 
 ---
