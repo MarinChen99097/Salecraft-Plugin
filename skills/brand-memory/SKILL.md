@@ -224,6 +224,8 @@ EVERY time a file is uploaded (`upload_base64`, `get_asset_upload_url`,
 
 ```
 POST /ai-agent/brand-memory/save-file
+Authorization: Bearer <access_token>
+X-Skill-Identifier: salecraft-plugin@<sha-or-version>   # see RULE 0
 {
   "brand_id": "<current Project>",
   "file_name": "product-hero.jpg",
@@ -266,6 +268,8 @@ showing the result to the user), call:
 
 ```
 POST /ai-agent/brand-memory/save-prompt
+Authorization: Bearer <access_token>
+X-Skill-Identifier: salecraft-plugin@<sha-or-version>   # see RULE 0
 {
   "brand_id": "<current Project>",
   "brand_name": "<known brand name>",      # always include if you know it
@@ -294,6 +298,8 @@ After the user shares **substantive** info about their brand/product/strategy
 
 ```
 POST /ai-agent/brand-memory/save-prompt
+Authorization: Bearer <access_token>
+X-Skill-Identifier: salecraft-plugin@<sha-or-version>   # see RULE 0
 {
   "brand_id": "<Project>",
   "brand_name": "小美肌膚實驗室",
@@ -332,6 +338,8 @@ Trigger `/compile-metadata` when ANY of these is true:
 
 ```
 POST /ai-agent/brand-memory/compile-metadata
+Authorization: Bearer <access_token>
+X-Skill-Identifier: salecraft-plugin@<sha-or-version>   # see RULE 0
 { "brand_id": "<Project>" }
 ```
 
