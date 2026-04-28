@@ -65,45 +65,9 @@
 
 ---
 
-## 🔴 Rule 7.5 — TOOL CALL CONVENTION（**所有 code block 範例都是 shorthand**）
+## 🔴 Rule 7.5 — TOOL CALLS
 
-**This entire plugin is reachable through ONE tool: `mcp_tool_call`.** 個別工具名（`create_session`、`generate_session`、`generate_ad`、`update_session` 等）**不會**作為 first-class tool 出現在你的 connector 工具列表——connector 只露出 `mcp_tool_call(server_name, tool_name, arguments)` 這一個 meta-tool。
-
-### Shorthand → Real call 翻譯規則
-
-整份 CLAUDE.md 與所有 SKILL.md 為了易讀，把工具呼叫寫成簡寫，例如：
-
-```
-generate_session(session_id, ta_group_ids_json=[...], requested_stripe_count=N)
-```
-
-**真實呼叫必須包成這樣（你的 LLM runtime 唯一能執行的形式）**：
-
-```
-mcp_tool_call(
-  server_name = "landing_ai_mcp",     # 或 "zereo_social_mcp"，視工具歸屬
-  tool_name   = "generate_session",
-  arguments   = {
-    "user_token": "<token>",
-    "session_id": "<id>",
-    "ta_group_ids_json": [...],
-    "requested_stripe_count": N
-  }
-)
-```
-
-### Server 歸屬（決定 `server_name`）
-
-| 工具家族 | `server_name` |
-|---------|---------------|
-| 登入 / session / brand / TA / 圖片 / generate / edit / homepage / brand-memory / market-intel | `"landing_ai_mcp"` |
-| Meta / TikTok 發佈、廣告 campaign、QR code、KOL、目標 / 計畫 | `"zereo_social_mcp"` |
-
-完整對照與更多範例（auth flow、create-and-poll pattern、JSON wrapping）見 `lib/mcp-patterns.md`。
-
-### Forbidden 直接呼叫
-
-直接寫 `generate_session(...)`、`create_session(...)`、`generate_ad(...)` 是**簡寫描述**，不是合法呼叫——你的 connector 會回 `Tool 'X' is not exposed on the Landing AI plugin endpoint. Use mcp_tool_call(...)`。看到這個錯誤就照上面翻譯規則重打一次。
+Connector 只露出**一個** tool：`mcp_tool_call(server_name, tool_name, arguments)`。本檔 + 所有 SKILL.md 裡的 `name(args)` 簡寫都是**描述用**，實際呼叫必須包進 `mcp_tool_call`。Server 路由、canonical syntax、auth flow、create-and-poll / edit / publish / ad-campaign pattern、JSON 參數慣例、error handling — 全在 [`lib/mcp-patterns.md`](./lib/mcp-patterns.md)。
 
 ---
 
