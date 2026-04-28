@@ -883,6 +883,60 @@ mcp_tool_call("landing_ai_mcp", "generate_group_spokesperson", {
 
 **用途**：team page、TA 全圖鑑、活動宣傳 hero、A/B testing 前先生團體版確認 cast、之後拿 image_url 餵 `regenerate_stripe.reference_image_urls_json` 讓 Factory 照團體照配 stripe。
 
+### 🔴 寫進 session — **唯一正確欄位是 `spokesperson_faces`（陣列）**
+
+`generate_group_spokesperson` 回 `{ image_url, person_count, generation_status }`、拿到後**必須**用 `update_session` 寫進 session、Factory 才能找到這張圖。
+
+**只寫一個地方、用陣列、即使只有一張也包陣列**：
+
+```python
+# 場景 A — 全部 TA 共用同一張群像（最常見）：寫 wizard_shared_data
+update_session(
+  user_token=token, session_id=session_id,
+  data={
+    "wizard_shared_data": {
+      "spokesperson_faces": [result["image_url"]]  # 1 個 URL、包陣列
+    }
+  }
+)
+
+# 場景 B — 不同 TA 配不同代言人：寫 wizard_ta_group_files[i]
+update_session(
+  user_token=token, session_id=session_id,
+  data={
+    "wizard_ta_group_files": [
+      {"id": "ta_1", "spokesperson_faces": [ta1_image_url]},
+      {"id": "ta_2", "spokesperson_faces": [ta2_image_url]},
+    ]
+  }
+)
+```
+
+**🚫 絕對禁用以下欄位名**（2026-04-28 production bug、LLM hallucinate 出來、backend 完全不讀、生 LP 沒人物）：
+
+| ❌ 禁用 | ✅ 改寫成 |
+|---|---|
+| `spokesperson_image_url: "https://..."` | `spokesperson_faces: ["https://..."]`（陣列） |
+| `spokesperson_image_urls: ["..."]` | `spokesperson_faces: ["..."]`（換 key 名） |
+| `account_spokesperson_id: "uuid"` | 不寫 session、id 只給 `list_spokespersons` 查 |
+
+**場景 C — 想把這張群像登記成 brand 資產讓未來 reuse**（可選、跟寫 session 是並行兩件事）：
+```python
+# 1) 寫 session 讓這次 LP 用得到
+update_session(data={"wizard_shared_data": {"spokesperson_faces": [result["image_url"]]}})
+
+# 2) （獨立）也存進 brand 資產庫、未來新 session 可從 list_spokespersons 挑
+create_spokesperson(
+  user_token=token, brand_id=brand_id,
+  name="三大客群陣容",
+  description="Cast lineup: 30s female brand director, 40s CFO, 30s entrepreneur",
+  photo_urls_json=json.dumps([result["image_url"]]),
+  is_ai_generated=True,
+)
+```
+
+**心智模型**：`spokesperson_faces` 是 backend 讀的「這次 LP 要用這些臉」、`create_spokesperson` 是「順便存進資產庫好下次 reuse」。**沒寫 spokesperson_faces = 這次 LP 沒代言人、不管資產庫存了幾個**。
+
 ---
 
 ### AI-Generated Spokesperson — Parameter Collection (MANDATORY when user chooses option 2)

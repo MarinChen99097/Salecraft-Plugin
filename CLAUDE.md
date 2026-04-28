@@ -852,6 +852,20 @@ curl -X PUT -H "Content-Type: image/jpeg" -T file "$upload_url"
 
 Array 是覆蓋（刪除 = 傳不含該 URL 的完整陣列）。
 
+**🚫 代言人欄位名陷阱（2026-04-28 production bug）**：把代言人 URL 寫到 session、**唯一正確欄位名** = `spokesperson_faces`（陣列、可放 1 - 5 個 URL）。
+**絕對禁用以下名字**（這些是 LLM 過去 hallucinate 出來的、生 LP 時 backend 完全讀不到、人物會消失）：
+
+| ❌ 禁用 | 為什麼會被 hallucinate | ✅ 改用 |
+|---|---|---|
+| `spokesperson_image_url`（單字串） | 部分 tool response 用此 key、LLM 直接複製進 session | `spokesperson_faces: [url]`（陣列、就算只有一個也包陣列）|
+| `spokesperson_image_urls`（陣列） | `brand_profiles` ORM column 叫這名字、LLM 跨層挪用 | `spokesperson_faces` |
+| `account_spokesperson_id` | `create_account_spokesperson` 回的 id 看似要存進 session | 不要存進 session、id 只給 `list_spokespersons` 查、寫 session 用 `spokesperson_faces: [photo_url]` |
+
+**何時用 `wizard_ta_groups[i].spokesperson_faces`（per-TA）vs `wizard_shared_data.spokesperson_faces`（全 TA 共用）**：
+- 不同 TA 配不同代言人 → 寫 `wizard_ta_groups[i].spokesperson_faces`
+- 所有 TA 共用同一群代言人 → 寫 `wizard_shared_data.spokesperson_faces`
+- **Group spokesperson（cast lineup 一張多人圖）**：仍寫 `spokesperson_faces: [composite_url]`（陣列裡一個 URL、不是把每個人拆開放）
+
 ### Quality Gate（Step 3、Phase 1.9、MANDATORY）
 
 3 個 tool 並行、全部帶 `session_id`、全部 0 pts：

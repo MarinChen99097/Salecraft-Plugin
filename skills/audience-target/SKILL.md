@@ -487,6 +487,7 @@ update_session(data={"wizard_ta_groups": [
 - ❌ 使用者講「N 個代言人」LLM 自己選擇解讀「N 張獨立 / 1 張群像」、不追問
 - ❌ 走群像路徑時 `composition` / `background` silently default 而不對使用者明說「我幫你預設 X、要改告訴我」
 - ❌ 候選 persona 不夠 N 個時、靜默 hard-code 一些變體湊數、不讓使用者看 / 修改
+- ❌ **把代言人 URL 寫進 `wizard_ta_groups[i].spokesperson_image_url`（單字串）或 `spokesperson_image_urls`（陣列）或 `account_spokesperson_id`** —— 這 3 個欄位名 backend 完全不讀、LLM 過去 hallucinate 出來、實測造成 4/27 production LP 完全沒人物（[2026-04-28 incident](../../CLAUDE.md#代言人欄位名陷阱)）。**唯一正確欄位** = `spokesperson_faces: [url, ...]`（陣列、即使只有一個 URL 也包陣列）。Group spokesperson 一張多人合成圖也是寫陣列裡一個 composite URL、不是把每個人拆開
 
 ---
 
