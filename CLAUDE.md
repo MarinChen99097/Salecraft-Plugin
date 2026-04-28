@@ -65,6 +65,48 @@
 
 ---
 
+## 🔴 Rule 7.5 — TOOL CALL CONVENTION（**所有 code block 範例都是 shorthand**）
+
+**This entire plugin is reachable through ONE tool: `mcp_tool_call`.** 個別工具名（`create_session`、`generate_session`、`generate_ad`、`update_session` 等）**不會**作為 first-class tool 出現在你的 connector 工具列表——connector 只露出 `mcp_tool_call(server_name, tool_name, arguments)` 這一個 meta-tool。
+
+### Shorthand → Real call 翻譯規則
+
+整份 CLAUDE.md 與所有 SKILL.md 為了易讀，把工具呼叫寫成簡寫，例如：
+
+```
+generate_session(session_id, ta_group_ids_json=[...], requested_stripe_count=N)
+```
+
+**真實呼叫必須包成這樣（你的 LLM runtime 唯一能執行的形式）**：
+
+```
+mcp_tool_call(
+  server_name = "landing_ai_mcp",     # 或 "zereo_social_mcp"，視工具歸屬
+  tool_name   = "generate_session",
+  arguments   = {
+    "user_token": "<token>",
+    "session_id": "<id>",
+    "ta_group_ids_json": [...],
+    "requested_stripe_count": N
+  }
+)
+```
+
+### Server 歸屬（決定 `server_name`）
+
+| 工具家族 | `server_name` |
+|---------|---------------|
+| 登入 / session / brand / TA / 圖片 / generate / edit / homepage / brand-memory / market-intel | `"landing_ai_mcp"` |
+| Meta / TikTok 發佈、廣告 campaign、QR code、KOL、目標 / 計畫 | `"zereo_social_mcp"` |
+
+完整對照與更多範例（auth flow、create-and-poll pattern、JSON wrapping）見 `lib/mcp-patterns.md`。
+
+### Forbidden 直接呼叫
+
+直接寫 `generate_session(...)`、`create_session(...)`、`generate_ad(...)` 是**簡寫描述**，不是合法呼叫——你的 connector 會回 `Tool 'X' is not exposed on the Landing AI plugin endpoint. Use mcp_tool_call(...)`。看到這個錯誤就照上面翻譯規則重打一次。
+
+---
+
 ## 🔴 Rule 6.5 — NO SILENT DEFAULTS（每個 wizard 設定都要「被碰到」）
 
 每個寫入 `wizard_shared_data` / `wizard_ta_groups` 的欄位、必須處在恰好兩種狀態之一：
@@ -892,19 +934,25 @@ digitize_product_text(image_urls_json, industry_category, product_name, brand_na
 
 **方法 A：快速廣告圖（~5 min）**
 ```
-generate_ad(session_id, { ta_group_id, aspect_ratio, ad_goal })
+mcp_tool_call("landing_ai_mcp", "generate_ad",
+              {"session_id": ..., "ta_group_id": ...,
+               "aspect_ratio": ..., "ad_goal": ...})
 → project_id; status: processing
-poll get_ad_result(session_id, project_id) 每 30s
+poll mcp_tool_call("landing_ai_mcp", "get_ad_result",
+                   {"session_id": ..., "project_id": ...}) 每 30s
 → image_url
-social_copy → caption
-publish_post({ social_account_id, post_type: "ig_post", caption, image_url })
+mcp_tool_call("landing_ai_mcp", "social_copy", {...}) → caption
+mcp_tool_call("zereo_social_mcp", "publish_post",
+              {"social_account_id": ..., "post_type": "ig_post",
+               "caption": ..., "image_url": ...})
 ```
 
 **方法 B：從既有 LP 取圖**
 ```
-download_stripe(campaign_id, stripe_idx) → image URL
-social_copy → caption
-publish_post(...)
+mcp_tool_call("landing_ai_mcp", "download_stripe",
+              {"campaign_id": ..., "stripe_idx": ...}) → image URL
+mcp_tool_call("landing_ai_mcp", "social_copy", {...}) → caption
+mcp_tool_call("zereo_social_mcp", "publish_post", {...})
 ```
 
 時間：廣告圖 ~5 min / LP ~30 min / 從 LP 提圖 ~1 min / 文案 ~30s / 發 IG ~10s。**不要說生圖要 30 分鐘**——那是 LP 的時間。
@@ -912,17 +960,19 @@ publish_post(...)
 ### Carousel（多張、風格一致）
 
 ```
-generate_carousel(session_id, {
-  ta_group_id, num_images: 5, aspect_ratio: "1:1",
-  carousel_narrative: "hook → features → proof → CTA"
+mcp_tool_call("landing_ai_mcp", "generate_carousel", {
+  "session_id": ..., "ta_group_id": ...,
+  "num_images": 5, "aspect_ratio": "1:1",
+  "carousel_narrative": "hook → features → proof → CTA"
 })
 → project_id
 
-poll get_carousel_result 每 30s（最多 20 次）
+poll mcp_tool_call("landing_ai_mcp", "get_carousel_result", {...}) 每 30s（最多 20 次）
 → image_urls[], ad_copy { headline, body_text, hashtags, cta_text }
 
-publish_post({ social_account_id, post_type: "ig_post",
-               caption: ad_copy.body_text, image_urls })
+mcp_tool_call("zereo_social_mcp", "publish_post",
+              {"social_account_id": ..., "post_type": "ig_post",
+               "caption": ad_copy.body_text, "image_urls": image_urls})
 ```
 
 連貫性：第一張作 reference + histogram matching + prompt 共用色調 / 字體 / 情緒弧。
