@@ -139,7 +139,7 @@ Cost 複誦**必須講清楚**：「預扣 {200 × requested × num_tas} pts、�
 每一條都會導致退費投訴。**寧可對話多一行、不少一個 confirmation**：
 
 - 未問 per-TA `language` 就 generate（fallback zh-TW）
-- 多 TA 但 `primary_color` / `aspect_ratio` 共用一個答案
+- 多 TA 但 `primary_color` 共用一個答案（per-TA 欄位不能用一份配色套兩組受眾。`aspect_ratio` **本質就是 shared**，整個 LP 用一個 ratio、不在此列）
 - LLM 自己挑 `requested_stripe_count`（包含「我幫你配 8 頁省點數」、「對你比較安全」）
 - TA 從候選裡 LLM 自己挑（必須使用者選；即使某組 appeal 最高）
 - 跳 Quality Gate 直接進 Step 4 TA（即使使用者沒講「檢查圖」、有產品圖就**主動跑**）
@@ -304,7 +304,7 @@ SKILL.md 提到的「Strategist / Architect / Factory / Stripe Reflector」**是
 
 #### 4. Color hex / 座標 / 版面 % / 字級 px（**全部工程語、感官化中文取代**）
 - ❌ `#A3B18A` / `rgb(...)` ✅「暖綠（像抹茶）」「墨綠（深森林）」
-- ❌ `9:16` / `16:9` 數字單獨寫 ✅「直版（手機直拿）」「橫版（桌機寬的）」
+- ❌ `9:16` / `16:9` / `1:1` / `4:5` 數字單獨寫 ✅「直版（手機直拿）」「橫版（桌機寬的）」「方版（IG / FB 貼文）」「IG portrait（IG 動態消息直拿）」
 - ❌ 「padding 5%」「margin 2em」「60% 高度」 ✅「貼近上緣」「底部留白多一點」「壓在底部三分之一」
 - ❌ `font-size: 48px` ✅「大字級標題」「比標題小一階的副標」
 - ❌ 任何 CSS 屬性名（`flex` / `grid` / `border-radius`）✅ 直接描述視覺（「左右等寬兩欄」、「圓角按鈕」）

@@ -415,7 +415,7 @@ Backend 把 Phase 2 spec 分成兩類儲存：
 
 | 欄位 | 可從這些 signal 推 | 推斷範例 |
 |------|-------------------|---------|
-| `aspect_ratio` | saleskit / brand-onboard 對話提到渠道（IG 限時 / TikTok / 桌機官網 / Google Ads） | 提過「IG 限時」→ `9:16`；提過「官網 hero」→ `16:9`；沒提或兩邊都要 → 預設兩邊 |
+| `aspect_ratio` | saleskit / brand-onboard 對話提到渠道：IG 限時 / TikTok / Reels 直拿；FB / IG 動態消息（feed）；桌機官網 hero / Google Ads / 簡報；IG 方版貼文 | 提過「IG 限時」/「TikTok」/「Reels」→ `9:16`；提過「官網 hero」/「Google Ads 桌機」→ `16:9`；提過「IG 方版貼文」/「FB 方版貼文」→ `1:1`；提過「IG 動態消息直拿」/「FB feed portrait」→ `4:5`；都沒提 → 預設 `9:16`（最廣用途）。**禁用 `"both"`** — backend 一個 session 只生一個 ratio；使用者要兩個比例 → 跟使用者明說「分兩次 session 各跑一個比例」（同 stripe_count 不能混搭的處理） |
 | `language` | 使用者對話主要語言 + brand scrape language + TA ta_description 語言 | 使用者講繁中、brand 官網繁中 → `"Traditional Chinese (Taiwan)"`；若 TA 中某組 ta_description 是英文 → 該 TA 推 `"English"`、其他推 `"Traditional Chinese (Taiwan)"`（canonical name、禁 ISO code）|
 | `primary_color` | `analyze_brand_url` 抓的 primary_color / logo 主色 | 抓到 `#2fa067` → 直接用；沒抓到 → 才問 |
 | `font_family` / `font_family_english` | `industry_category` 的通用字體偏好 | cosmetics / jewelry / luxury → `serif` / Noto Serif；software / electronics / SaaS → `sans-serif` / Inter；handmade / artisan → `handwritten`。中文英文兩欄位對齊、或都走 `"auto"` 交給 AI |
@@ -1463,17 +1463,21 @@ mcp_tool_call("landing_ai_mcp", "export_html", {
 
 ---
 
-## Generating Both Aspect Ratios
+## Generating Multiple Aspect Ratios (one ratio per session)
 
-If user selected "both" in Phase 2:
+Backend generates **one ratio per session**. To deliver two ratios for the same brand, run **two separate sessions** in sequence:
 
-1. Generate 16:9 version first (steps 1-6)
-2. Create a second session with same config but `aspect_ratio="9:16"`
-3. Generate 9:16 version (steps 1-6)
-4. Present both results together
+1. Confirm with user explicitly: "兩個比例需要分兩次扣點生成、總費用會是 2× — 確定要兩個都跑嗎？"
+2. After explicit yes, generate the **first** ratio: `update_session(wizard_shared_data.aspect_ratio="16:9", ...)` then `generate_session` (steps 1-6 of this skill)
+3. Create a **second** session via `create_session` (new session_id) with the same brand / TA / spec, only difference is `aspect_ratio="9:16"` and run steps 1-6 again
+4. Present both campaign_ids together once both finish
+
+**Do NOT** put a list value (e.g. `["16:9", "9:16"]`) into `wizard_shared_data.aspect_ratio` — backend treats it as unknown and coerces back to `9:16`, silently dropping the 16:9 request. Always one single ratio string per session.
+
+Final report once both sessions finish:
 
 ```
-Both versions generated!
+Both ratios generated (2 sessions, 2× cost):
 
 16:9 (Landscape): [campaign_id_landscape] — [X] stripes
   Sales Page: https://landingai.info/{locale}/lp/{campaign_id_landscape}
