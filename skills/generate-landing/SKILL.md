@@ -507,6 +507,39 @@ mcp_tool_call("landing_ai_mcp", "update_session", {
 
 Infer pass 跑完、`needs` 通常從 7-8 題縮到 0-3 題。**剩下的才問使用者**、仍然 2-4 題一組。
 
+##### Step 5b.1 — `aspect_ratio` 切換腳本（使用者明示 / 反悔 / 雙比例）
+
+LLM 看到下面任何 cue 進入此分支、不要當成普通 infer 處理：
+
+| 使用者表達 | 情境 |
+|------------|------|
+| 「我要橫版」/「直拿那種」/「方版」/「IG portrait feed」/「16:9」/「1080×1920」 | A. 明示單一比例 |
+| 「兩個都要」/「直版橫版都做一份」/「9:16 跟 16:9 都生」 | B. 要兩個比例 |
+| Step 5c 宣告後 / Step 6 頁數中 / Step 7 pre-flight 才講「等等、我要改成 16:9」 | C. 反悔切換 |
+
+**情境 A — 明示單一比例**：
+```
+mcp_tool_call("landing_ai_mcp", "update_session", {
+  "user_token": token, "session_id": session_id,
+  "data_json": '{"wizard_shared_data": {"aspect_ratio": "<literal>"}}'
+})
+```
+- DB 寫 literal 字串（`"16:9"` / `"9:16"` / `"1:1"` / `"4:5"` 等）、對使用者說「直版/橫版/方版/IG portrait feed」
+- 屬 NO SILENT DEFAULTS Mode A（使用者親答）、Step 5c 仍要列、但**不標**「（我幫你配）」
+- 不需中斷 Wizard 流程、寫完接續
+
+**情境 B — 兩個比例（觸發兩-session 協定）**：
+1. **明示**扣費：「兩個比例需要分兩次扣點生成、總費用會是 2× — 確定兩個都要嗎？」
+2. 使用者明確 yes：跑下方 [Generating Multiple Aspect Ratios](#generating-multiple-aspect-ratios-one-ratio-per-session) 協定
+3. 使用者只想要一個（例：「不用、那選一個就好」）：問「你比較常用哪個渠道？」收斂到單一 ratio、走情境 A
+4. 使用者沒明確 yes（只說「都好」/「OK」之類模糊回應）：**禁止**自行 commit 雙 session、再問一次「2× 扣費、確定嗎？」
+
+**情境 C — 反悔切換（Step 5c / 6 / 7 中途）**：
+- 直接 update_session 覆寫即可。Wizard SOP「禁止顛倒」防的是**跳關**（例：跳過 Step 3 直接生）、**不防同 session 內 spec 微調**
+- 不需重跑 Step 1-4、TA 還在、其他 spec 還在、只改 aspect_ratio
+- 改完口頭確認新值（一句即可）、接續原本步驟（5c 重新宣告 / 6 繼續問頁數 / 7 重跑 pre-flight checklist）
+- 例外：若使用者反悔的是 Step 4 TA（非 spec）、那是 audience-target 領域、回 Step 4 重做
+
 #### Step 5c — 宣告推斷值、等使用者反對
 
 Step 5a/5b 跑完、進 Step 6 頁數之前，把 **whitelist 內全部欄位一次宣告**（不管使用者親答、LLM infer、還是走 silent default、都要列出）、給反對機會。**禁止**只列部分欄位、禁止用「其他都用預設」一句帶過——使用者要看到每個欄位的值才能點頭。

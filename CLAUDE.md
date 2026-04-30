@@ -522,6 +522,12 @@ edit-landing（使用者要改再進）
 
 **為什麼頁數放最後**：頁數 × TA 組數 = 總扣點。Phase 1-2 全是內容 / 品質決策、不影響總額。頁數放最後 = 使用者看完所有 spec 才做最終金額承諾。
 
+> **mid-Wizard 改 spec**（Step 5-7 中途想換 aspect_ratio / language / primary_color / 字體 等）：直接 `update_session` 覆寫即可、原步驟接續、不需重跑 Step 1-4。Wizard SOP「禁止顛倒」防的是**跳關**（例：跳過 Step 3 Quality Gate 直接 Step 8 generate）、不防**同 session 內 spec 微調**。
+>
+> 例外：使用者反悔的是 Step 4 **TA 選擇**（不是 Step 5 spec）→ 那是 audience-target 領域、回 Step 4 重做（重跑 `generate_ta_options` / 重新 update wizard_ta_groups）。
+>
+> aspect_ratio 切換的三種情境腳本（明示單一 / 要兩個 / 反悔切換）見 [`skills/generate-landing/SKILL.md` Step 5b.1](./skills/generate-landing/SKILL.md)；post-generation 換比例見 [`skills/edit-landing/SKILL.md` Aspect Ratio Switch](./skills/edit-landing/SKILL.md)。
+
 ### 規則
 
 - 「做 LP」**但還沒跑 Phase 1** → 「先收素材會比較準、給我網址最快、沒網址也 OK 手動來」
